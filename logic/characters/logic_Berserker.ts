@@ -92,7 +92,7 @@ export class BerserkerLogic extends BaseCharacterLogic {
   }
 
   getCardPower(context: PowerContext): number {
-    const { card, trickContainsOne, isKakumei } = context;
+    const { card, trickContainsOne, isKakumei, isRevolt } = context;
 
     // Berserker cards are usually very strong (3000+)
     const isBerserkerCard = card.id.startsWith('berserker-');
@@ -136,7 +136,7 @@ export class BerserkerLogic extends BaseCharacterLogic {
     // 3000 > 1. Berserker wins.
     // We need 1 to win.
     // So if `trickContainsOne`, force Berserker Power to -1 (so 1 > -1).
-    if (!isKakumei && trickContainsOne) {
+    if (!(isKakumei || isRevolt) && trickContainsOne) {
       power = -1;
     }
 

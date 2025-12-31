@@ -11,7 +11,7 @@ export class HermitLogic extends BaseCharacterLogic {
 
         // Habilidad del Ermitaño: La Bandera Blanca vence a la Rara (Hierarchy 4A)
         // Usamos 5000 para sobrepasar incluso a las cartas Negras (1000+) y Raras estándar (2000).
-        if (card.type === CardType.WHITE_FLAG && trickContainsRare) {
+        if (card.type === CardType.WHITE_FLAG && trickContainsRare && !(context.isKakumei || context.isRevolt)) {
             power = 5000;
         }
 

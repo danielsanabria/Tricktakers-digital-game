@@ -147,10 +147,9 @@ export const determineWinner = (
   const hermitInPlay = players.some(p => p.character === CharacterType.HERMIT);
   const berserkerInPlay = players.some(p => p.character === CharacterType.BERSERKER);
 
-  let winnerCard = playedCards[0];
-  let bestPower = -999999;
-  // In Revolt/Kakumei, "Best" means "Lowest Value", but we can mathematically invert logic 
-  // or just use a comparator. Let's calculate raw "Strength" and then compare.
+  // 1 vs 10 Special Rule: Identify all valid '1s' in the trick
+  // A '1' can beat a '10' of the same color, but ONLY if the '10' would have been the winner otherwise.
+  // Actually, let's simplify: A 10 is considered "weaker" than a 1 of the same suit in combat.
 
   // Helper to get raw strength
   const getStrength = (card: Card): number => {
@@ -161,7 +160,7 @@ export const determineWinner = (
     const context: PowerContext = {
       card,
       leadSuit,
-      isRevolt, // Not used much in getCardPower, usually determines the sorting direction
+      isRevolt,
       isKakumei,
       trickContainsOne: miriaPassive ? false : trickContainsOne,
       trickContainsRare,
@@ -174,121 +173,38 @@ export const determineWinner = (
     return logic.getCardPower(context);
   };
 
+  let winnerCard = playedCards[0];
+  let bestPower = getStrength(winnerCard);
+
   // KERNEL: Iterate and Compare
-  playedCards.forEach((card, index) => {
+  for (let i = 1; i < playedCards.length; i++) {
+    const card = playedCards[i];
     const power = getStrength(card);
 
-    // Initialize winner with first card
-    if (index === 0) {
-      bestPower = power;
-      winnerCard = card;
-      return;
-    }
-
-    // 1. Lead Suit & Valid Suit Priority Check
-    const cardIsLead = leadSuit !== null && card.suit === leadSuit;
-    const cardIsColorless = card.suit === Suit.COLORLESS;
-    const winnerIsLead = leadSuit !== null && winnerCard.suit === leadSuit;
-    const winnerIsColorless = winnerCard.suit === Suit.COLORLESS;
-
-    const cardIsValid = cardIsLead || cardIsColorless;
-    const winnerIsValid = winnerIsLead || winnerIsColorless;
-
-    // If challenger is Off-Suit (and invalid) while Winner is Valid -> Winner keeps it automatically.
-    if (!cardIsValid && winnerIsValid) {
-      return; // Challenger loses.
-    }
-
-    // If Challenger is Valid and Winner is Off-Suit -> Challenger takes it automatically.
-    if (cardIsValid && !winnerIsValid) {
-      bestPower = power;
-      winnerCard = card;
-      return;
-    }
-
-    // 1 vs 10 RULE (Strength of Numbers)
-    // "1 beats 10 of the SAME COLOR"
-    // Check if this comparison is a 1 vs 10 situation
-    const cardIsOne = card.type === CardType.NUMBER && card.value === 1;
-    const winnerIsTen = winnerCard.type === CardType.NUMBER && winnerCard.value === 10;
-    const sameColor = card.suit !== Suit.COLORLESS && card.suit === winnerCard.suit;
-
-    const cardIsTen = card.type === CardType.NUMBER && card.value === 10;
-    const winnerIsOne = winnerCard.type === CardType.NUMBER && winnerCard.value === 1;
-
-    // Kakumei usually inverts strength, but the user said: "Excepción: Los efectos que fortalecen cartas (como el 1 venciendo al 10) se anulan."
-    // So in Kakumei, 1 vs 10 follows normal Kakumei rules (1 is stronger than 10 because it's lower? No, Kakumei means Weakest wins. 1 is "weaker" value than 10, so 1 wins anyway?)
-    // Wait. In Standard: 10 > 1. But Rule says 1 > 10.
-    // In Kakumei: 1 < 10 (value). So 1 wins because it's weaker.
-    // So in BOTH cases, 1 beats 10? 
-    // User said: "Jerarquía de Rebelión... Inversión total... Excepción: Los efectos que fortalecen cartas (como el 1 venciendo al 10) se anulan."
-    // This implies 1 beating 10 is a "Special Effect" that overrides the natural order (10 > 1).
-    // If this effect is ANNULLED in Kakumei, then 10 vs 1 comparison reverts to "Weakest Wins".
-    // Value 1 is weaker than 10. So 1 wins in Kakumei too?
-    // Unless "Weakest" means "Lowest Power".
-    // Let's assume Standard: 1 beats 10. 
-    // Kakumei: The "1 beats 10" rule is OFF. 
-    // So we compare Power. Power of 10 is ~10. Power of 1 is ~1.
-    // In Kakumei, Weakest Wins. So 1 wins...
-    // UNLESS the prompt means "1 beats 10" is a SPECIAL victory, and in Kakumei 10 should beat 1?
-    // Usually in Revolt (Daihinmin), 10 < 1 is true. Revolt makes 10 > 1.
-    // But here 1 < 10 normally.
-    // Let's stick to the prompt:
-    // Standard: 1 beats 10 (Special).
-    // Revolt: Special annulled. 1 vs 10 compared by Inverted Hierarchy.
-    // Hierarchy: "Carta más débil gana". 1 is weaker than 10. So 1 wins.
-    // This results in 1 always beating 10... that seems redundant.
-    // Maybe "Berserker" 10 is 3000 power. 1 beats it.
-    // Let's check Berserker logic. Berserker 10 is 3000.
-    // If I play 1, and 3000 is on table. 
-    // Standard: 3000 > 1. But Special Rule says 1 beats 10. So 1 wins.
-    // Revolt: 3000 vs 1. Weakest wins. 1 wins.
-    // So 1 beats 10 always?
-    // UNLESS 1 becomes Stronger than 10 in Standard?
-
-    // Let's implement the specific override for Standard Mode only.
-    if (!isKakumei && !isRevolt) {
-      // Miria Passive: 10 vs 1 rule is annulled
-      // If miriaPassive is true, we skip this block and rely on Power/Values directly.
-      if (miriaPassive) {
-        // Do nothing special. 10 defeats 1 naturally by value/power.
-      } else {
-        if (cardIsOne && winnerIsTen && sameColor) {
-          // 1 beats 10
-          bestPower = power; // Or force win
-          winnerCard = card;
-          return;
-        }
-        // Note: In standard, if 10 is played AFTER 1?
-        // 1 is winner. 10 is played. 10 > 1? Yes.
-        // But 1 beats 10. So 1 stays winner.
-        if (cardIsTen && winnerIsOne && sameColor) {
-          // 10 loses to 1.
-          return;
-        }
-      }
-    }
-    // Standard: Higher is better.
-    // Kakumei: Lower is better.
-    // GOLD RULE: In case of TIE, the card played earlier (lower index) wins. 
-    // So strictly Greater (or strictly Less) is required to change winner.
-
-    if (!isKakumei) {
-      // Standard Hierarchy
+    if (!(isKakumei || isRevolt)) {
       if (power > bestPower) {
         bestPower = power;
         winnerCard = card;
       }
     } else {
-      // Revolution Hierarchy (Weakest wins)
-      // Note: In Kakumei, 1 beating 10 logic is usually disabled or inverted by the specific logic class.
-      // Here we just compare the raw power returned. 
       if (power < bestPower) {
         bestPower = power;
         winnerCard = card;
       }
     }
-  });
+  }
+
+  // --- SPECIAL OVERRIDE: 1 vs 10 ---
+  if (!(isKakumei || isRevolt) && !miriaPassive && winnerCard.value === 10) {
+    const killer = playedCards.find(c =>
+      c.value === 1 &&
+      c.suit !== Suit.COLORLESS &&
+      c.suit === winnerCard.suit
+    );
+    if (killer) {
+      winnerCard = killer;
+    }
+  }
 
   return winnerCard.ownerId || '';
 };

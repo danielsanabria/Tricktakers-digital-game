@@ -50,9 +50,9 @@ export class BaseCharacterLogic implements ICharacterLogic {
     } else {
       // Suit Bonuses for Number cards
       if (card.suit === Suit.BLACK) {
-        // In Kakumei, Black cards are the weakest, so they get a huge penalty to win in "Lowest Wins" mode.
-        power += context.isKakumei ? -1000 : 1000;
-      } else if (leadSuit && card.suit === leadSuit && !context.isKakumei && !context.isRevolt) {
+        // In Kakumei/Revolt, Black cards are the weakest, so they get a huge penalty to win in "Lowest Wins" mode.
+        power += (context.isKakumei || context.isRevolt) ? -1000 : 1000;
+      } else if (leadSuit && card.suit === leadSuit && !(context.isKakumei || context.isRevolt)) {
         // User Feedback: "Invalidez del Palo Líder: En modo Rebelión, no existe la ventaja por palo líder"
         power += 500;
       }

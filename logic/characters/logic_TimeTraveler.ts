@@ -6,6 +6,7 @@ import { UIContext, SetupContext, Player } from '../../game/core/types';
 export class TimeTravelerLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {
     return {
+      ...super.setup(context),
       timeTravelTokens: 2,
       timeTravelPredictions: []
     };
