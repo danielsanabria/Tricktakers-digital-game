@@ -806,9 +806,16 @@ const App: React.FC = () => {
 
 
     return (
-        <div className="h-[100dvh] bg-slate-900 text-slate-200 font-sans selection:bg-amber-500/30 flex flex-col overflow-hidden">
+        <div
+            className="h-[100dvh] text-slate-800 font-sans selection:bg-teal-500/30 flex flex-col overflow-hidden bg-cover bg-center"
+            style={{
+                backgroundColor: '#B9DED1',
+                backgroundImage: `url('/assets/bg-pattern.png')`,
+                backgroundBlendMode: 'overlay', // Optional: blends color with pattern
+                backgroundSize: 'cover' // Or 'auto' if it's a tile
+            }}
+        >
 
-            {/* Strategist Choice Modal */}
             {/* Strategist Choice Modal */}
             <StrategistModal
                 choice={strategistPendingChoice}
@@ -835,40 +842,43 @@ const App: React.FC = () => {
             />
 
             {/* Header */}
-            <header className="px-6 pt-10 pb-4 md:py-4 flex items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black">TT</div>
-                    <h1 className="font-black text-xl tracking-tighter uppercase text-slate-800">Tricktakers <span className="text-teal-500">Digital</span></h1>
+            <header className="px-6 pt-10 pb-4 md:py-4 flex items-center justify-between border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <img src="/assets/logo/logo.svg" alt="Tricktakers Logo" className="h-10 w-auto" />
                 </div>
 
-                {phase === GamePhase.TRICK_PLAYING && (
-                    <div className="flex gap-8 items-center">
-                        <div className="text-center">
-                            <span className="block text-[10px] font-black text-slate-400 uppercase">Ronda</span>
-                            <span className="font-black text-lg">{round}/3</span>
+                <div className="flex items-center gap-4">
+                    {phase === GamePhase.TRICK_PLAYING && (
+                        <div className="hidden sm:flex gap-6 items-center bg-slate-50 px-4 py-1.5 rounded-full border border-slate-100">
+                            <div className="text-center">
+                                <span className="block text-[8px] font-black text-slate-400 uppercase">Ronda</span>
+                                <span className="font-black text-xs">{round}/3</span>
+                            </div>
+                            <div className="text-center">
+                                <span className="block text-[8px] font-black text-slate-400 uppercase">Baza</span>
+                                <span className="font-black text-xs text-teal-500">{trick}/5</span>
+                            </div>
                         </div>
-                        <div className="text-center">
-                            <span className="block text-[10px] font-black text-slate-400 uppercase">Baza</span>
-                            <span className="font-black text-lg text-teal-500">{trick}/5</span>
-                        </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={resetGame}
+                            className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-white hover:bg-rose-600 transition-all"
+                            title="Reiniciar"
+                        >
+                            <i className="fa-solid fa-arrow-rotate-left text-sm"></i>
+                        </button>
+
+                        <button
+                            onClick={() => setShowLogs(!showLogs)}
+                            className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${showLogs ? 'bg-teal-500 text-white' : 'bg-white text-slate-600'}`}
+                            title="Log"
+                        >
+                            <i className="fa-solid fa-list-ul text-sm"></i>
+                        </button>
                     </div>
-                )}
-
-                <button
-                    onClick={() => setShowLogs(!showLogs)}
-                    className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${showLogs ? 'bg-teal-500 border-teal-600 text-white shadow-lg shadow-teal-500/20' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'}`}
-                    title="Ver Historial"
-                >
-                    <i className="fa-solid fa-list-ul text-sm"></i>
-                </button>
-
-                <button
-                    onClick={resetGame}
-                    className="ml-2 w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-white hover:bg-rose-600 hover:border-rose-700 transition-all shadow-lg shadow-slate-900/10"
-                    title="Reiniciar al Menú Principal"
-                >
-                    <i className="fa-solid fa-arrow-rotate-left text-sm"></i>
-                </button>
+                </div>
             </header>
 
             <main className="flex-1 relative overflow-hidden flex flex-col">
@@ -880,17 +890,17 @@ const App: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <button onClick={() => initGame(GameMode.BASIC)} className="p-8 bg-slate-50 rounded-[2rem] border-2 border-slate-100 hover:border-teal-500 hover:bg-teal-50/30 transition-all group text-left">
                                     <i className="fa-solid fa-seedling text-3xl text-teal-500 mb-4 group-hover:scale-110 transition-transform"></i>
-                                    <h4 className="font-black text-xl mb-2">BÁSICO</h4>
+                                    <h4 className="font-white text-xl mb-2">BÁSICO</h4>
                                     <p className="text-slate-500 text-xs">Personajes iniciales recomendados para aprender.</p>
                                 </button>
                                 <button onClick={() => initGame(GameMode.ADVANCED)} className="p-8 bg-slate-50 rounded-[2rem] border-2 border-slate-100 hover:border-amber-500 hover:bg-amber-50/30 transition-all group text-left">
                                     <i className="fa-solid fa-chess-knight text-3xl text-amber-500 mb-4 group-hover:scale-110 transition-transform"></i>
-                                    <h4 className="font-black text-xl mb-2">AVANZADO</h4>
+                                    <h4 className="font-white text-xl mb-2">AVANZADO</h4>
                                     <p className="text-slate-500 text-xs">Pool dinámico de personajes de la expansión.</p>
                                 </button>
                                 <button onClick={() => initGame(GameMode.ALL_STAR)} className="p-8 bg-slate-50 rounded-[2rem] border-2 border-slate-100 hover:border-rose-500 hover:bg-rose-50/30 transition-all group text-left">
                                     <i className="fa-solid fa-crown text-3xl text-rose-500 mb-4 group-hover:scale-110 transition-transform"></i>
-                                    <h4 className="font-black text-xl mb-2">ALL-STAR</h4>
+                                    <h4 className="font-white text-xl mb-2">ALL-STAR</h4>
                                     <p className="text-slate-500 text-xs">Todos los personajes disponibles desde el inicio.</p>
                                 </button>
                             </div>

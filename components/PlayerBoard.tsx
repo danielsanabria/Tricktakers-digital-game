@@ -97,9 +97,18 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
           </div>
 
           <div className="flex flex-col">
-            <h3 className={`font-black uppercase tracking-tight text-slate-800 ${isHuman ? 'text-xl' : 'text-sm'}`}>
-              {player.name}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className={`font-black uppercase tracking-tight text-slate-800 ${isHuman ? 'text-xl' : 'text-sm'}`}>
+                {player.name}
+              </h3>
+              {/* Active Abilities Icons/Badges next to name */}
+              <div className="flex gap-1">
+                {player.thiefBetrayalMode && <span title="Traición Activa" className="text-xs text-red-500 font-bold">🗡️</span>}
+                {player.rulerUsedRuleAvoidance && <span title="Reglas Ignoradas" className="text-xs text-purple-500 font-bold">👁️</span>}
+                {player.revoltUsed && <span title="Rebelión Usada" className="text-[10px] text-amber-500 font-bold">🔥</span>}
+                {player.hermitUsedAbility && <span title="Ermitaño Activo" className="text-[10px] text-blue-500 font-bold">🏔️</span>}
+              </div>
+            </div>
             {char && (
               <span className={`font-bold uppercase tracking-widest text-teal-600 ${isHuman ? 'text-[10px]' : 'text-[8px]'}`}>
                 {char.name}
@@ -108,18 +117,7 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
           </div>
         </div>
 
-        {/* Estadísticas: Puntos y Bazas */}
-        <div className={`flex gap-4 items-center bg-white rounded-xl border border-slate-100 shadow-sm ${isHuman ? 'px-6 py-2' : 'px-3 py-1.5'}`}>
-          <div className="text-center">
-            <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Puntos</p>
-            <p className={`font-black text-amber-500 ${isHuman ? 'text-2xl' : 'text-lg'}`}>{player.score}</p>
-          </div>
-          <div className="w-px h-6 bg-slate-100"></div>
-          <div className="text-center">
-            <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Bazas</p>
-            <p className={`font-black text-teal-500 ${isHuman ? 'text-2xl' : 'text-lg'}`}>{player.wins}<span className="text-slate-300 text-xs font-normal">/5</span></p>
-          </div>
-        </div>
+        {/* Removed redundant header stats block */}
       </div>
 
       {/* Objetos y Tareas (Info Pública) */}
@@ -137,6 +135,20 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
           ))}
         </div>
       )}
+
+      {/* ÁREA DE ESTADÍSTICAS (Below header, good for mobile) */}
+      <div className="flex justify-between items-center bg-slate-100 rounded-2xl p-3 mb-4">
+        <div className="flex flex-col items-center w-1/2 border-r border-slate-200">
+          <span className="text-[9px] font-black uppercase text-slate-400">Puntos</span>
+          <span className={`${isHuman ? 'text-3xl' : 'text-xl'} font-black text-amber-500`}>{player.score}</span>
+        </div>
+        <div className="flex flex-col items-center w-1/2">
+          <span className="text-[9px] font-black uppercase text-slate-400">Bazas</span>
+          <span className={`${isHuman ? 'text-3xl' : 'text-xl'} font-black text-teal-500`}>
+            {player.wins}<span className="text-sm text-slate-400 font-bold">/5</span>
+          </span>
+        </div>
+      </div>
 
       {/* ÁREA DE MANO DIFERENCIADA */}
       {isHuman ? (
@@ -160,31 +172,12 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
         </div>
       ) : (
         // RIVAL: Resumen Compacto (Sin cartas visibles)
-        // RIVAL: Resumen Compacto y Prioridad a Datos
-        <div className="flex flex-col gap-2">
-          {/* Stats Row */}
-          <div className="flex justify-between items-center bg-slate-100 rounded-lg p-2">
-            <div className="flex flex-col items-center w-1/2 border-r border-slate-200">
-              <span className="text-[9px] font-black uppercase text-slate-400">Puntos</span>
-              <span className="text-xl font-black text-amber-500">{player.score}</span>
-            </div>
-            <div className="flex flex-col items-center w-1/2">
-              <span className="text-[9px] font-black uppercase text-slate-400">Bazas</span>
-              <span className="text-xl font-black text-teal-500">{player.wins}<span className="text-xs text-slate-300">/5</span></span>
-            </div>
+        <div className="flex justify-between items-center">
+          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            {player.hand.length} Cartas en mano
           </div>
-
-          {/* Status/Hand Info */}
-          <div className="flex justify-between items-center">
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-              {player.hand.length} Cartas
-            </div>
-            {/* Active Abilities Icons/Badges */}
-            <div className="flex gap-1">
-              {player.thiefBetrayalMode && <span title="Traición Activa" className="text-xs text-red-500 font-bold">🗡️</span>}
-              {player.rulerUsedRuleAvoidance && <span title="Reglas Ignoradas" className="text-xs text-purple-500 font-bold">👁️</span>}
-              {/* Add more status icons if needed */}
-            </div>
+          <div className="text-[10px] font-bold text-slate-300 italic">
+            Oculto
           </div>
         </div>
       )}
