@@ -185,6 +185,27 @@ export const determineWinner = (
       return;
     }
 
+    // 1. Lead Suit & Valid Suit Priority Check
+    const cardIsLead = leadSuit !== null && card.suit === leadSuit;
+    const cardIsColorless = card.suit === Suit.COLORLESS;
+    const winnerIsLead = leadSuit !== null && winnerCard.suit === leadSuit;
+    const winnerIsColorless = winnerCard.suit === Suit.COLORLESS;
+
+    const cardIsValid = cardIsLead || cardIsColorless;
+    const winnerIsValid = winnerIsLead || winnerIsColorless;
+
+    // If challenger is Off-Suit (and invalid) while Winner is Valid -> Winner keeps it automatically.
+    if (!cardIsValid && winnerIsValid) {
+      return; // Challenger loses.
+    }
+
+    // If Challenger is Valid and Winner is Off-Suit -> Challenger takes it automatically.
+    if (cardIsValid && !winnerIsValid) {
+      bestPower = power;
+      winnerCard = card;
+      return;
+    }
+
     // 1 vs 10 RULE (Strength of Numbers)
     // "1 beats 10 of the SAME COLOR"
     // Check if this comparison is a 1 vs 10 situation

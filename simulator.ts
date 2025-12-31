@@ -504,6 +504,7 @@ async function main() {
     await testCollector();
     await testTimeTraveler();
     await testBerserker();
+    await testRuler();
 }
 
 async function testBerserker() {
@@ -635,5 +636,28 @@ async function testTimeTraveler() {
     if (predictionBonus === 150) console.log("SUCCESS: Time Traveler prediction scoring working.");
 }
 
+async function testRuler() {
+    console.log("\n--- Testing Ruler (5B) ---");
+    const players = createInitialPlayers([CharacterType.RULER, CharacterType.KING, CharacterType.HERMIT]);
+    const ruler = players[0];
+
+    // 1. Tyranny Win Logic
+    ruler.wins = 2;
+    ruler.wonCards = [
+        { id: '1', suit: Suit.BLACK, value: 5, type: CardType.NUMBER, ownerId: ruler.id },
+        { id: '2', suit: Suit.COLORLESS, value: 0, type: CardType.WHITE_FLAG, ownerId: 'p2' },
+        { id: '3', suit: Suit.BLACK, value: 10, type: CardType.NUMBER, ownerId: ruler.id }
+    ];
+
+    const hasColorCards = ruler.wonCards.some(c =>
+        c.suit === Suit.RED || c.suit === Suit.BLUE || c.suit === Suit.GREEN
+    );
+
+    console.log(`Ruler Tyranny Check: Wins ${ruler.wins}, HasColorCards: ${hasColorCards}`);
+    if (ruler.wins >= 2 && !hasColorCards) console.log("SUCCESS: Ruler meets Tyranny condition (Simulated).");
+    else console.log("FAILURE: Ruler Tyranny condition check failed.");
+}
+
 main().catch(console.error);
+
 

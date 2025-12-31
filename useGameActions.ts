@@ -411,6 +411,11 @@ export const useGameActions = ({
         else if (actionName === 'SHOW_ITEM_CARD') {
             setItemCardToShow(payload);
         }
+        else if (actionName === 'RULER_IGNORE_RULES') {
+            // Toggle mode. If already active, cancel it?
+            setAbilityMode(prev => prev === 'RULER_IGNORE_RULES' ? 'NONE' : 'RULER_IGNORE_RULES');
+            addLog("Ruler: Modo 'Ignorar Reglas' activado (o desactivado). Juega cualquier carta.");
+        }
     }, [drawPile, selectedCards, players, playedCards, currentPlayerIdx, trickStarterIdx, isResolvingRef, trick, setItemCardToShow]);
 
     return { performAction };

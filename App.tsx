@@ -421,6 +421,17 @@ const App: React.FC = () => {
                     addLog("¡Berserker: 0 Victorias! Victoria Instantánea (Furia Desatanada).");
                 }
 
+                // Logic Ruler: Tyranny (2+ Wins, No Color Cards Captured)
+                if (p.character === CharacterType.RULER && p.wins >= 2) {
+                    const hasColorCards = p.wonCards.some(c =>
+                        c.suit === Suit.RED || c.suit === Suit.BLUE || c.suit === Suit.GREEN
+                    );
+                    if (!hasColorCards) {
+                        pts = 999;
+                        addLog("¡Gobernante: TIRANÍA! (2+ Victorias sin cartas de color). Victoria Instantánea.");
+                    }
+                }
+
                 return { ...p, score: pts === 999 ? 999 : Math.max(0, p.score + pts) };
             });
 
