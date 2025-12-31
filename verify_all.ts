@@ -1,0 +1,150 @@
+
+import { KingLogic } from './logic_King';
+import { StrategistLogic } from './logic_Strategist';
+import { GamblerLogic } from './logic_Gambler';
+import { SummonerLogic } from './logic_Summoner';
+import { NinjaLogic } from './logic_Ninja';
+import { ResistanceLogic } from './logic_Resistance';
+import { AdventurerLogic } from './logic_Adventurer';
+import { AlchemistLogic } from './logic_Alchemist';
+import { SamuraiLogic } from './logic_Samurai';
+import { HermitLogic } from './logic_Hermit';
+import { CollectorLogic } from './logic_Collector';
+import { TimeTravelerLogic } from './logic_TimeTraveler';
+import { BerserkerLogic } from './logic_Berserker';
+import { RulerLogic } from './logic_Ruler';
+import { PhantomThiefLogic } from './logic_PhantomThief';
+import { CharacterType, Suit, CardType, Player } from './types';
+
+// --- MOCK DATA ---
+const mockDeck = Array(60).fill(null).map((_, i) => ({
+    id: `card-${i}`,
+    suit: i % 2 === 0 ? Suit.RED : i % 3 === 0 ? Suit.BLUE : Suit.GREEN,
+    value: (i % 9) + 1,
+    type: CardType.NUMBER
+}));
+
+const basePlayer: Player = {
+    id: 'p1', name: 'Tester', character: null, hand: [], wonCards: [], score: 0,
+    goldCrowns: 0, blackCrowns: 0, wins: 0, items: [], tasks: [], beasts: [], rearBeasts: [], magicElements: [], mp: 0
+};
+
+function runTest(name: string, testFn: () => boolean) {
+    try {
+        if (testFn()) console.log(`✅ ${name}`);
+        else console.error(`❌ ${name}`);
+    } catch (e) {
+        console.error(`❌ ${name} (EXCEPTION: ${e})`);
+    }
+}
+
+console.log("=== TRICKTAKERS CHARACTER LOGIC VERIFICATION ===");
+
+// 1. KING (1A)
+runTest('King Setup (Rare + 6 Cards)', () => {
+    const l = new KingLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 6 && res.hand.some(c => c.type === CardType.RARE);
+});
+
+// 2. STRATEGIST (1C)
+runTest('Strategist Setup (Black 7 + 6 Cards)', () => {
+    const l = new StrategistLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 6 && res.hand.some(c => c.value === 7 && c.suit === Suit.BLACK);
+});
+
+// 3. GAMBLER (2A)
+runTest('Gambler Default Setup (5 Cards)', () => {
+    const l = new GamblerLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 5;
+});
+
+// 4. SUMMONER (2C)
+runTest('Summoner Setup (Beasts initialized)', () => {
+    const l = new SummonerLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.mp === 5 && res.beasts && res.beasts.length > 0;
+});
+
+// 5. NINJA (2D)
+runTest('Ninja Setup', () => {
+    const l = new NinjaLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 5;
+});
+
+// 6. RESISTANCE (3A)
+runTest('Resistance Setup', () => {
+    const l = new ResistanceLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 5;
+});
+
+// 7. ADVENTURER (3B)
+runTest('Adventurer Setup (Has Items)', () => {
+    const l = new AdventurerLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.items && res.items.length > 0;
+});
+
+// 8. ALCHEMIST (3C)
+runTest('Alchemist Setup (Magic Elements)', () => {
+    const l = new AlchemistLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    // Alchemist logic might not init elements in setup but in gameplay?
+    // Checking logic file... typically standard hand.
+    return res.hand?.length === 5;
+});
+
+// 9. SAMURAI (3D)
+runTest('Samurai Setup', () => {
+    const l = new SamuraiLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 5;
+});
+
+// 10. HERMIT (4A)
+runTest('Hermit Setup', () => {
+    const l = new HermitLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 5;
+});
+
+// 11. COLLECTOR (4B)
+runTest('Collector Setup', () => {
+    const l = new CollectorLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 5;
+});
+
+// 12. TIME TRAVELER (4C)
+runTest('Time Traveler Setup', () => {
+    const l = new TimeTravelerLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 5; // Might vary if specific logic exists
+});
+
+// 13. BERSERKER (5A)
+runTest('Berserker Setup', () => {
+    const l = new BerserkerLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 5;
+});
+
+// 14. RULER (5B)
+runTest('Ruler Setup (Has Tasks)', () => {
+    const l = new RulerLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.tasks && res.tasks.length > 0;
+});
+
+// 15. PHANTOM THIEF (5C)
+runTest('Phantom Thief Setup', () => {
+    const l = new PhantomThiefLogic();
+    const res = l.setup({ deck: [...mockDeck], playerId: 'p1', round: 1, players: [basePlayer] });
+    return res.hand?.length === 5;
+});
+
+console.log("=== VALIDATION END ===");

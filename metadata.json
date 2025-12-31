@@ -1,0 +1,5 @@
+{
+  "name": "Tricktakers Web Edition",
+  "description": "A high-fidelity digital implementation of the asymmetric trick-taking board game Tricktakers, featuring multiple characters, unique winning conditions, and dynamic suit hierarchies.",
+  "requestFramePermissions": []
+}
