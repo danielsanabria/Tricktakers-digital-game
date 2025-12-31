@@ -1,6 +1,7 @@
 
 import { KingLogic } from './logic/logic_King';
 import { StrategistLogic } from './logic/logic_Strategist';
+import { PhantomThiefLogic } from './logic/logic_PhantomThief';
 import { CharacterType, Suit, CardType, Player } from './types';
 import { determineWinner } from './gameLogic';
 
@@ -106,5 +107,42 @@ if (winnerId === 'p1') {
 } else {
     console.error("❌ FAIL: Wrong winner for 3 Rares.", winnerId);
 }
+
+// TEST 5: Phantom Thief Steal
+console.log("\n[TEST 5] Phantom Thief Steal Logic");
+const thiefWins = 3;
+const victimWins = 2; // Diff 1
+
+const thiefPlayer: Player = {
+    ...mockPlayer,
+    id: 'thief',
+    name: 'Lupin',
+    character: CharacterType.PHANTOM_THIEF,
+    wins: thiefWins,
+    thiefTargetIds: ['victim'],
+    thiefChipValue: 1, // Chip 1 => Matches Diff +/- 1
+    goldCrowns: 0
+};
+const victimPlayer: Player = {
+    ...mockPlayer,
+    id: 'victim',
+    name: 'Victim',
+    wins: victimWins,
+    goldCrowns: 1,
+    score: 50
+};
+
+const playersList = [thiefPlayer, victimPlayer];
+const theftResult = PhantomThiefLogic.resolveSteal(playersList, (msg) => console.log("LOG:", msg));
+
+const thiefAfter = theftResult.find(p => p.id === 'thief');
+const victimAfter = theftResult.find(p => p.id === 'victim');
+
+if (thiefAfter?.goldCrowns === 1 && victimAfter?.goldCrowns === 0) {
+    console.log("✅ PASS: Phantom Thief stole Gold Crown (Diff 1, Chip 1).");
+} else {
+    console.error("❌ FAIL: Theft failed.", { thief: thiefAfter?.goldCrowns, victim: victimAfter?.goldCrowns });
+}
+
 
 console.log("\n--- VERIFICATION COMPLETE ---");

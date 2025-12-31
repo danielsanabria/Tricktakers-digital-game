@@ -301,7 +301,65 @@ export const getAiMove = (
   const validMoves = getValidMoves(player.hand, leadSuit);
   if (validMoves.length === 0) return '';
 
-  // Basic AI: Try to win if possible, else throw low
   // Random for now to keep it unpredictable as requested
   return validMoves[Math.floor(Math.random() * validMoves.length)].id;
+};
+
+export interface TournamentResult {
+  winner: Player;
+  reason: string;
+}
+
+export const determineTournamentWinner = (players: Player[]): TournamentResult => {
+  // Priority 1: Instant Win (Score >= 900) - e.g. King with 5 wins
+  const instant = players.find(p => p.score >= 900);
+  if (instant) return { winner: instant, reason: '¡Victoria Instantánea!' };
+
+  // Priority 2: 2 Gold Crowns
+  const gold = players.find(p => p.goldCrowns >= 2);
+  if (gold) return { winner: gold, reason: 'Maestro de Coronas Doradas (2)' };
+
+  // Priority 3: 3 Black Crowns
+  const black = players.find(p => p.blackCrowns >= 3);
+  if (black) return { winner: black, reason: 'Rey de la Miseria (3 Coronas Negras)' };
+
+  // Priority 4: Max Score with Tie-Breaker (Hierarchy)
+  const hierarchy = [
+    CharacterType.KING,
+    CharacterType.GAMBLER,
+    CharacterType.RESISTANCE,
+    CharacterType.ADVENTURER,
+    CharacterType.HERMIT,
+    CharacterType.COLLECTOR,
+    CharacterType.BERSERKER,
+    CharacterType.RULER,
+    CharacterType.STRATEGIST,
+    CharacterType.SUMMONER,
+    CharacterType.PHANTOM_THIEF,
+    CharacterType.TIME_TRAVELER
+  ];
+
+  const sorted = [...players].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    // Tie-breaker
+    const idxA = hierarchy.indexOf(a.character!);
+    const idxB = hierarchy.indexOf(b.character!);
+    if (idxA === -1) return 1;
+    if (idxB === -1) return -1;
+    return idxA - idxB;
+  });
+
+  // Priority 1.5: Ruler Special Win (2+ Wins, No Color Cards)
+  // Tyranny check (Ruler) - Placed here to override score if present?
+  // Original code checked it after score but "Priority 1.5" implies it's high.
+  // Let's check it before Score.
+  const ruler = players.find(p => p.character === CharacterType.RULER);
+  if (ruler && ruler.wins >= 2) {
+    const hasColor = ruler.wonCards.some(c => c.suit !== Suit.COLORLESS);
+    if (!hasColor) {
+      return { winner: ruler, reason: 'Tiranía Absoluta (2+ victorias sin cartas de color)' };
+    }
+  }
+
+  return { winner: sorted[0], reason: 'Victoria por Puntuación (y Jerarquía)' };
 };

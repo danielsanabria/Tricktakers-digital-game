@@ -3,11 +3,18 @@ import { Player, Card, Suit, CharacterType, GamePhase, GameMode, CardType, Item,
 import { CHARACTERS, ITEMS, TRAPS, BEASTS, TASKS } from './constants';
 import { createDeck, getValidMoves, calculateAlchemyValue, determineWinner, calculateCollectorScore, getAiMove } from './gameLogic';
 import { getCharacterLogic } from './logic/logic_Registry';
+import { PhantomThiefLogic } from './logic/logic_PhantomThief';
 import PlayerBoard from './components/PlayerBoard';
 import GameCard from './components/GameCard';
 import CharacterModal from './components/CharacterModal';
 import { useGameActions } from './useGameActions';
 import { CharacterSelection } from './components/CharacterSelection';
+import { LogsPanel } from './components/LogsPanel';
+import { GameOverScreen } from './components/screens/GameOverScreen';
+import { AdventurerSetupModal } from './components/modals/AdventurerSetupModal';
+import { BerserkerSetupModal } from './components/modals/BerserkerSetupModal';
+import { StrategistModal } from './components/modals/StrategistModal';
+import { determineTournamentWinner } from './gameLogic';
 
 const getInitialPlayers = (): Player[] => [
     { id: 'p1', name: 'Tú', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} },
@@ -48,8 +55,6 @@ const App: React.FC = () => {
     const [viewingCharacter, setViewingCharacter] = useState<CharacterType | null>(null);
     const [strategistInheritedCard, setStrategistInheritedCard] = useState<Card | null>(null);
     const [strategistPendingChoice, setStrategistPendingChoice] = useState<{ type: 'BLACK7' | 'RARE', pointsObj: number } | null>(null);
-    const [advRed, setAdvRed] = useState<string | null>(null);
-    const [advBlue, setAdvBlue] = useState<string | null>(null);
     const isResolvingRef = useRef(false);
     const isRoundResolvingRef = useRef(false);
     const [itemCardToShow, setItemCardToShow] = useState<Item | null>(null);
@@ -457,50 +462,10 @@ const App: React.FC = () => {
             });
 
             // 3. Phantom Thief Stealing Logic (After Crowns Assigned)
+            updated = PhantomThiefLogic.resolveSteal(updated, addLog);
+
             const thief = updated.find(p => p.character === CharacterType.PHANTOM_THIEF);
-            if (thief && thief.wins !== 0 && thief.wins !== 5) {
-                let targetIds = thief.thiefBetrayalMode ? [thief.thiefPartnerId!] : (thief.thiefTargetIds || []);
-                const chip = thief.thiefChipValue || 0;
-
-                let bestVictimId: string | null = null;
-                let bestStealType: 'GOLD' | 'BLACK' | 'POINTS' | null = null;
-
-                targetIds.forEach(tid => {
-                    const victim = updated.find(v => v.id === tid);
-                    if (!victim) return;
-
-                    const diff = Math.abs(thief.wins - victim.wins);
-                    const matches = chip === 0 ? diff === 0 : (diff === 1); // 0 or +/-1
-
-                    if (matches) {
-                        if (victim.goldCrowns > 0) {
-                            if (bestStealType !== 'GOLD') { bestStealType = 'GOLD'; bestVictimId = victim.id; }
-                        } else if (victim.blackCrowns > 0) {
-                            if (bestStealType !== 'GOLD' && bestStealType !== 'BLACK') { bestStealType = 'BLACK'; bestVictimId = victim.id; }
-                        } else if (victim.score >= 30) {
-                            if (!bestStealType) { bestStealType = 'POINTS'; bestVictimId = victim.id; }
-                        }
-                    }
-                });
-
-                if (bestVictimId && bestStealType) {
-                    updated = updated.map(p => {
-                        if (p.id === bestVictimId) {
-                            if (bestStealType === 'GOLD') return { ...p, goldCrowns: p.goldCrowns - 1 };
-                            if (bestStealType === 'BLACK') return { ...p, blackCrowns: p.blackCrowns - 1 };
-                            if (bestStealType === 'POINTS') return { ...p, score: p.score - 30 };
-                        }
-                        if (p.id === thief.id) {
-                            if (bestStealType === 'GOLD') { addLog(`Phantom Thief roba una Corona Dorada a ${updated.find(v => v.id === bestVictimId)?.name}.`); return { ...p, goldCrowns: p.goldCrowns + 1 }; }
-                            if (bestStealType === 'BLACK') { addLog(`Phantom Thief roba una Corona Negra a ${updated.find(v => v.id === bestVictimId)?.name}.`); return { ...p, blackCrowns: p.blackCrowns + 1 }; }
-                            if (bestStealType === 'POINTS') { addLog(`Phantom Thief roba 30 puntos a ${updated.find(v => v.id === bestVictimId)?.name}.`); return { ...p, score: p.score + 30 }; }
-                        }
-                        return p;
-                    });
-                } else {
-                    addLog("Phantom Thief no encontró víctimas adecuadas para su robo.");
-                }
-            } else if (thief && thief.wins === 0) {
+            if (thief && thief.wins === 0) {
                 updated = updated.map(p => p.id === thief.id ? { ...p, score: p.score - 20 } : p);
                 addLog("Phantom Thief: 0 victorias. Gana corona negra pero pierde 20 puntos.");
             } else if (thief && thief.wins === 2) {
@@ -740,7 +705,7 @@ const App: React.FC = () => {
             addLog("El Gobernante ignora las reglas y juega lo que quiere.");
         }
 
-        if (leadSuit === null && card.suit !== Suit.COLORLESS) {
+        if (playedCards.length === 0 && card.suit !== Suit.COLORLESS) {
             setLeadSuit(card.suit);
         }
 
@@ -809,171 +774,65 @@ const App: React.FC = () => {
 
 
     // Turnos de la IA
-    // Turnos de la IA
+    // Turnos de la IA - ROBUST FIX
     useEffect(() => {
         if (phase === GamePhase.TRICK_PLAYING && currentPlayerIdx !== 0 && !isResolvingRef.current && abilityMode === 'NONE') {
             const timer = setTimeout(() => {
-                const p = players[currentPlayerIdx];
-                const moveId = getAiMove(p, leadSuit, playedCards);
-                if (moveId) playCard(moveId);
+                try {
+                    const p = players[currentPlayerIdx];
+                    const moveId = getAiMove(p, leadSuit, playedCards);
+                    if (moveId) playCard(moveId);
+                    else {
+                        // FALLBACK: Play first valid card if AI Logic returns null
+                        console.warn("AI returned no move. Using fallback.");
+                        const valid = getValidMoves(p.hand, leadSuit);
+                        if (valid.length > 0) playCard(valid[0].id);
+                        else {
+                            // Should not happen, but prevents perma-freeze
+                            addLog(`Error: ${p.name} no tiene cartas válidas.`);
+                        }
+                    }
+                } catch (e) {
+                    console.error("AI Turn Error:", e);
+                    // Emergency Fallback
+                    const p = players[currentPlayerIdx];
+                    const valid = getValidMoves(p.hand, leadSuit);
+                    if (valid.length > 0) playCard(valid[0].id);
+                }
             }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [currentPlayerIdx, phase, abilityMode, players, leadSuit, playedCards]); // Added missing dependencies to prevent freezes
+    }, [currentPlayerIdx, phase, abilityMode, players, leadSuit, playedCards]);
 
-    const renderSelection = () => {
-        const currentPicker = players.find(p => p.id === selectionOrder[selectionIndex]);
-        const isUserTurn = currentPicker?.id === 'p1';
-
-        return (
-            <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col h-full animate-in fade-in duration-500">
-                {/* Header de Selección */}
-                <div className="text-center mb-8">
-                    <h2 className="text-4xl font-black text-slate-800 uppercase tracking-tighter mb-2">Selección de Personaje</h2>
-                    <div className="inline-flex items-center gap-4 bg-white px-8 py-3 rounded-full shadow-sm border border-slate-200">
-                        <span className="text-slate-400 font-bold uppercase text-xs tracking-widest">Turno actual</span>
-                        <div className="w-px h-4 bg-slate-200"></div>
-                        <span className={`font-black uppercase text-lg ${isUserTurn ? 'text-teal-500 animate-pulse' : 'text-slate-700'}`}>
-                            {currentPicker?.name}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Grid de Personajes - Estilo Clásico/Premium */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                        {characterPool.map(ct => {
-                            const char = CHARACTERS[ct];
-                            const taker = players.find(p => p.character === ct);
-                            const isTaken = !!taker;
-                            const canSelect = isUserTurn && !isTaken;
-
-                            // King Ban Rule: Cannot pick King if you were King last round
-                            const isBanned = ct === CharacterType.KING && currentPicker?.lastCharacter === CharacterType.KING;
-
-                            return (
-                                <div
-                                    key={ct}
-                                    onClick={() => canSelect && !isBanned && selectCharacter(ct)}
-                                    className={`
-                                    relative group transition-all duration-500
-                                    ${isTaken || isBanned ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:-translate-y-2 cursor-pointer'}
-                                `}
-                                >
-                                    {/* Card Body */}
-                                    <div className={`
-                                    aspect-[2/3] rounded-[1.5rem] overflow-hidden bg-slate-200 relative shadow-lg
-                                    ${canSelect ? 'ring-4 ring-transparent group-hover:ring-teal-400 group-hover:shadow-teal-500/30' : ''}
-                                `}>
-                                        <img
-                                            src={`/assets/thumb/${char.thumbnailPath || `${char.id}-thumb.jpg`}`}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                            alt={char.name}
-                                            onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/300x400?text=' + char.name)}
-                                        />
-
-                                        {/* Info Overlay */}
-                                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 pt-10">
-                                            <h4 className="text-white font-black text-xl uppercase leading-none mb-1">{char.name}</h4>
-                                            <div className="flex justify-between items-center">
-                                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-md text-white uppercase
-                                                ${char.difficulty === 'EASY' ? 'bg-emerald-500' : char.difficulty === 'HARD' ? 'bg-rose-500' : 'bg-amber-500'}`}>
-                                                    {char.difficulty}
-                                                </span>
-                                                <i className="fa-solid fa-circle-info text-white/50 text-xs"></i>
-                                            </div>
-                                        </div>
-
-                                        {/* Taken Overlay */}
-                                        {isTaken && (
-                                            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center">
-                                                <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-white mb-2 border-2 border-slate-600">
-                                                    <i className="fa-solid fa-check"></i>
-                                                </div>
-                                                <span className="text-white font-bold text-sm uppercase tracking-wider">{taker.name}</span>
-                                            </div>
-                                        )}
-
-                                        {/* Selection Hover Effect */}
-                                        {canSelect && (
-                                            <div className="absolute inset-0 bg-teal-500/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <span className="bg-white text-teal-600 px-6 py-2 rounded-full font-black text-xs uppercase shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform">
-                                                    Seleccionar
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-        );
-    };
 
     return (
-        <div className="h-screen bg-slate-900 text-slate-200 font-sans selection:bg-amber-500/30 flex flex-col overflow-hidden">
+        <div className="h-[100dvh] bg-slate-900 text-slate-200 font-sans selection:bg-amber-500/30 flex flex-col overflow-hidden">
 
             {/* Strategist Choice Modal */}
-            {strategistPendingChoice && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-slate-800 border border-slate-700 p-8 rounded-2xl max-w-lg w-full shadow-2xl space-y-6">
-                        <h2 className="text-2xl font-black text-amber-500 uppercase tracking-widest text-center">Decisión del Estratega</h2>
-                        <p className="text-slate-300 text-center">
-                            Has obtenido {strategistPendingChoice.type === 'RARE' ? '0 victorias' : '1 victoria'}.
-                            <br />
-                            ¿Qué prefieres para la siguiente ronda?
-                        </p>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <button
-                                onClick={() => {
-                                    // Option A: Points
-                                    setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, score: p.score + strategistPendingChoice.pointsObj } : p));
-                                    addLog(`Estratega eligió ${strategistPendingChoice.pointsObj} puntos.`);
-                                    setStrategistPendingChoice(null); // Close modal
-                                    // Determine updated players for next step
-                                    // Use functional update or ref logic? checkGameOver uses passed players. 
-                                    // We need to pass the *updated* players to checkGameOver.
-                                    // Accessing state 'players' inside this callback refers to current render closure? 
-                                    // Yes. But we are inside App body, so 'players' is current.
-                                    // BUT setPlayers updates asynchronously.
-                                    // Workaround: Apply logic to a local copy then set.
-                                    const updated = players.map(p => p.id === 'p1' ? { ...p, score: p.score + strategistPendingChoice.pointsObj } : p);
-                                    performCheckGameOver(updated);
-                                }}
-                                className="p-6 bg-slate-700 hover:bg-slate-600 rounded-xl border border-slate-600 transition-all group"
-                            >
-                                <div className="text-3xl font-black text-amber-400 mb-2">+{strategistPendingChoice.pointsObj} PTS</div>
-                                <div className="text-xs text-slate-400 uppercase tracking-wider">Aceptar Puntos</div>
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    // Option B: Card Inheritance
-                                    const cardType = strategistPendingChoice.type;
-                                    const cardToInherit: Card = {
-                                        id: `inherited-${cardType}-${Date.now()}`,
-                                        suit: cardType === 'BLACK7' ? Suit.BLACK : Suit.COLORLESS,
-                                        value: cardType === 'BLACK7' ? 7 : 11, // Rare value is usually 11?
-                                        type: cardType === 'BLACK7' ? CardType.NUMBER : CardType.RARE,
-                                        ownerId: 'p1'
-                                    };
-                                    setStrategistInheritedCard(cardToInherit);
-                                    addLog(`Estratega eligió llevarse la carta ${cardType === 'BLACK7' ? '7 Negro' : 'Rara'} a la siguiente ronda.`);
-                                    setStrategistPendingChoice(null);
-                                    performCheckGameOver(players); // Score didn't change
-                                }}
-                                className="p-6 bg-slate-700 hover:bg-slate-600 rounded-xl border border-slate-600 transition-all group"
-                            >
-                                <div className="text-3xl font-black text-purple-400 mb-2">{strategistPendingChoice.type === 'BLACK7' ? '7 NEGRO' : 'CARTA RARA'}</div>
-                                <div className="text-xs text-slate-400 uppercase tracking-wider">Obtener Carta (Próxima Ronda)</div>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Strategist Choice Modal */}
+            <StrategistModal
+                choice={strategistPendingChoice}
+                onChoosePoints={(pts) => {
+                    setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, score: p.score + pts } : p));
+                    addLog(`Estratega eligió ${pts} puntos.`);
+                    setStrategistPendingChoice(null);
+                    const updated = players.map(p => p.id === 'p1' ? { ...p, score: p.score + pts } : p);
+                    performCheckGameOver(updated);
+                }}
+                onChooseCard={(type) => {
+                    const cardToInherit: Card = {
+                        id: `inherited-${type}-${Date.now()}`,
+                        suit: type === 'BLACK7' ? Suit.BLACK : Suit.COLORLESS,
+                        value: type === 'BLACK7' ? 7 : 11,
+                        type: type === 'BLACK7' ? CardType.NUMBER : CardType.RARE,
+                        ownerId: 'p1'
+                    };
+                    setStrategistInheritedCard(cardToInherit);
+                    addLog(`Estratega eligió llevarse la carta ${type === 'BLACK7' ? '7 Negro' : 'Rara'} a la siguiente ronda.`);
+                    setStrategistPendingChoice(null);
+                    performCheckGameOver(players);
+                }}
+            />
 
             {/* Header */}
             <header className="px-6 pt-10 pb-4 md:py-4 flex items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50">
@@ -1098,7 +957,15 @@ const App: React.FC = () => {
                     </div>
                 )}
 
-                {phase === GamePhase.CHARACTER_SELECTION && renderSelection()}
+                {phase === GamePhase.CHARACTER_SELECTION && (
+                    <CharacterSelection
+                        players={players}
+                        selectionOrder={selectionOrder}
+                        selectionIndex={selectionIndex}
+                        characterPool={characterPool}
+                        selectCharacter={selectCharacter}
+                    />
+                )}
 
                 {phase === GamePhase.TRICK_PLAYING && (
                     <>
@@ -1191,112 +1058,16 @@ const App: React.FC = () => {
 
                 {/* Logs Side Panel */}
                 {showLogs && phase !== GamePhase.MODE_SELECTION && (
-                    <div className="w-80 bg-white border-l border-slate-200 flex flex-col animate-in slide-in-from-right duration-300 fixed right-0 top-16 bottom-0 z-50 shadow-2xl">
-                        <div className="p-6 border-b border-slate-100">
-                            <h3 className="font-black text-sm uppercase tracking-widest text-slate-400">Crónica del Torneo</h3>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-                            {logs.map((log, i) => (
-                                <div key={i} className={`text-xs font-medium leading-relaxed ${i === 0 ? 'text-teal-600 font-bold' : 'text-slate-500'}`}>
-                                    {log}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <LogsPanel logs={logs} onClose={() => setShowLogs(false)} />
                 )}
 
-                {phase === GamePhase.GAME_OVER && (() => {
-                    // Priority 1: Instant Win (Score >= 900) - e.g. King with 5 wins
-                    const instant = players.find(p => p.score >= 900);
-                    let winner = instant ? { player: instant, reason: '¡Victoria Instantánea!' } : null;
-
-                    // Priority 2: 2 Gold Crowns
-                    if (!winner) {
-                        const gold = players.find(p => p.goldCrowns >= 2);
-                        if (gold) winner = { player: gold, reason: 'Maestro de Coronas Doradas (2)' };
-                    }
-
-                    // Priority 3: 3 Black Crowns
-                    if (!winner) {
-                        const black = players.find(p => p.blackCrowns >= 3);
-                        if (black) winner = { player: black, reason: 'Rey de la Miseria (3 Coronas Negras)' };
-                    }
-
-                    // Priority 4: Max Score with Tie-Breaker (Hierarchy)
-                    if (!winner) {
-                        const hierarchy = [
-                            CharacterType.KING,
-                            CharacterType.GAMBLER,
-                            CharacterType.RESISTANCE,
-                            CharacterType.ADVENTURER,
-                            CharacterType.HERMIT,
-                            CharacterType.COLLECTOR,
-                            CharacterType.BERSERKER,
-                            CharacterType.RULER,
-                            CharacterType.STRATEGIST,
-                            CharacterType.SUMMONER, // Add others if needed
-                        ];
-
-                        const sorted = [...players].sort((a, b) => {
-                            if (b.score !== a.score) return b.score - a.score;
-                            // Tie-breaker
-                            const idxA = hierarchy.indexOf(a.character!);
-                            const idxB = hierarchy.indexOf(b.character!);
-                            // Lower index = Higher priority
-                            // If char not in list (e.g. basic), -1. Priority valid chars first.
-                            if (idxA === -1) return 1;
-                            if (idxB === -1) return -1;
-                            return idxA - idxB;
-                        });
-
-                        // Variant checks (+350 or +150 diff) could go here too
-                        winner = { player: sorted[0], reason: 'Victoria por Puntuación (y Jerarquía)' };
-                    }
-
-                    // Priority 1.5: Ruler Special Win (2+ Wins, No Color Cards)
-                    // Check before Score if this is an "Instant Win" equivalent or high priority?
-                    // Rules say "Instant Win". Let's put it high.
-                    if (!winner || winner.reason === 'Victoria por Puntuación (y Jerarquía)') {
-                        const ruler = players.find(p => p.character === CharacterType.RULER);
-                        if (ruler) {
-                            const hasColor = ruler.wonCards.some(c => c.suit !== Suit.COLORLESS);
-                            if (ruler.wins >= 2 && !hasColor) {
-                                winner = { player: ruler, reason: 'Tiranía Absoluta (2+ victorias sin cartas de color)' };
-                            }
-                        }
-                    }
-
-                    return (
-                        <div className="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-8">
-                            <div className="text-center max-w-lg">
-                                <h2 className="text-7xl font-black text-white mb-4 tracking-tighter">FIN DEL TORNEO</h2>
-                                <div className="bg-white/10 p-8 rounded-[3rem] border border-white/20 mb-8">
-                                    <p className="text-teal-400 font-black text-2xl mb-2 uppercase">Ganador Absoluto</p>
-                                    <h3 className="text-5xl font-black text-white mb-6 tracking-tight">
-                                        {winner.player.name}
-                                    </h3>
-                                    <p className="text-white/60 mb-6">{winner.reason}</p>
-
-                                    <div className="space-y-2">
-                                        {players.sort((a, b) => b.score - a.score).map((p, i) => (
-                                            <div key={p.id} className="flex justify-between items-center text-white/60 font-bold">
-                                                <span>{i + 1}. {p.name} ({CHARACTERS[p.character!].name})</span>
-                                                <div className="text-right">
-                                                    <div className="text-white">{p.score} pts</div>
-                                                    <div className="text-[9px] flex gap-1 justify-end">
-                                                        {Array(p.goldCrowns).fill(0).map((_, i) => <i key={i} className="fa-solid fa-crown text-amber-400"></i>)}
-                                                        {Array(p.blackCrowns).fill(0).map((_, i) => <i key={i} className="fa-solid fa-crown text-slate-900"></i>)}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <button onClick={resetGame} className="px-12 py-4 bg-teal-500 text-white rounded-full font-black text-xl hover:bg-teal-400 transition-all shadow-2xl shadow-teal-500/20">VOLVER A JUGAR</button>
-                            </div>
-                        </div>
-                    );
-                })()}
+                {phase === GamePhase.GAME_OVER && (
+                    <GameOverScreen
+                        result={determineTournamentWinner(players)}
+                        players={players}
+                        onReset={resetGame}
+                    />
+                )}
             </main>
 
             {viewingCharacter && (
@@ -1324,114 +1095,36 @@ const App: React.FC = () => {
 
             {/* Adventurer Setup Modal */}
             {abilityMode === 'ADVENTURER_SETUP' && (
-                <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
-                    <div className="bg-slate-800 rounded-xl border border-slate-600 p-6 max-w-2xl w-full shadow-2xl">
-                        <h2 className="text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2">
-                            <span className="text-3xl">🎒</span> Preparación de Aventurero
-                        </h2>
-                        <p className="text-slate-300 mb-6">Elige tus 2 objetos iniciales para la partida:</p>
-
-                        <div className="grid grid-cols-2 gap-8 mb-8">
-                            <div>
-                                <label className="block text-sm font-bold text-red-400 mb-2 uppercase tracking-wider">Objeto Rojo</label>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {ITEMS.filter(i => i.type === 'RED').map(item => (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => setAdvRed(item.id)}
-                                            className={`p-3 rounded-lg border text-left transition-all ${advRed === item.id
-                                                ? 'bg-red-900/50 border-red-500 ring-2 ring-red-500/50'
-                                                : 'bg-slate-700 border-slate-600 hover:bg-slate-600'}`}
-                                        >
-                                            <div className="font-bold text-white">{item.name}</div>
-                                            <div className="text-xs text-slate-400 mt-1">{item.effect}</div>
-                                            <div className="text-xs text-amber-500/80 mt-1">No usado: {item.unusedPoints} pts</div>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-blue-400 mb-2 uppercase tracking-wider">Objeto Azul</label>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {ITEMS.filter(i => i.type === 'BLUE').map(item => (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => setAdvBlue(item.id)}
-                                            className={`p-3 rounded-lg border text-left transition-all ${advBlue === item.id
-                                                ? 'bg-blue-900/50 border-blue-500 ring-2 ring-blue-500/50'
-                                                : 'bg-slate-700 border-slate-600 hover:bg-slate-600'}`}
-                                        >
-                                            <div className="font-bold text-white">{item.name}</div>
-                                            <div className="text-xs text-slate-400 mt-1">{item.effect}</div>
-                                            <div className="text-xs text-amber-500/80 mt-1">No usado: {item.unusedPoints} pts</div>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-700">
-                            <button
-                                onClick={() => {
-                                    if (advRed && advBlue) {
-                                        performAction('ADVENTURER_PICK_ITEMS', { redItemId: advRed, blueItemId: advBlue });
-                                    }
-                                }}
-                                disabled={!advRed || !advBlue}
-                                className={`px-6 py-3 rounded-lg font-bold uppercase tracking-wider transition-colors
-                                        ${advRed && advBlue
-                                        ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20'
-                                        : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
-                            >
-                                Confirmar Equipo
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <AdventurerSetupModal
+                    onConfirm={(red, blue) => {
+                        performAction('ADVENTURER_PICK_ITEMS', { redItemId: red, blueItemId: blue });
+                    }}
+                />
             )}
 
             {/* Berserker Setup Modal */}
             {abilityMode === 'BERSERKER_SETUP' && (
-                <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
-                    <div className="bg-slate-800 rounded-xl border border-rose-900 p-8 max-w-lg w-full shadow-2xl animate-in zoom-in duration-300">
-                        <div className="text-center mb-8">
-                            <h2 className="text-4xl font-black text-rose-500 mb-2 uppercase tracking-tighter italic">¡Modo Berserker Intimidante!</h2>
-                            <p className="text-slate-400">Rechaza las cartas débiles de los mortales y toma tu Hacha.</p>
-                        </div>
+                <BerserkerSetupModal
+                    onConfirm={() => {
+                        setPlayers(prev => {
+                            const p1 = prev.find(p => p.id === 'p1')!;
+                            const logic = getCharacterLogic(CharacterType.BERSERKER) as any;
 
-                        <div className="flex justify-center">
-                            <button
-                                onClick={() => {
-                                    setPlayers(prev => {
-                                        const p1 = prev.find(p => p.id === 'p1')!;
-                                        const logic = getCharacterLogic(CharacterType.BERSERKER) as any;
+                            if (logic.drawBerserkerHand && p1.berserkerDeck) {
+                                const { hand, remaining } = logic.drawBerserkerHand(p1.berserkerDeck);
+                                return prev.map(p => p.id === 'p1' ? {
+                                    ...p,
+                                    hand,
+                                    berserkerDeck: remaining
+                                } : p);
+                            }
+                            return prev;
+                        });
 
-                                        if (logic.drawBerserkerHand && p1.berserkerDeck) {
-                                            const { hand, remaining } = logic.drawBerserkerHand(p1.berserkerDeck);
-                                            return prev.map(p => p.id === 'p1' ? {
-                                                ...p,
-                                                hand,
-                                                berserkerDeck: remaining
-                                            } : p);
-                                        }
-                                        return prev;
-                                    });
-
-                                    setAbilityMode('NONE');
-                                    addLog("¡Berserker ha descartado su mano y desenvainado su mazo exclusivo!");
-                                }}
-                                className="group relative px-8 py-4 bg-rose-600 hover:bg-rose-500 rounded-lg overflow-hidden transition-all shadow-[0_0_30px_rgba(225,29,72,0.6)] hover:shadow-[0_0_50px_rgba(225,29,72,0.8)]"
-                            >
-                                <div className="absolute inset-0 bg-[url('/assets/color-cards/berserker-cards/berserker-init.png')] opacity-20 bg-cover bg-center group-hover:scale-110 transition-transform duration-500"></div>
-                                <span className="relative text-xl font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                    <i className="fa-solid fa-hand-fist"></i> Descartar Mano
-                                </span>
-                            </button>
-                        </div>
-                        <p className="text-center text-rose-500/50 text-xs mt-6 uppercase font-bold tracking-widest">Solo los fuertes sobreviven</p>
-                    </div>
-                </div>
+                        setAbilityMode('NONE');
+                        addLog("¡Berserker ha descartado su mano y desenvainado su mazo exclusivo!");
+                    }}
+                />
             )}
 
             {/* King Setup Modal */}
@@ -1466,60 +1159,6 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            {/* Strategist Choice Modal */}
-            {
-                strategistPendingChoice && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                        <div className="bg-slate-800 border border-slate-700 p-8 rounded-2xl max-w-lg w-full shadow-2xl space-y-6">
-                            <h2 className="text-2xl font-black text-amber-500 uppercase tracking-widest text-center">Decisión del Estratega</h2>
-                            <p className="text-slate-300 text-center">
-                                Has obtenido <span className="text-white font-bold">{strategistPendingChoice.type === 'RARE' ? '0 victorias' : '1 victoria'}</span>.
-                                <br />
-                                ¿Qué recompensa prefieres?
-                            </p>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <button
-                                    onClick={() => {
-                                        // Option A: Points
-                                        const updated = players.map(p => p.id === 'p1' ? { ...p, score: p.score + strategistPendingChoice.pointsObj } : p);
-                                        setPlayers(updated); // Sync state
-                                        addLog(`Estratega eligió ${strategistPendingChoice.pointsObj} puntos.`);
-                                        setStrategistPendingChoice(null);
-                                        performCheckGameOver(updated);
-                                    }}
-                                    className="flex flex-col items-center justify-center p-6 bg-slate-700 hover:bg-slate-600 rounded-xl border border-slate-600 hover:border-amber-500 transition-all group"
-                                >
-                                    <div className="text-3xl font-black text-amber-400 mb-2">+{strategistPendingChoice.pointsObj}</div>
-                                    <div className="text-xs text-slate-400 group-hover:text-amber-200 uppercase tracking-wider font-bold">Puntos de Victoria</div>
-                                </button>
-
-                                <button
-                                    onClick={() => {
-                                        // Option B: Card Inheritance
-                                        const cardType = strategistPendingChoice.type;
-                                        const cardToInherit: Card = {
-                                            id: `inherited-strat-${Date.now()}`,
-                                            suit: cardType === 'BLACK7' ? Suit.BLACK : Suit.COLORLESS,
-                                            value: cardType === 'BLACK7' ? 7 : 11,
-                                            type: cardType === 'BLACK7' ? CardType.NUMBER : CardType.RARE,
-                                            ownerId: 'p1'
-                                        };
-                                        setStrategistInheritedCard(cardToInherit);
-                                        addLog(`Estratega reservó: ${cardType === 'BLACK7' ? '7 Negro' : 'Carta Rara'} para la siguiente ronda.`);
-                                        setStrategistPendingChoice(null);
-                                        performCheckGameOver(players);
-                                    }}
-                                    className="flex flex-col items-center justify-center p-6 bg-slate-700 hover:bg-slate-600 rounded-xl border border-slate-600 hover:border-purple-500 transition-all group"
-                                >
-                                    <div className="text-3xl font-black text-purple-400 mb-2">{strategistPendingChoice.type === 'BLACK7' ? '7' : 'R'}</div>
-                                    <div className="text-xs text-slate-400 group-hover:text-purple-200 uppercase tracking-wider font-bold">{strategistPendingChoice.type === 'BLACK7' ? '7 Negro' : 'Carta Rara'}</div>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
         </div>
     );
 };
