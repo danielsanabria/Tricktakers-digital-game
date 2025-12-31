@@ -160,16 +160,32 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
         </div>
       ) : (
         // RIVAL: Resumen Compacto (Sin cartas visibles)
-        <div className="bg-slate-100/50 rounded-xl p-3 border border-dashed border-slate-200 flex items-center justify-center gap-3">
-          {/* Icono visual de mazo pequeño */}
-          <div className="flex -space-x-1.5 items-center">
-            {Array.from({ length: Math.min(player.hand.length, 5) }).map((_, i) => (
-              <div key={i} className="w-4 h-6 bg-slate-300 rounded-sm border border-white shadow-sm transform hover:-translate-y-1 transition-transform"></div>
-            ))}
+        // RIVAL: Resumen Compacto y Prioridad a Datos
+        <div className="flex flex-col gap-2">
+          {/* Stats Row */}
+          <div className="flex justify-between items-center bg-slate-100 rounded-lg p-2">
+            <div className="flex flex-col items-center w-1/2 border-r border-slate-200">
+              <span className="text-[9px] font-black uppercase text-slate-400">Puntos</span>
+              <span className="text-xl font-black text-amber-500">{player.score}</span>
+            </div>
+            <div className="flex flex-col items-center w-1/2">
+              <span className="text-[9px] font-black uppercase text-slate-400">Bazas</span>
+              <span className="text-xl font-black text-teal-500">{player.wins}<span className="text-xs text-slate-300">/5</span></span>
+            </div>
           </div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            {player.hand.length > 0 ? `${player.hand.length} Cartas en mano` : 'Sin cartas'}
-          </span>
+
+          {/* Status/Hand Info */}
+          <div className="flex justify-between items-center">
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              {player.hand.length} Cartas
+            </div>
+            {/* Active Abilities Icons/Badges */}
+            <div className="flex gap-1">
+              {player.thiefBetrayalMode && <span title="Traición Activa" className="text-xs text-red-500 font-bold">🗡️</span>}
+              {player.rulerUsedRuleAvoidance && <span title="Reglas Ignoradas" className="text-xs text-purple-500 font-bold">👁️</span>}
+              {/* Add more status icons if needed */}
+            </div>
+          </div>
         </div>
       )}
     </div>

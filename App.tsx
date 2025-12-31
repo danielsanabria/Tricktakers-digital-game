@@ -55,6 +55,7 @@ const App: React.FC = () => {
     const [itemCardToShow, setItemCardToShow] = useState<Item | null>(null);
 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [viewingRules, setViewingRules] = useState(false);
 
     const addLog = (msg: string) => {
         setLogs(prev => [...prev, msg].slice(-50));
@@ -700,8 +701,10 @@ const App: React.FC = () => {
         const isUser = p.id === 'p1';
         const isKingDiscardPhase = p.character === CharacterType.KING && p.hand.length > 5;
 
-        // Allow selection if in specific Ability Mode OR it's King's setup discard phase
-        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD'].includes(abilityMode) || isKingDiscardPhase)) {
+        const isGamblerSwapPhase = p.character === CharacterType.GAMBLER && (p.gambleSwaps || 0) > 0 && p.bid === undefined;
+
+        // Allow selection if in specific Ability Mode OR it's King's setup discard phase OR Gambler Swap
+        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase)) {
             setSelectedCards(prev => {
                 if (prev.includes(cardId)) return prev.filter(id => id !== cardId);
                 // King discard only allows 1 card, so we might want to enforce single selection for UX, but multi-select logic is fine if button checks length.
@@ -806,6 +809,7 @@ const App: React.FC = () => {
 
 
     // Turnos de la IA
+    // Turnos de la IA
     useEffect(() => {
         if (phase === GamePhase.TRICK_PLAYING && currentPlayerIdx !== 0 && !isResolvingRef.current && abilityMode === 'NONE') {
             const timer = setTimeout(() => {
@@ -815,7 +819,7 @@ const App: React.FC = () => {
             }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [currentPlayerIdx, phase, isResolvingRef.current]);
+    }, [currentPlayerIdx, phase, abilityMode, players, leadSuit, playedCards]); // Added missing dependencies to prevent freezes
 
     const renderSelection = () => {
         const currentPicker = players.find(p => p.id === selectionOrder[selectionIndex]);
@@ -972,7 +976,7 @@ const App: React.FC = () => {
             )}
 
             {/* Header */}
-            <header className="shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex justify-between items-center z-50">
+            <header className="px-6 pt-10 pb-4 md:py-4 flex items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black">TT</div>
                     <h1 className="font-black text-xl tracking-tighter uppercase text-slate-800">Tricktakers <span className="text-teal-500">Digital</span></h1>
@@ -1031,6 +1035,65 @@ const App: React.FC = () => {
                                     <p className="text-slate-500 text-xs">Todos los personajes disponibles desde el inicio.</p>
                                 </button>
                             </div>
+
+                            {/* Rulebooks Button */}
+                            <div className="mt-8">
+                                <button
+                                    onClick={() => setViewingRules(true)}
+                                    className="px-6 py-3 bg-white border border-slate-200 rounded-full text-slate-500 font-bold uppercase text-xs tracking-widest hover:bg-slate-50 hover:text-slate-800 transition-colors flex items-center gap-2 mx-auto"
+                                >
+                                    <i className="fa-solid fa-book-open"></i> Manuales de Juego
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Rulebooks Modal */}
+                {viewingRules && (
+                    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setViewingRules(false)}>
+                        <div className="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl space-y-6" onClick={e => e.stopPropagation()}>
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Manuales de Reglas</h3>
+                                <button onClick={() => setViewingRules(false)} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <p className="text-slate-500 text-sm">Consulta las reglas oficiales para resolver tus dudas.</p>
+
+                            <div className="grid grid-cols-1 gap-4">
+                                <a
+                                    href="/rules/Tricktakers_Base_Rulebook_copia.pdf"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 transition-all group"
+                                >
+                                    <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center text-teal-600 group-hover:scale-110 transition-transform">
+                                        <i className="fa-solid fa-book text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-slate-800 group-hover:text-teal-700">Tricktakers Base</div>
+                                        <div className="text-xs text-slate-400">Reglas fundamentales y personajes básicos.</div>
+                                    </div>
+                                    <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-slate-300 group-hover:text-teal-500"></i>
+                                </a>
+
+                                <a
+                                    href="/rules/tricktakers_ex_rules_en_copia.pdf"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 transition-all group"
+                                >
+                                    <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
+                                        <i className="fa-solid fa-scroll text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-slate-800 group-hover:text-amber-700">Expansión (Inglés)</div>
+                                        <div className="text-xs text-slate-400">Nuevos personajes y mecánicas avanzadas.</div>
+                                    </div>
+                                    <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-slate-300 group-hover:text-amber-500"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -1065,8 +1128,11 @@ const App: React.FC = () => {
                                             key={idx}
                                             className={`animate-in zoom-in slide-in-from-bottom-8 duration-500 cursor-pointer transition-transform ${selectedCards.includes(c.id) ? 'scale-110 -translate-y-4' : ''}`}
                                             onClick={() => {
-                                                if (abilityMode === 'COLLECTOR_RESERVE') {
-                                                    setSelectedCards(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [c.id]);
+                                                const p = players[0];
+                                                const isGamblerSwap = p.character === CharacterType.GAMBLER && (p.gambleSwaps || 0) > 0 && p.bid === undefined;
+
+                                                if (abilityMode === 'COLLECTOR_RESERVE' || isGamblerSwap) {
+                                                    setSelectedCards(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]);
                                                 }
                                             }}
                                         >
@@ -1309,7 +1375,7 @@ const App: React.FC = () => {
                             <button
                                 onClick={() => {
                                     if (advRed && advBlue) {
-                                        performAction({ type: 'ADVENTURER_PICK_ITEMS', payload: { redItemId: advRed, blueItemId: advBlue } });
+                                        performAction('ADVENTURER_PICK_ITEMS', { redItemId: advRed, blueItemId: advBlue });
                                     }
                                 }}
                                 disabled={!advRed || !advBlue}

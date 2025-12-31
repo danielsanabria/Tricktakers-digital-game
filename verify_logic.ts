@@ -1,14 +1,16 @@
 
-import { KingLogic } from './logic_King';
-import { StrategistLogic } from './logic_Strategist';
+import { KingLogic } from './logic/logic_King';
+import { StrategistLogic } from './logic/logic_Strategist';
 import { CharacterType, Suit, CardType, Player } from './types';
+import { determineWinner } from './gameLogic';
 
 // Mock Data
 const mockDeck = Array(50).fill(null).map((_, i) => ({
     id: `card-${i}`,
     suit: i % 2 === 0 ? Suit.RED : Suit.BLUE,
     value: (i % 9) + 1,
-    type: CardType.NUMBER
+    type: CardType.NUMBER,
+    ownerId: `p${i % 3}`
 }));
 
 const mockPlayer: Player = {
@@ -26,7 +28,14 @@ const mockPlayer: Player = {
     beasts: [],
     rearBeasts: [],
     magicElements: [],
-    mp: 0
+    itemSlots: 0,
+    mp: 0,
+    collectedCards: [],
+    gambleSwaps: 0,
+    bid: undefined,
+    betAmount: 0,
+    timeTravelTokens: 0,
+    timeTravelPredictions: []
 };
 
 console.log("--- STARTING VERIFICATION ---");
@@ -76,6 +85,26 @@ if (kingWinResult.score === 999) {
     console.log("✅ PASS: King triggers Instant Win (999 pts) on 5th win.");
 } else {
     console.error("❌ FAIL: King did not trigger instant win.", kingWinResult);
+}
+
+// TEST 4: 3 Rares Logic
+console.log("\n[TEST 4] 3 Rares Logic (First Wins)");
+const rare1 = { id: 'r1', suit: Suit.COLORLESS, value: 11, type: CardType.RARE, ownerId: 'p1' };
+const rare2 = { id: 'r2', suit: Suit.COLORLESS, value: 11, type: CardType.RARE, ownerId: 'p2' };
+const rare3 = { id: 'r3', suit: Suit.COLORLESS, value: 11, type: CardType.RARE, ownerId: 'p3' };
+
+// Played in order: r1, r2, r3
+const playedCards = [rare1, rare2, rare3];
+const winnerId = determineWinner(playedCards, Suit.RED, false, false, [
+    { ...mockPlayer, id: 'p1' },
+    { ...mockPlayer, id: 'p2' },
+    { ...mockPlayer, id: 'p3' }
+]);
+
+if (winnerId === 'p1') {
+    console.log("✅ PASS: First Rare played wins when 3 Rares are present.");
+} else {
+    console.error("❌ FAIL: Wrong winner for 3 Rares.", winnerId);
 }
 
 console.log("\n--- VERIFICATION COMPLETE ---");
