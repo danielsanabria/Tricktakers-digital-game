@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Player, CharacterType } from '../../types';
-import { CHARACTERS } from '../../constants';
-import { TournamentResult } from '../../gameLogic';
+import { Player, CharacterType } from '../../game/core/types';
+import { CHARACTERS } from '../../game/core/constants';
+import { TournamentResult } from '../../game/core/gameLogic';
 
 interface GameOverScreenProps {
     result: TournamentResult;

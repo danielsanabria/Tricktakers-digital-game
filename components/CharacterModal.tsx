@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { CharacterData } from '../types';
+import { CharacterData } from '../game/core/types';
 
 interface CharacterModalProps {
   character: CharacterData;
@@ -48,22 +48,22 @@ const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) =
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="relative max-w-lg w-full bg-transparent perspective-1000"
+        className="relative max-w-lg w-full bg-transparent perspective-1000 my-8 flex flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute -top-12 right-0 text-white hover:text-rose-400 text-4xl transition-colors drop-shadow-lg z-50"
+          className="fixed top-4 right-4 text-white hover:text-rose-400 text-4xl transition-colors drop-shadow-lg z-[110]"
         >
           <i className="fa-solid fa-times"></i>
         </button>
 
-        <div className="bg-white rounded-3xl overflow-hidden shadow-2xl ring-4 ring-white/10 transform transition-all max-h-[90vh] flex flex-col">
-          <div className="bg-slate-100 flex-1 flex items-center justify-center relative overflow-y-auto custom-scrollbar min-h-[200px]">
+        <div className="bg-white rounded-3xl overflow-hidden shadow-2xl ring-4 ring-white/10 transform transition-all flex flex-col w-full">
+          <div className="bg-slate-100 flex-1 relative min-h-[400px]">
             {!hasFinalError ? (
               <img
                 key={imgSrc} // Force re-render on src change to trigger onError

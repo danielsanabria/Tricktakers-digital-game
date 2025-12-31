@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Player, Card, Suit, CharacterType, GamePhase, GameMode, CardType, Item, Trap } from './types';
-import { CHARACTERS, ITEMS, TRAPS, BEASTS, TASKS } from './constants';
-import { createDeck, getValidMoves, calculateAlchemyValue, determineWinner, calculateCollectorScore, getAiMove } from './gameLogic';
+import { Player, Card, Suit, CharacterType, GamePhase, GameMode, CardType, Item, Trap } from './game/core/types';
+import { CHARACTERS, ITEMS, TRAPS, BEASTS, TASKS } from './game/core/constants';
+import { createDeck, getValidMoves, calculateAlchemyValue, determineWinner, calculateCollectorScore, getAiMove } from './game/core/gameLogic';
 import { getCharacterLogic } from './logic/logic_Registry';
-import { PhantomThiefLogic } from './logic/logic_PhantomThief';
+import { PhantomThiefLogic } from './logic/characters/logic_PhantomThief';
 import PlayerBoard from './components/PlayerBoard';
 import GameCard from './components/GameCard';
 import CharacterModal from './components/CharacterModal';
@@ -14,7 +14,7 @@ import { GameOverScreen } from './components/screens/GameOverScreen';
 import { AdventurerSetupModal } from './components/modals/AdventurerSetupModal';
 import { BerserkerSetupModal } from './components/modals/BerserkerSetupModal';
 import { StrategistModal } from './components/modals/StrategistModal';
-import { determineTournamentWinner } from './gameLogic';
+import { determineTournamentWinner } from './game/core/gameLogic';
 
 const getInitialPlayers = (): Player[] => [
     { id: 'p1', name: 'Tú', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} },
@@ -634,6 +634,13 @@ const App: React.FC = () => {
             setCurrentPlayerIdx(winnerIdx);
             isResolvingRef.current = false;
 
+            // Character Logic Resets (Baza a Baza)
+            setPlayers(prev => prev.map(p => ({
+                ...p,
+                adventurerUsedItem: false,
+                pendingItemEffect: null
+            })));
+
             // Resistance Logic: Reset Kakumei (Revolt Trick is 1 trick only)
             if (isKakumei) {
                 setIsKakumei(false);
@@ -984,7 +991,7 @@ const App: React.FC = () => {
                             {/* Oponentes (Rivales) */}
                             <div className="grid grid-cols-2 gap-4 mb-4 shrink-0">
                                 {players.slice(1).map(p => (
-                                    <PlayerBoard key={p.id} player={p} isCurrentPlayer={players[currentPlayerIdx].id === p.id} onCardPlay={() => { }} canPlay={false} onCharacterClick={() => setViewingCharacter(p.character)} />
+                                    <PlayerBoard key={p.id} player={p} isCurrentPlayer={players[currentPlayerIdx].id === p.id} onCardPlay={() => { }} canPlay={false} onCharacterClick={() => setViewingCharacter(p.character)} onItemClick={setItemCardToShow} />
                                 ))}
                             </div>
 
@@ -1059,6 +1066,7 @@ const App: React.FC = () => {
                                     onCardPlay={playCard}
                                     canPlay={currentPlayerIdx === 0}
                                     onCharacterClick={() => setViewingCharacter(players[0].character)}
+                                    onItemClick={setItemCardToShow}
                                     selectedCards={selectedCards}
                                 />
                             </div>

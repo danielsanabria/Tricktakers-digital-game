@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { UIContext, Player, Card } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { UIContext, Player, Card } from '../../game/core/types';
 
 export class NinjaLogic extends BaseCharacterLogic {
 
@@ -23,7 +23,7 @@ export class NinjaLogic extends BaseCharacterLogic {
     return (
       React.createElement("button", {
         onClick: () => setAbilityMode(isActive ? 'NONE' : 'NINJA_FACE_DOWN'),
-        className: `btn ${isActive ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-600'}`
+        className: `btn btn-slate ${isActive ? 'shadow-lg scale-105' : '!bg-white !text-slate-500 hover:!bg-slate-50'}`
       },
         React.createElement("i", { className: "fa-solid fa-user-ninja mr-2" }),
         "CLON DE SOMBRA"

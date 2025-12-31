@@ -1,9 +1,8 @@
-
-import { KingLogic } from './logic/logic_King';
-import { StrategistLogic } from './logic/logic_Strategist';
-import { PhantomThiefLogic } from './logic/logic_PhantomThief';
-import { CharacterType, Suit, CardType, Player } from './types';
-import { determineWinner } from './gameLogic';
+import { KingLogic } from '../logic/characters/logic_King';
+import { StrategistLogic } from '../logic/characters/logic_Strategist';
+import { PhantomThiefLogic } from '../logic/characters/logic_PhantomThief';
+import { CharacterType, Suit, CardType, Player } from '../game/core/types';
+import { determineWinner } from '../game/core/gameLogic';
 
 // Mock Data
 const mockDeck = Array(50).fill(null).map((_, i) => ({

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, Suit, CardType } from '../types';
-import { SUIT_COLORS, SUIT_ICONS, SUIT_BG_COLORS } from '../constants';
+import { Card, Suit, CardType } from '../game/core/types';
+import { SUIT_COLORS, SUIT_ICONS, SUIT_BG_COLORS } from '../game/core/constants';
 
 interface GameCardProps {
   card: Card;

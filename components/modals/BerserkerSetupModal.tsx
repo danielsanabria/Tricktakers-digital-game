@@ -17,7 +17,7 @@ export const BerserkerSetupModal: React.FC<BerserkerSetupModalProps> = ({ onConf
                 <div className="flex justify-center">
                     <button
                         onClick={onConfirm}
-                        className="px-8 py-4 bg-rose-600 text-white font-black text-xl uppercase tracking-wider rounded-full hover:bg-rose-500 transition-colors shadow-2xl shadow-rose-600/30"
+                        className="btn btn-rose !text-xl !py-6 !px-12 !rounded-full shadow-2xl shadow-rose-600/40"
                     >
                         ACEPTAR PODER
                     </button>

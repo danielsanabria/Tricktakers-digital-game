@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { UIContext, PowerContext, SetupContext, Player } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { UIContext, PowerContext, SetupContext, Player } from '../../game/core/types';
 
 export class ResistanceLogic extends BaseCharacterLogic {
 
@@ -22,7 +22,7 @@ export class ResistanceLogic extends BaseCharacterLogic {
     return (
       React.createElement("button", {
         onClick: () => performAction('TRIGGER_KAKUMEI'),
-        className: "btn bg-rose-600 text-white"
+        className: "btn btn-rose"
       },
         React.createElement("i", { className: "fa-solid fa-flag mr-2" }),
         "REVOLUCIÓN"

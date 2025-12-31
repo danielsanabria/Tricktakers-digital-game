@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Card, Suit, CardType } from '../../types';
+import { Card, Suit, CardType } from '../../game/core/types';
 
 interface StrategistModalProps {
     choice: { type: 'BLACK7' | 'RARE', pointsObj: number } | null;
@@ -24,18 +24,18 @@ export const StrategistModal: React.FC<StrategistModalProps> = ({ choice, onChoo
                 <div className="grid grid-cols-2 gap-4">
                     <button
                         onClick={() => onChoosePoints(choice.pointsObj)}
-                        className="p-6 bg-slate-700 hover:bg-slate-600 rounded-xl border border-slate-600 transition-all group"
+                        className="btn btn-amber !py-10 !rounded-2xl flex flex-col items-center justify-center !gap-1"
                     >
-                        <div className="text-3xl font-black text-amber-400 mb-2">+{choice.pointsObj} PTS</div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider">Aceptar Puntos</div>
+                        <div className="text-3xl font-black mb-1">+{choice.pointsObj} PTS</div>
+                        <div className="text-[10px] opacity-70">Aceptar Puntos</div>
                     </button>
 
                     <button
                         onClick={() => onChooseCard(choice.type)}
-                        className="p-6 bg-slate-700 hover:bg-slate-600 rounded-xl border border-slate-600 transition-all group"
+                        className="btn btn-purple !py-10 !rounded-2xl flex flex-col items-center justify-center !gap-1"
                     >
-                        <div className="text-3xl font-black text-purple-400 mb-2">{choice.type === 'BLACK7' ? '7 NEGRO' : 'CARTA RARA'}</div>
-                        <div className="text-xs text-slate-400 uppercase tracking-wider">Obtener Carta (Próxima Ronda)</div>
+                        <div className="text-2xl font-black mb-1">{choice.type === 'BLACK7' ? '7 NEGRO' : 'CARTA RARA'}</div>
+                        <div className="text-[10px] opacity-70">Obtener Carta</div>
                     </button>
                 </div>
             </div>

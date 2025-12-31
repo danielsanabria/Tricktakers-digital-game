@@ -1,4 +1,4 @@
-import { Player, Card, SetupContext, PowerContext, UIContext, CardType, Suit } from '../types';
+import { Player, Card, SetupContext, PowerContext, UIContext, CardType, Suit } from '../game/core/types';
 import React from 'react';
 
 export interface ICharacterLogic {

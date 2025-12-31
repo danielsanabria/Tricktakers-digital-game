@@ -1,5 +1,5 @@
-import { determineWinner } from './gameLogic';
-import { Card, Suit, CardType, GamePhase, Player } from './types';
+import { determineWinner } from '../game/core/gameLogic';
+import { Card, Suit, CardType, GamePhase, Player } from '../game/core/types';
 
 // Mock Players
 const players: Player[] = [

@@ -1,5 +1,5 @@
 import { Suit, CardType, Card, Player, CharacterType, PowerContext } from './types';
-import { getCharacterLogic } from './logic/logic_Registry';
+import { getCharacterLogic } from '../../logic/logic_Registry';
 
 export const createDeck = (): Card[] => {
   const deck: Card[] = [];

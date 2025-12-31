@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { UIContext, SetupContext, Player } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { UIContext, SetupContext, Player } from '../../game/core/types';
 
 export class RulerLogic extends BaseCharacterLogic {
 
@@ -26,12 +26,12 @@ export class RulerLogic extends BaseCharacterLogic {
       React.createElement("div", { className: "flex gap-2" },
         React.createElement("button", {
           onClick: () => performAction('RULER_ASSIGN_TASK'),
-          className: "btn bg-slate-800 text-white"
+          className: "btn btn-slate !py-1.5 !px-4 text-[11px]"
         }, "ASIGNAR TAREA"),
 
         !usedToken && React.createElement("button", {
           onClick: () => performAction('RULER_IGNORE_RULES'),
-          className: "btn bg-yellow-500 text-white"
+          className: "btn btn-amber !py-1.5 !px-4 text-[11px]"
         }, "IGNORAR REGLAS (TOKEN)")
       )
     );

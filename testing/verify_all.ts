@@ -1,20 +1,19 @@
-
-import { KingLogic } from './logic_King';
-import { StrategistLogic } from './logic_Strategist';
-import { GamblerLogic } from './logic_Gambler';
-import { SummonerLogic } from './logic_Summoner';
-import { NinjaLogic } from './logic_Ninja';
-import { ResistanceLogic } from './logic_Resistance';
-import { AdventurerLogic } from './logic_Adventurer';
-import { AlchemistLogic } from './logic_Alchemist';
-import { SamuraiLogic } from './logic_Samurai';
-import { HermitLogic } from './logic_Hermit';
-import { CollectorLogic } from './logic_Collector';
-import { TimeTravelerLogic } from './logic_TimeTraveler';
-import { BerserkerLogic } from './logic_Berserker';
-import { RulerLogic } from './logic_Ruler';
-import { PhantomThiefLogic } from './logic_PhantomThief';
-import { CharacterType, Suit, CardType, Player } from './types';
+import { KingLogic } from '../logic/characters/logic_King';
+import { StrategistLogic } from '../logic/characters/logic_Strategist';
+import { GamblerLogic } from '../logic/characters/logic_Gambler';
+import { SummonerLogic } from '../logic/characters/logic_Summoner';
+import { NinjaLogic } from '../logic/characters/logic_Ninja';
+import { ResistanceLogic } from '../logic/characters/logic_Resistance';
+import { AdventurerLogic } from '../logic/characters/logic_Adventurer';
+import { AlchemistLogic } from '../logic/characters/logic_Alchemist';
+import { SamuraiLogic } from '../logic/characters/logic_Samurai';
+import { HermitLogic } from '../logic/characters/logic_Hermit';
+import { CollectorLogic } from '../logic/characters/logic_Collector';
+import { TimeTravelerLogic } from '../logic/characters/logic_TimeTraveler';
+import { BerserkerLogic } from '../logic/characters/logic_Berserker';
+import { RulerLogic } from '../logic/characters/logic_Ruler';
+import { PhantomThiefLogic } from '../logic/characters/logic_PhantomThief';
+import { CharacterType, Suit, CardType, Player } from '../game/core/types';
 
 // --- MOCK DATA ---
 const mockDeck = Array(60).fill(null).map((_, i) => ({
@@ -25,8 +24,31 @@ const mockDeck = Array(60).fill(null).map((_, i) => ({
 }));
 
 const basePlayer: Player = {
-    id: 'p1', name: 'Tester', character: null, hand: [], wonCards: [], score: 0,
-    goldCrowns: 0, blackCrowns: 0, wins: 0, items: [], tasks: [], beasts: [], rearBeasts: [], magicElements: [], mp: 0
+    id: 'p1',
+    name: 'Tester',
+    character: null,
+    hand: [],
+    wonCards: [],
+    score: 0,
+    goldCrowns: 0,
+    blackCrowns: 0,
+    wins: 0,
+    items: [],
+    tasks: [],
+    mp: 0,
+    beasts: [],
+    rearBeasts: [],
+    magicElements: [],
+    collectedCards: [],
+    timeTravelTokens: 0,
+    timeTravelPredictions: [],
+    revoltsLeft: 0,
+    itemSlots: 0,
+    gambleSwaps: 0,
+    betAmount: 0,
+    thiefChipValue: 0,
+    thiefTargetIds: [],
+    thiefBetrayalMode: false
 };
 
 function runTest(name: string, testFn: () => boolean) {

@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { PowerContext, CardType, UIContext, Player, Card } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { PowerContext, CardType, UIContext, Player, Card } from '../../game/core/types';
 
 export class HermitLogic extends BaseCharacterLogic {
 
@@ -58,7 +58,7 @@ export class HermitLogic extends BaseCharacterLogic {
                 !isDiscarding ? (
                     React.createElement("button", {
                         onClick: () => performAction('HERMIT_START_ABILITY'),
-                        className: "px-6 py-2 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 transition-all shadow-md"
+                        className: "btn btn-emerald"
                     }, "ROBAR CARTA EXTRA")
                 ) : (
                     React.createElement("div", { className: "flex gap-2" },
@@ -66,7 +66,7 @@ export class HermitLogic extends BaseCharacterLogic {
                         React.createElement("button", {
                             disabled: selectedCards.length !== 1,
                             onClick: () => performAction('HERMIT_EXECUTE_DISCARD'),
-                            className: "px-4 py-2 bg-emerald-500 text-white rounded-xl font-black text-xs disabled:opacity-50 shadow-md"
+                            className: "btn btn-emerald"
                         }, "CONFIRMAR")
                     )
                 )

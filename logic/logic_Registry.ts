@@ -1,21 +1,21 @@
 
-import { CharacterType } from '../types';
+import { CharacterType } from '../game/core/types';
 import { ICharacterLogic, BaseCharacterLogic } from './logic_Interface';
-import { KingLogic } from './logic_King';
-import { StrategistLogic } from './logic_Strategist';
-import { GamblerLogic } from './logic_Gambler';
-import { SummonerLogic } from './logic_Summoner';
-import { NinjaLogic } from './logic_Ninja';
-import { ResistanceLogic } from './logic_Resistance';
-import { AdventurerLogic } from './logic_Adventurer';
-import { AlchemistLogic } from './logic_Alchemist';
-import { SamuraiLogic } from './logic_Samurai';
-import { HermitLogic } from './logic_Hermit';
-import { CollectorLogic } from './logic_Collector';
-import { TimeTravelerLogic } from './logic_TimeTraveler';
-import { BerserkerLogic } from './logic_Berserker';
-import { RulerLogic } from './logic_Ruler';
-import { PhantomThiefLogic } from './logic_PhantomThief';
+import { KingLogic } from './characters/logic_King';
+import { StrategistLogic } from './characters/logic_Strategist';
+import { GamblerLogic } from './characters/logic_Gambler';
+import { SummonerLogic } from './characters/logic_Summoner';
+import { NinjaLogic } from './characters/logic_Ninja';
+import { ResistanceLogic } from './characters/logic_Resistance';
+import { AdventurerLogic } from './characters/logic_Adventurer';
+import { AlchemistLogic } from './characters/logic_Alchemist';
+import { SamuraiLogic } from './characters/logic_Samurai';
+import { HermitLogic } from './characters/logic_Hermit';
+import { CollectorLogic } from './characters/logic_Collector';
+import { TimeTravelerLogic } from './characters/logic_TimeTraveler';
+import { BerserkerLogic } from './characters/logic_Berserker';
+import { RulerLogic } from './characters/logic_Ruler';
+import { PhantomThiefLogic } from './characters/logic_PhantomThief';
 
 const REGISTRY: Partial<Record<CharacterType, ICharacterLogic>> = {
   [CharacterType.KING]: new KingLogic(),

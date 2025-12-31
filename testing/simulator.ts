@@ -1,10 +1,10 @@
 
 import {
     Player, CharacterType, Card, Suit, CardType, GamePhase, SetupContext, PowerContext
-} from './types';
-import { CHARACTERS, ITEMS, BEASTS, TRAPS } from './constants';
-import { createDeck, determineWinner, getValidMoves, calculateAlchemyValue, calculateCollectorScore } from './gameLogic';
-import { getCharacterLogic } from './logic/logic_Registry';
+} from '../game/core/types';
+import { CHARACTERS, ITEMS, BEASTS, TRAPS } from '../game/core/constants';
+import { createDeck, determineWinner, getValidMoves, calculateAlchemyValue, calculateCollectorScore } from '../game/core/gameLogic';
+import { getCharacterLogic } from '../logic/characters/logic_Registry';
 
 function createInitialPlayers(characters: CharacterType[]): Player[] {
     return characters.map((char, i) => ({

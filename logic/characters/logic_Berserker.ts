@@ -1,6 +1,6 @@
 
-import { BaseCharacterLogic } from './logic_Interface';
-import { SetupContext, Player, CardType, Suit, PowerContext, Card } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { SetupContext, Player, CardType, Suit, PowerContext, Card } from '../../game/core/types';
 
 export class BerserkerLogic extends BaseCharacterLogic {
 

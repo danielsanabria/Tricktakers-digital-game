@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ITEMS } from '../../constants';
+import { ITEMS } from '../../game/core/constants';
 
 interface AdventurerSetupModalProps {
     onConfirm: (redId: string, blueId: string) => void;
@@ -66,10 +66,7 @@ export const AdventurerSetupModal: React.FC<AdventurerSetupModalProps> = ({ onCo
                             }
                         }}
                         disabled={!red || !blue}
-                        className={`px-6 py-3 rounded-lg font-bold uppercase tracking-wider transition-colors
-                                ${red && blue
-                                ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20'
-                                : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                        className="btn btn-amber disabled:opacity-50 disabled:cursor-not-allowed shadow-xl"
                     >
                         Confirmar Equipo
                     </button>

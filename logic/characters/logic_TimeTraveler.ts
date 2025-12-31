@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { UIContext, SetupContext, Player } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { UIContext, SetupContext, Player } from '../../game/core/types';
 
 export class TimeTravelerLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {
@@ -17,7 +17,7 @@ export class TimeTravelerLogic extends BaseCharacterLogic {
     return (
       React.createElement("button", {
         onClick: () => performAction('TIME_TRAVEL_REWIND'),
-        className: "btn bg-fuchsia-600 text-white"
+        className: "btn btn-purple !py-2 !px-6"
       }, "REBOBINAR TIEMPO")
     );
   }

@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { SetupContext, Player, CardType, Suit, UIContext, Card } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { SetupContext, Player, CardType, Suit, UIContext, Card } from '../../game/core/types';
 
 export class KingLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {

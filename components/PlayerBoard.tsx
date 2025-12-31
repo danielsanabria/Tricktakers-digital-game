@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Player } from '../types';
-import { CHARACTERS } from '../constants';
+import { Player, CharacterType } from '../game/core/types';
+import { CHARACTERS } from '../game/core/constants';
 import GameCard from './GameCard';
 
 interface PlayerBoardProps {
@@ -10,6 +10,7 @@ interface PlayerBoardProps {
   onCardPlay: (cardId: string) => void;
   canPlay: boolean;
   onCharacterClick?: () => void;
+  onItemClick?: (itemCardPath: string) => void;
   selectedCards?: string[];
 }
 
@@ -19,6 +20,7 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
   onCardPlay,
   canPlay,
   onCharacterClick,
+  onItemClick,
   selectedCards = []
 }) => {
   const char = player.character ? CHARACTERS[player.character] : null;
@@ -124,9 +126,13 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
       {(player.items.length > 0 || player.tasks.length > 0) && (
         <div className="flex flex-wrap gap-2 mb-4 min-h-[24px]">
           {player.items.map((it, idx) => (
-            <div key={idx} className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-600 rounded-lg text-[8px] font-black uppercase flex items-center gap-1">
+            <button
+              key={idx}
+              onClick={() => onItemClick?.(it.itemCardPath)}
+              className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-600 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 hover:bg-amber-100 transition-colors"
+            >
               <i className="fa-solid fa-toolbox"></i> {it.name}
-            </div>
+            </button>
           ))}
           {player.tasks.map((t, idx) => (
             <div key={idx} className="px-2 py-0.5 bg-rose-50 border border-rose-200 text-rose-500 rounded-lg text-[8px] font-black uppercase flex items-center gap-1">
@@ -137,51 +143,91 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
       )}
 
       {/* ÁREA DE ESTADÍSTICAS (Below header, good for mobile) */}
-      <div className="flex justify-between items-center bg-slate-100 rounded-2xl p-3 mb-4">
+      <div className="flex justify-between items-center bg-slate-100 rounded-2xl p-3 mb-4 relative overflow-hidden">
+        {/* Gambler Bid Overlay/Badge */}
+        {player.character === CharacterType.GAMBLER && player.bid !== undefined && (
+          <div className="absolute top-0 right-0 bg-amber-500 text-white px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-tighter">
+            Apuesta: {player.bid}
+          </div>
+        )}
+
+        {/* Summoner MP Badge */}
+        {player.character === CharacterType.SUMMONER && (
+          <div className="absolute top-0 right-0 bg-indigo-600 text-white px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-tighter flex items-center gap-1">
+            <i className="fa-solid fa-bolt text-[6px]"></i> {player.mp || 0} MP
+          </div>
+        )}
+
+        {/* Adventurer Slots Badge */}
+        {player.character === CharacterType.ADVENTURER && (
+          <div className="absolute top-0 right-0 bg-sky-600 text-white px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-tighter">
+            Salas: {player.items.length}/{player.itemSlots || 2}
+          </div>
+        )}
+
+        {/* Ruler Tasks Badge */}
+        {player.character === CharacterType.RULER && player.tasks && player.tasks.length > 0 && (
+          <div className="absolute top-0 right-0 bg-slate-800 text-white px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-tighter">
+            Tareas: {player.tasks.filter(t => t.completed).length}/{player.tasks.length}
+          </div>
+        )}
+
+        {/* Resistance Revolt Badge */}
+        {player.character === CharacterType.RESISTANCE && (
+          <div className="absolute top-0 right-0 bg-rose-600 text-white px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-tighter flex items-center gap-1">
+            {player.revoltUsed && <span className="animate-pulse">Activa</span>}
+            <span>Revoluciones: {player.revoltsLeft || 0}</span>
+          </div>
+        )}
         <div className="flex flex-col items-center w-1/2 border-r border-slate-200">
           <span className="text-[9px] font-black uppercase text-slate-400">Puntos</span>
           <span className={`${isHuman ? 'text-3xl' : 'text-xl'} font-black text-amber-500`}>{player.score}</span>
         </div>
         <div className="flex flex-col items-center w-1/2">
           <span className="text-[9px] font-black uppercase text-slate-400">Bazas</span>
-          <span className={`${isHuman ? 'text-3xl' : 'text-xl'} font-black text-teal-500`}>
-            {player.wins}<span className="text-sm text-slate-400 font-bold">/5</span>
-          </span>
+          <div className="flex items-baseline gap-0.5">
+            <span className={`${isHuman ? 'text-3xl' : 'text-xl'} font-black text-teal-500`}>
+              {player.wins}
+            </span>
+            <span className="text-sm text-slate-400 font-bold">/5</span>
+          </div>
         </div>
       </div>
 
       {/* ÁREA DE MANO DIFERENCIADA */}
-      {isHuman ? (
-        // JUGADOR: Mano Interactiva Completa
-        <div className="flex flex-wrap gap-3 justify-center bg-slate-50 p-4 rounded-[1.5rem] border border-slate-200/50 shadow-inner min-h-[160px]">
-          {player.hand.map(card => (
-            <GameCard
-              key={card.id}
-              card={card}
-              onClick={() => onCardPlay(card.id)}
-              disabled={!canPlay}
-              small={window.innerWidth < 640}
-              selected={selectedCards.includes(card.id)}
-            />
-          ))}
-          {player.hand.length === 0 && (
-            <div className="w-full flex items-center justify-center h-32 opacity-30">
-              <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Sin cartas</p>
+      {
+        isHuman ? (
+          // JUGADOR: Mano Interactiva Completa
+          <div className="flex flex-wrap gap-3 justify-center bg-slate-50 p-4 rounded-[1.5rem] border border-slate-200/50 shadow-inner min-h-[160px]">
+            {player.hand.map(card => (
+              <GameCard
+                key={card.id}
+                card={card}
+                onClick={() => onCardPlay(card.id)}
+                disabled={!canPlay}
+                small={window.innerWidth < 640}
+                selected={selectedCards.includes(card.id)}
+              />
+            ))}
+            {player.hand.length === 0 && (
+              <div className="w-full flex items-center justify-center h-32 opacity-30">
+                <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Sin cartas</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          // RIVAL: Resumen Compacto (Sin cartas visibles)
+          <div className="flex justify-between items-center">
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              {player.hand.length} Cartas en mano
             </div>
-          )}
-        </div>
-      ) : (
-        // RIVAL: Resumen Compacto (Sin cartas visibles)
-        <div className="flex justify-between items-center">
-          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-            {player.hand.length} Cartas en mano
+            <div className="text-[10px] font-bold text-slate-300 italic">
+              Oculto
+            </div>
           </div>
-          <div className="text-[10px] font-bold text-slate-300 italic">
-            Oculto
-          </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

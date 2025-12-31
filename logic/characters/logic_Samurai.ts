@@ -1,5 +1,5 @@
-import { BaseCharacterLogic } from './logic_Interface';
-import { PowerContext, Suit, SetupContext, Player, Card } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { PowerContext, Suit, SetupContext, Player, Card } from '../../game/core/types';
 
 export class SamuraiLogic extends BaseCharacterLogic {
 

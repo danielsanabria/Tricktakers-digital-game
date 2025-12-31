@@ -1,6 +1,6 @@
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { UIContext, SetupContext, Player, Card, CharacterType } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { UIContext, SetupContext, Player, Card, CharacterType } from '../../game/core/types';
 
 export class PhantomThiefLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {
@@ -45,15 +45,15 @@ export class PhantomThiefLogic extends BaseCharacterLogic {
         React.createElement("div", { className: "flex gap-2" },
           React.createElement("button", {
             onClick: () => performAction('PHANTOM_EXCHANGE_REQUEST'),
-            className: "btn bg-purple-600 text-white text-xs"
+            className: "btn btn-purple !py-1 !px-3 text-[10px]"
           }, "CAMBIAR CARTA"),
           React.createElement("button", {
             onClick: () => performAction('PHANTOM_TOGGLE_CHIP'),
-            className: "btn bg-slate-700 text-white text-xs"
-          }, `Chip: ${player.thiefChipValue}`),
+            className: "btn btn-slate !py-1 !px-3 text-[10px]"
+          }, `CHIP: ${player.thiefChipValue}`),
           React.createElement("button", {
             onClick: () => performAction('PHANTOM_TOGGLE_BETRAYAL'),
-            className: `btn text-xs ${player.thiefBetrayalMode ? 'bg-red-600' : 'bg-slate-700'} text-white`
+            className: `btn ${player.thiefBetrayalMode ? 'btn-rose scale-105 shadow-lg' : 'btn-slate !bg-white !text-slate-500 hover:!border-rose-500'} !py-1 !px-3 text-[10px]`
           }, player.thiefBetrayalMode ? "TRAICIÓN ACTIVA" : "TRAICIÓN")
         )
       )

@@ -1,7 +1,7 @@
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { SetupContext, Player, UIContext, Card } from '../types';
-import { ITEMS } from '../constants';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { SetupContext, Player, UIContext, Card } from '../../game/core/types';
+import { ITEMS } from '../../game/core/constants';
 
 export class AdventurerLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {
@@ -48,8 +48,8 @@ export class AdventurerLogic extends BaseCharacterLogic {
       return React.createElement("div", { className: "p-4 bg-slate-800 rounded-xl space-y-4" },
         React.createElement("h3", { className: "text-white font-bold" }, "Elige tus ítems iniciales"),
         React.createElement("div", { className: "flex gap-2" },
-          redItems.map(it => React.createElement("button", { key: it.id, onClick: () => performAction('CHOOSE_INITIAL_ITEM', it), className: "btn bg-rose-500 text-xs" }, it.name)),
-          blueItems.map(it => React.createElement("button", { key: it.id, onClick: () => performAction('CHOOSE_INITIAL_ITEM', it), className: "btn bg-sky-500 text-xs" }, it.name))
+          redItems.map(it => React.createElement("button", { key: it.id, onClick: () => performAction('CHOOSE_INITIAL_ITEM', it), className: "btn btn-rose !py-1.5 !px-3 text-[10px]" }, it.name)),
+          blueItems.map(it => React.createElement("button", { key: it.id, onClick: () => performAction('CHOOSE_INITIAL_ITEM', it), className: "btn btn-blue !py-1.5 !px-3 text-[10px]" }, it.name))
         )
       );
     }
@@ -61,7 +61,7 @@ export class AdventurerLogic extends BaseCharacterLogic {
             React.createElement("div", { key: item.id, className: "flex gap-1" },
               React.createElement("button", {
                 onClick: () => performAction('USE_ITEM', item),
-                className: "btn bg-sky-500 text-white text-[10px] px-2"
+                className: `btn ${item.type === 'RED' ? 'btn-rose' : 'btn-blue'} !py-1 !px-3 text-[9px]`
               }, `USAR: ${item.name}`),
               React.createElement("button", {
                 onClick: () => {

@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { SetupContext, Player, UIContext, Card } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { SetupContext, Player, UIContext, Card } from '../../game/core/types';
 
 export class GamblerLogic extends BaseCharacterLogic {
     onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
@@ -44,11 +44,11 @@ export class GamblerLogic extends BaseCharacterLogic {
                         React.createElement("button", {
                             disabled: selectedCards.length === 0,
                             onClick: () => performAction('GAMBLER_EXECUTE_SWAP'),
-                            className: "px-4 py-2 bg-amber-500 text-white rounded-xl font-black text-xs disabled:opacity-50 hover:bg-amber-600 transition-colors"
+                            className: "btn btn-amber !py-1.5 !px-4 text-[10px]"
                         }, "CAMBIAR SELECCIONADAS"),
                         React.createElement("button", {
                             onClick: () => performAction('GAMBLER_SKIP_SWAP'),
-                            className: "px-4 py-2 bg-slate-200 text-slate-600 rounded-xl font-black text-xs"
+                            className: "btn btn-slate !py-1.5 !px-4 text-[10px]"
                         }, "ESTOY LISTO")
                     )
                 )

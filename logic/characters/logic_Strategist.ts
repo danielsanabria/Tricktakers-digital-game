@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { SetupContext, Player, CardType, Card, UIContext } from '../types';
-import { Suit } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { SetupContext, Player, CardType, Card, UIContext } from '../../game/core/types';
+import { Suit } from '../../game/core/types';
 
 export class StrategistLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {
@@ -53,7 +53,7 @@ export class StrategistLogic extends BaseCharacterLogic {
         !usedIgnore && (
           React.createElement("button", {
             onClick: () => setAbilityMode(abilityMode === 'STRATEGIST_IGNORE_SUIT' ? 'NONE' : 'STRATEGIST_IGNORE_SUIT'),
-            className: `px - 4 py - 2 rounded - xl text - xs font - black uppercase tracking - widest transition - all ${abilityMode === 'STRATEGIST_IGNORE_SUIT' ? 'bg-amber-500 text-white shadow-lg scale-105' : 'bg-white border border-slate-200 text-slate-500 hover:border-amber-500 hover:text-amber-500'} `
+            className: `btn ${abilityMode === 'STRATEGIST_IGNORE_SUIT' ? 'btn-amber shadow-lg scale-105' : 'btn-slate border-slate-200 !bg-white !text-slate-500 hover:!border-amber-500 hover:!text-amber-500'}`
           }, abilityMode === 'STRATEGIST_IGNORE_SUIT' ? "CANCELAR HABILIDAD" : "IGNORAR PALO (1 VEZ)")
         )
       )

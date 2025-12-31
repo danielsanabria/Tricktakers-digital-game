@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Player, CharacterType, GamePhase } from '../types';
-import { CHARACTERS } from '../constants';
+import { Player, CharacterType, GamePhase } from '../game/core/types';
+import { CHARACTERS } from '../game/core/constants';
 
 interface CharacterSelectionProps {
     players: Player[];

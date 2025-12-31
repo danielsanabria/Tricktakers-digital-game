@@ -1,8 +1,8 @@
 
 import React, { useCallback } from 'react';
-import { Player, Card, Suit, CharacterType, Item, Trap, CardType } from './types';
-import { calculateAlchemyValue } from './gameLogic';
-import { BEASTS, ITEMS } from './constants';
+import { Player, Card, Suit, CharacterType, Item, Trap, CardType } from './game/core/types';
+import { calculateAlchemyValue } from './game/core/gameLogic';
+import { BEASTS, ITEMS } from './game/core/constants';
 
 interface GameActionsProps {
     drawPile: Card[];
@@ -378,35 +378,49 @@ export const useGameActions = ({
         }
         else if (actionName === 'USE_ITEM') {
             const item = payload as Item;
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
-                ...pl,
-                items: pl.items.filter(i => i.id !== item.id)
-            } : pl));
+            const p = players.find(x => x.id === 'p1');
+            if (!p || (p as any).adventurerUsedItem) {
+                addLog("Ya has usado un objeto en esta baza.");
+                return;
+            }
 
             addLog(`Usaste: ${item.name}`);
 
-            if (item.effect === 'DRAW_X') {
-                const currentDrawPile = [...drawPile];
-                const drawn = currentDrawPile.splice(0, 2).map(c => ({ ...c, ownerId: 'p1' }));
-                setDrawPile(currentDrawPile);
-                setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, hand: [...p.hand, ...drawn] } : p));
-                setAbilityMode('KING_DISCARD');
-                addLog("Robaste 2 cartas. Descarta 2.");
-            }
-            else {
-                // Potion, Wand, Sword, Axe
-                setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, pendingItemEffect: item.effect } : p));
-            }
+            setPlayers(prev => prev.map(pl => {
+                if (pl.id !== 'p1') return pl;
 
-            const possibleItems = ITEMS.filter(i => i.id !== item.id);
-            if (possibleItems.length > 0) {
-                const replacement = possibleItems[Math.floor(Math.random() * possibleItems.length)];
-                setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+                const filteredItems = pl.items.filter(i => i.id !== item.id);
+                let newHand = pl.hand;
+                let pendingEffect = pl.pendingItemEffect;
+
+                if (item.effect === 'DRAW_X') {
+                    const currentDrawPile = [...drawPile];
+                    const drawn = currentDrawPile.splice(0, 2).map(c => ({ ...c, ownerId: 'p1' }));
+                    setDrawPile(currentDrawPile);
+                    newHand = [...pl.hand, ...drawn];
+                    setAbilityMode('KING_DISCARD');
+                    addLog("Robaste 2 cartas. Descarta 2.");
+                } else {
+                    pendingEffect = item.effect;
+                }
+
+                // Replacement draw
+                const possibleItems = ITEMS.filter(i => i.id !== item.id && !filteredItems.map(x => x.id).includes(i.id));
+                let updatedItems = filteredItems;
+                if (possibleItems.length > 0) {
+                    const replacement = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+                    updatedItems = [...filteredItems, replacement];
+                    addLog(`Encontraste: ${replacement.name}`);
+                }
+
+                return {
                     ...pl,
-                    items: [...pl.items, replacement]
-                } : pl));
-                addLog(`Encontraste: ${replacement.name}`);
-            }
+                    items: updatedItems,
+                    hand: newHand,
+                    pendingItemEffect: pendingEffect,
+                    adventurerUsedItem: true
+                };
+            }));
         }
         else if (actionName === 'SHOW_ITEM_CARD') {
             setItemCardToShow(payload);

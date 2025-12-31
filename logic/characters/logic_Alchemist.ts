@@ -1,6 +1,6 @@
 import React from 'react';
-import { BaseCharacterLogic } from './logic_Interface';
-import { SetupContext, Player, Card, CardType, UIContext } from '../types';
+import { BaseCharacterLogic } from '../logic_Interface';
+import { SetupContext, Player, Card, CardType, UIContext } from '../../game/core/types';
 
 export class AlchemistLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {
@@ -28,7 +28,7 @@ export class AlchemistLogic extends BaseCharacterLogic {
         React.createElement("button", {
           disabled: selectedCards.length !== 3,
           onClick: () => performAction('ALCHEMIST_PLAY'),
-          className: "px-4 py-1 bg-purple-500 text-white rounded-lg font-bold text-[10px] disabled:opacity-50"
+          className: "btn btn-purple !py-1 !px-4 text-[10px] disabled:opacity-50"
         }, "TRANSMUTAR")
       )
     );
