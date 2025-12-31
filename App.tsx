@@ -814,7 +814,7 @@ const App: React.FC = () => {
 
     return (
         <div
-            className="h-[100dvh] text-slate-800 font-sans selection:bg-teal-500/30 flex flex-col overflow-hidden bg-cover bg-center"
+            className="min-h-[100dvh] md:h-[100dvh] text-slate-800 font-sans selection:bg-teal-500/30 flex flex-col overflow-x-hidden bg-cover bg-center"
             style={{
                 backgroundColor: '#B9DED1',
                 backgroundImage: `url('/assets/bg-pattern.png')`,
@@ -890,10 +890,10 @@ const App: React.FC = () => {
 
             <main className="flex-1 relative overflow-hidden flex flex-col">
                 {phase === GamePhase.MODE_SELECTION && (
-                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white overflow-y-auto">
-                        <div className="max-w-2xl">
-                            <h2 className="text-6xl font-black text-slate-900 mb-6 tracking-tighter">EL TORNEO <br />COMIENZA AQUÍ</h2>
-                            <p className="text-slate-500 text-lg mb-12 font-medium">Selecciona el nivel de desafío para tu partida.</p>
+                    <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-8 text-center bg-white overflow-y-auto custom-scrollbar">
+                        <div className="max-w-2xl py-12">
+                            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tighter">EL TORNEO <br />COMIENZA AQUÍ</h2>
+                            <p className="text-slate-500 text-base md:text-lg mb-12 font-medium">Selecciona el nivel de desafío para tu partida.</p>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <button onClick={() => initGame(GameMode.BASIC)} className="p-8 bg-slate-50 rounded-[2rem] border-2 border-slate-100 hover:border-teal-500 hover:bg-teal-50/30 transition-all group text-left">
                                     <i className="fa-solid fa-seedling text-3xl text-teal-500 mb-4 group-hover:scale-110 transition-transform"></i>

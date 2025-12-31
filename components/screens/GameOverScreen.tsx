@@ -14,15 +14,15 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ result, players,
     const { winner, reason } = result;
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-8">
-            <div className="text-center max-w-lg">
-                <h2 className="text-7xl font-black text-white mb-4 tracking-tighter">FIN DEL TORNEO</h2>
-                <div className="bg-white/10 p-8 rounded-[3rem] border border-white/20 mb-8">
-                    <p className="text-teal-400 font-black text-2xl mb-2 uppercase">Ganador Absoluto</p>
-                    <h3 className="text-5xl font-black text-white mb-6 tracking-tight">
+        <div className="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4 sm:p-8 overflow-y-auto">
+            <div className="text-center max-w-lg w-full py-8">
+                <h2 className="text-4xl md:text-7xl font-black text-white mb-4 tracking-tighter">FIN DEL TORNEO</h2>
+                <div className="bg-white/10 p-6 sm:p-8 rounded-[2.5rem] sm:rounded-[3rem] border border-white/20 mb-8">
+                    <p className="text-teal-400 font-black text-xl sm:text-2xl mb-2 uppercase">Ganador Absoluto</p>
+                    <h3 className="text-3xl md:text-5xl font-black text-white mb-6 tracking-tight">
                         {winner.name}
                     </h3>
-                    <p className="text-white/60 mb-6">{reason}</p>
+                    <p className="text-white/60 mb-6 text-sm md:text-base">{reason}</p>
 
                     <div className="space-y-2">
                         {players.sort((a, b) => b.score - a.score).map((p, i) => (

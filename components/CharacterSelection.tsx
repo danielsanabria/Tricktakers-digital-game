@@ -25,7 +25,7 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
         <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col h-full animate-in fade-in duration-500">
             {/* Header de Selección */}
             <div className="text-center mb-8">
-                <h2 className="text-4xl font-black text-slate-800 uppercase tracking-tighter mb-2">Selección de Personaje</h2>
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 uppercase tracking-tighter mb-2">Selección de Personaje</h2>
                 <div className="inline-flex items-center gap-4 bg-white px-8 py-3 rounded-full shadow-sm border border-slate-200">
                     <span className="text-slate-400 font-bold uppercase text-xs tracking-widest">Turno actual</span>
                     <div className="w-px h-4 bg-slate-200"></div>
