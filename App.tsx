@@ -17,7 +17,10 @@ import { BerserkerSetupModal } from './components/modals/BerserkerSetupModal';
 import { RulerSetupModal } from './components/modals/RulerSetupModal';
 import { PhantomThiefSetupModal } from './components/modals/PhantomThiefSetupModal';
 import { StrategistModal } from './components/modals/StrategistModal';
+import { RoundSummaryModal } from './components/modals/RoundSummaryModal';
+import { HomeMenu } from './components/screens/HomeMenu';
 import { determineTournamentWinner } from './game/core/gameLogic';
+import { PlayerRoundResult, RoundResult } from './game/core/types';
 
 const getInitialPlayers = (): Player[] => [
     { id: 'p1', name: 'Tú', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} },
@@ -45,6 +48,7 @@ const App: React.FC = () => {
     const [leadSuit, setLeadSuit] = useState<Suit | null>(null);
     const [isRevolt, setIsRevolt] = useState(false);
     const [isKakumei, setIsKakumei] = useState(false);
+    const [roundResults, setRoundResults] = useState<RoundResult | null>(null);
 
     const [logs, setLogs] = useState<string[]>(["¡Bienvenidos al Torneo Tricktakers!"]);
     const [showLogs, setShowLogs] = useState(false);
@@ -357,77 +361,88 @@ const App: React.FC = () => {
     const resolveRound = () => {
         addLog(`--- FINAL DE LA RONDA ${round} ---`);
 
-        setPlayers(prev => {
-            let updated = [...prev];
+        // 1. Calculate Results without modifying state yet
+        const scoringResults = players.map(p => {
+            const scoringLogic = getScoringLogic(p.character);
+            const result = scoringLogic.getScore(p, round, players);
+            return { playerId: p.id, pts: result.score, logs: result.logs };
+        });
 
-            // 1. Calcular Puntos por Personaje
-            updated = updated.map(p => {
-                // Modular Scoring Refactor
-                const scoringLogic = getScoringLogic(p.character);
-                const result = scoringLogic.getScore(p, round, updated);
-
-                let pts = result.score;
-                result.logs.forEach(msg => addLog(msg));
-
-                // Special UI-related logic (cannot easily be in modular logic without passing setters)
-                if (p.character === CharacterType.STRATEGIST && p.id === 'p1') {
-                    if (p.wins === 0) setStrategistPendingChoice({ type: 'RARE', pointsObj: 50 });
-                    else if (p.wins === 1) setStrategistPendingChoice({ type: 'BLACK7', pointsObj: 30 });
+        const maxWins = Math.max(...players.map(p => p.wins));
+        let blackCrownsGiven = 0;
+        const crownResults = players.map(p => {
+            let gold = 0; let black = 0;
+            if (p.character !== CharacterType.COLLECTOR) {
+                if (p.wins === maxWins && maxWins > 0) gold = 1;
+                const isResistanceBlackCrown = p.character === CharacterType.RESISTANCE && p.wins === 1 && p.wonRevolutionTrick;
+                if ((p.wins === 0 || isResistanceBlackCrown) && blackCrownsGiven < 2) {
+                    blackCrownsGiven++;
+                    black = 1;
                 }
+            }
+            return { playerId: p.id, gold, black };
+        });
 
+        // Apply scoring logs
+        scoringResults.forEach(sr => sr.logs.forEach(msg => addLog(msg)));
+        crownResults.forEach(cr => {
+            const p = players.find(pl => pl.id === cr.playerId)!;
+            if (cr.gold > 0) addLog(`${p.name} obtiene una Corona Dorada.`);
+            if (cr.black > 0) addLog(`${p.name} obtiene una Corona Negra.`);
+        });
+
+        // Update Players State
+        setPlayers(prev => {
+            let updated = prev.map(p => {
+                const sr = scoringResults.find(s => s.playerId === p.id)!;
+                const cr = crownResults.find(c => c.playerId === p.id)!;
                 return {
                     ...p,
-                    score: pts === 999 ? 999 : Math.max(0, p.score + pts),
-                    magicElements: [],
-                    tasks: [],
-                    wonCards: [],
-                    collectedCards: [],
-                    bid: undefined,
-                    betAmount: 0,
-                    wonRevolutionTrick: false,
-                    revoltUsed: false,
-                    isKakumeiActive: false,
-                    wins: 0
+                    score: sr.pts === 999 ? 999 : Math.max(0, p.score + sr.pts),
+                    goldCrowns: p.goldCrowns + cr.gold,
+                    blackCrowns: p.blackCrowns + cr.black,
+                    magicElements: [], tasks: [], wonCards: [], collectedCards: [],
+                    bid: undefined, betAmount: 0, wonRevolutionTrick: false,
+                    revoltUsed: false, isKakumeiActive: false, wins: 0
                 };
             });
 
-            // 2. Coronas
-            const maxWins = Math.max(...updated.map(p => p.wins));
-            let blackCrownsGiven = 0;
-            updated = updated.map(p => {
-                // Rule: Collector cannot get crowns
-                if (p.character === CharacterType.COLLECTOR) return p;
-
-                if (p.wins === maxWins && maxWins > 0) {
-                    addLog(`${p.name} obtiene una Corona Dorada.`);
-                    return { ...p, goldCrowns: p.goldCrowns + 1 };
-                }
-
-                // Resistance Special: 1 win (if Kakumei) counts for Black Crown
-                const isResistanceBlackCrown = p.character === CharacterType.RESISTANCE && p.wins === 1 && p.wonRevolutionTrick;
-                if ((p.wins === 0 || isResistanceBlackCrown) && blackCrownsGiven < 2) {
-                    addLog(`${p.name} obtiene una Corona Negra.`);
-                    blackCrownsGiven++;
-                    return { ...p, blackCrowns: p.blackCrowns + 1 };
-                }
-                return p;
-            });
-
-            // 3. Phantom Thief Stealing Logic (After Crowns Assigned)
             updated = PhantomThiefLogic.resolveSteal(updated, addLog);
             updated = PhantomThiefLogic.resolveBonus(updated, addLog);
-
             return updated;
         });
 
-        // Effect check check
+        setRoundResults({
+            round,
+            playerResults: players.map(p => {
+                const sr = scoringResults.find(s => s.playerId === p.id)!;
+                const cr = crownResults.find(c => c.playerId === p.id)!;
+                return {
+                    playerId: p.id,
+                    playerName: p.name,
+                    character: p.character,
+                    tricksWon: p.wins,
+                    pointsGained: sr.pts,
+                    totalScore: sr.pts === 999 ? 999 : Math.max(0, p.score + sr.pts),
+                    goldCrownsGained: cr.gold,
+                    blackCrownsGained: cr.black
+                };
+            })
+        });
+
         setTimeout(() => {
             const strategist = players.find(p => p.character === CharacterType.STRATEGIST && p.id === 'p1');
             const needsChoice = strategist && (strategist.wins === 0 || strategist.wins === 1);
             if (!needsChoice) {
-                performCheckGameOver(players);
+                setPhase(GamePhase.ROUND_SUMMARY);
             }
-        }, 2000);
+        }, 1000);
+    };
+
+    const proceedFromSummary = () => {
+        setPhase(GamePhase.ROUND_END); // Use ROUND_END as a transition state if needed, or go straight to next
+        setRoundResults(null);
+        performCheckGameOver(players);
     };
 
     const resolveTrick = (cards: Card[]) => {
@@ -824,39 +839,10 @@ const App: React.FC = () => {
 
             <main className="flex-1 relative overflow-hidden flex flex-col">
                 {phase === GamePhase.MODE_SELECTION && (
-                    <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-8 text-center bg-white overflow-y-auto custom-scrollbar">
-                        <div className="max-w-2xl py-12">
-                            <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tighter">EL TORNEO <br />COMIENZA AQUÍ</h2>
-                            <p className="text-slate-500 text-base md:text-lg mb-12 font-medium">Selecciona el nivel de desafío para tu partida.</p>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <button onClick={() => initGame(GameMode.BASIC)} className="p-8 bg-slate-50 rounded-[2rem] border-2 border-slate-100 hover:border-teal-500 hover:bg-teal-50/30 transition-all group text-left">
-                                    <i className="fa-solid fa-seedling text-3xl text-teal-500 mb-4 group-hover:scale-110 transition-transform"></i>
-                                    <h4 className="font-white text-xl mb-2">BÁSICO</h4>
-                                    <p className="text-slate-500 text-xs">Personajes iniciales recomendados para aprender.</p>
-                                </button>
-                                <button onClick={() => initGame(GameMode.ADVANCED)} className="p-8 bg-slate-50 rounded-[2rem] border-2 border-slate-100 hover:border-amber-500 hover:bg-amber-50/30 transition-all group text-left">
-                                    <i className="fa-solid fa-chess-knight text-3xl text-amber-500 mb-4 group-hover:scale-110 transition-transform"></i>
-                                    <h4 className="font-white text-xl mb-2">AVANZADO</h4>
-                                    <p className="text-slate-500 text-xs">Pool dinámico de personajes de la expansión.</p>
-                                </button>
-                                <button onClick={() => initGame(GameMode.ALL_STAR)} className="p-8 bg-slate-50 rounded-[2rem] border-2 border-slate-100 hover:border-rose-500 hover:bg-rose-50/30 transition-all group text-left">
-                                    <i className="fa-solid fa-crown text-3xl text-rose-500 mb-4 group-hover:scale-110 transition-transform"></i>
-                                    <h4 className="font-white text-xl mb-2">ALL-STAR</h4>
-                                    <p className="text-slate-500 text-xs">Todos los personajes disponibles desde el inicio.</p>
-                                </button>
-                            </div>
-
-                            {/* Rulebooks Button */}
-                            <div className="mt-8">
-                                <button
-                                    onClick={() => setViewingRules(true)}
-                                    className="px-6 py-3 bg-white border border-slate-200 rounded-full text-slate-500 font-bold uppercase text-xs tracking-widest hover:bg-slate-50 hover:text-slate-800 transition-colors flex items-center gap-2 mx-auto"
-                                >
-                                    <i className="fa-solid fa-book-open"></i> Manuales de Juego
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <HomeMenu
+                        onSelectMode={initGame}
+                        onOpenRules={() => setViewingRules(true)}
+                    />
                 )}
 
                 {/* Rulebooks Modal */}
@@ -1022,111 +1008,130 @@ const App: React.FC = () => {
                 )}
             </main>
 
-            {viewingCharacter && (
-                <CharacterModal character={CHARACTERS[viewingCharacter]} onClose={() => setViewingCharacter(null)} />
-            )}
+            {
+                viewingCharacter && (
+                    <CharacterModal character={CHARACTERS[viewingCharacter]} onClose={() => setViewingCharacter(null)} />
+                )
+            }
 
             {/* Adventurer Item Card Modal */}
-            {itemCardToShow && (
-                <div
-                    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-300"
-                    onClick={() => setItemCardToShow(null)}
-                >
-                    <div className="relative max-w-sm w-full animate-in zoom-in duration-300">
-                        <img
-                            src={`/assets/3b-cards/${itemCardToShow}`}
-                            className="w-full rounded-2xl shadow-2xl border-4 border-slate-700"
-                            alt="Item Card"
-                        />
-                        <button className="absolute -top-4 -right-4 w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-white border-2 border-slate-700 shadow-xl">
-                            <i className="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Adventurer Setup Modal */}
-            {abilityMode === 'ADVENTURER_SETUP' && (
-                <AdventurerSetupModal
-                    onConfirm={(red, blue) => {
-                        performAction('ADVENTURER_PICK_ITEMS', { redItemId: red, blueItemId: blue });
-                    }}
-                />
-            )}
-
-            {/* Berserker Setup Modal */}
-            {abilityMode === 'BERSERKER_SETUP' && (
-                <BerserkerSetupModal
-                    onConfirm={() => {
-                        setPlayers(prev => {
-                            const p1 = prev.find(p => p.id === 'p1')!;
-                            const logic = getCharacterLogic(CharacterType.BERSERKER) as any;
-
-                            if (logic.drawBerserkerHand && p1.berserkerDeck) {
-                                const { hand, remaining } = logic.drawBerserkerHand(p1.berserkerDeck);
-                                return prev.map(p => p.id === 'p1' ? {
-                                    ...p,
-                                    hand,
-                                    berserkerDeck: remaining
-                                } : p);
-                            }
-                            return prev;
-                        });
-
-                        setAbilityMode('NONE');
-                        addLog("¡Berserker ha descartado su mano y desenvainado su mazo exclusivo!");
-                    }}
-                />
-            )}
-
-            {/* King Setup Modal */}
-            {abilityMode === 'KING_SETUP' && (
-                <div className="fixed inset-0 z-[100] bg-black/80 flex flex-col items-center justify-start pt-20">
-                    <div className="bg-amber-100 rounded-xl border-4 border-amber-500 p-6 px-12 shadow-2xl animate-in fade-in zoom-in duration-300">
-                        <div className="text-center mb-4">
-                            <h2 className="text-3xl font-black text-amber-600 mb-1 uppercase tracking-tighter">👑 Preparación Real: Descarta 1 Carta</h2>
-                            <p className="text-amber-800 font-bold">Selecciona una carta para descartar</p>
+            {
+                itemCardToShow && (
+                    <div
+                        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-300"
+                        onClick={() => setItemCardToShow(null)}
+                    >
+                        <div className="relative max-w-sm w-full animate-in zoom-in duration-300">
+                            <img
+                                src={`/assets/3b-cards/${itemCardToShow}`}
+                                className="w-full rounded-2xl shadow-2xl border-4 border-slate-700"
+                                alt="Item Card"
+                            />
+                            <button className="absolute -top-4 -right-4 w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-white border-2 border-slate-700 shadow-xl">
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
                         </div>
                     </div>
-                    {/* The hand is rendered below in the main UI, but we can overlay instructions or force interaction */}
-                    {/* Render a special hand view here for discarding to ensure focus and clarity */}
-                    <div className="mt-10 flex gap-4 max-w-4xl flex-wrap justify-center animate-in slide-in-from-bottom-10 duration-500">
-                        {players.find(p => p.id === 'p1')?.hand.map(card => (
-                            <GameCard
-                                key={card.id}
-                                card={card}
-                                onClick={() => {
-                                    setPlayers(prev => {
-                                        const p1 = prev.find(p => p.id === 'p1')!;
-                                        const newHand = p1.hand.filter(c => c.id !== card.id);
-                                        return prev.map(p => p.id === 'p1' ? { ...p, hand: newHand } : p);
-                                    });
-                                    setAbilityMode('NONE');
-                                    addLog(`Rey ha descartado ${card.suit} ${card.value}.`);
-                                }}
-                                selected={false}
-                            />
-                        ))}
+                )
+            }
+
+            {/* Adventurer Setup Modal */}
+            {
+                abilityMode === 'ADVENTURER_SETUP' && (
+                    <AdventurerSetupModal
+                        onConfirm={(red, blue) => {
+                            performAction('ADVENTURER_PICK_ITEMS', { redItemId: red, blueItemId: blue });
+                        }}
+                    />
+                )
+            }
+
+            {/* Berserker Setup Modal */}
+            {
+                abilityMode === 'BERSERKER_SETUP' && (
+                    <BerserkerSetupModal
+                        onConfirm={() => {
+                            setPlayers(prev => {
+                                const p1 = prev.find(p => p.id === 'p1')!;
+                                const logic = getCharacterLogic(CharacterType.BERSERKER) as any;
+
+                                if (logic.drawBerserkerHand && p1.berserkerDeck) {
+                                    const { hand, remaining } = logic.drawBerserkerHand(p1.berserkerDeck);
+                                    return prev.map(p => p.id === 'p1' ? {
+                                        ...p,
+                                        hand,
+                                        berserkerDeck: remaining
+                                    } : p);
+                                }
+                                return prev;
+                            });
+
+                            setAbilityMode('NONE');
+                            addLog("¡Berserker ha descartado su mano y desenvainado su mazo exclusivo!");
+                        }}
+                    />
+                )
+            }
+
+            {/* King Setup Modal */}
+            {
+                abilityMode === 'KING_SETUP' && (
+                    <div className="fixed inset-0 z-[100] bg-black/80 flex flex-col items-center justify-start pt-20">
+                        {/* The hand is rendered below in the main UI, but we can overlay instructions or force interaction */}
+                        {/* Render a special hand view here for discarding to ensure focus and clarity */}
+                        <div className="mt-10 flex gap-4 max-w-4xl flex-wrap justify-center animate-in slide-in-from-bottom-10 duration-500">
+                            {players.find(p => p.id === 'p1')?.hand.map(card => (
+                                <GameCard
+                                    key={card.id}
+                                    card={card}
+                                    onClick={() => {
+                                        setPlayers(prev => {
+                                            const p1 = prev.find(p => p.id === 'p1')!;
+                                            const newHand = p1.hand.filter(c => c.id !== card.id);
+                                            return prev.map(p => p.id === 'p1' ? { ...p, hand: newHand } : p);
+                                        });
+                                        setAbilityMode('NONE');
+                                        addLog(`Rey ha descartado ${card.suit} ${card.value}.`);
+                                    }}
+                                    selected={false}
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Ruler Setup Modal */}
-            {abilityMode === 'RULER_SETUP' && (
-                <RulerSetupModal
-                    otherPlayers={players.filter(p => p.id !== 'p1')}
-                    onConfirm={(assignments) => performAction('RULER_ASSIGN_TASKS', assignments)}
-                />
-            )}
+            {
+                abilityMode === 'RULER_SETUP' && (
+                    <RulerSetupModal
+                        otherPlayers={players.filter(p => p.id !== 'p1')}
+                        onConfirm={(assignments) => performAction('RULER_ASSIGN_TASKS', assignments)}
+                    />
+                )
+            }
 
             {/* Phantom Thief Setup Modal */}
-            {abilityMode === 'PHANTOM_THIEF_SETUP' && (
-                <PhantomThiefSetupModal
-                    onConfirm={(suits) => performAction('PHANTOM_THIEF_SETUP', suits)}
-                />
-            )}
+            {
+                abilityMode === 'PHANTOM_THIEF_SETUP' && (
+                    <PhantomThiefSetupModal
+                        onConfirm={(suits) => performAction('PHANTOM_THIEF_SETUP', suits)}
+                    />
+                )
+            }
 
-        </div>
+            {/* Round Summary */}
+            {
+                phase === GamePhase.ROUND_SUMMARY && roundResults && (
+                    <RoundSummaryModal
+                        result={roundResults}
+                        onNext={proceedFromSummary}
+                        isLastRound={round === 3}
+                    />
+                )
+            }
+
+        </div >
     );
 };
 

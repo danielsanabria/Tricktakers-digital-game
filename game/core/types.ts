@@ -144,12 +144,29 @@ export interface Player {
   tasksAssigned?: Record<string, string[]>;
 }
 
+export interface PlayerRoundResult {
+  playerId: string;
+  playerName: string;
+  character: CharacterType | null;
+  tricksWon: number;
+  pointsGained: number;
+  totalScore: number;
+  goldCrownsGained: number;
+  blackCrownsGained: number;
+}
+
+export interface RoundResult {
+  round: number;
+  playerResults: PlayerRoundResult[];
+}
+
 export enum GamePhase {
   MODE_SELECTION = 'MODE_SELECTION',
   CHARACTER_SELECTION = 'CHARACTER_SELECTION',
   SETUP = 'SETUP',
   TRICK_PLAYING = 'TRICK_PLAYING',
   ROUND_END = 'ROUND_END',
+  ROUND_SUMMARY = 'ROUND_SUMMARY',
   GAME_OVER = 'GAME_OVER'
 }
 
