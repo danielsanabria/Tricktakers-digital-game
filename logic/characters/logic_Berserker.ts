@@ -54,6 +54,17 @@ export class BerserkerLogic extends BaseCharacterLogic {
 
     const fullBerserkerDeck = [berserkerMain, ...supplementary];
 
+    // AI Auto-Setup
+    if (playerId !== 'p1') {
+      const { hand, remaining } = this.drawBerserkerHand(fullBerserkerDeck);
+      return {
+        hand,
+        berserkerDeck: remaining,
+        beasts: [],
+        mp: 0
+      };
+    }
+
     return {
       ...baseSetup, // Keep the normal hand for now (user will discard it manually)
       berserkerDeck: fullBerserkerDeck,

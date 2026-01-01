@@ -18,6 +18,7 @@ import { RulerSetupModal } from './components/modals/RulerSetupModal';
 import { PhantomThiefSetupModal } from './components/modals/PhantomThiefSetupModal';
 import { StrategistModal } from './components/modals/StrategistModal';
 import { RoundSummaryModal } from './components/modals/RoundSummaryModal';
+import { KingSetupModal } from './components/modals/KingSetupModal';
 import { HomeMenu } from './components/screens/HomeMenu';
 import { determineTournamentWinner } from './game/core/gameLogic';
 import { PlayerRoundResult, RoundResult } from './game/core/types';
@@ -248,61 +249,33 @@ const App: React.FC = () => {
             setTrapPool(0);
         }
 
-        // Ruler Task Assignment
+        // Ruler Setup (Human)
         const rulerPlayer = newPlayers.find(p => p.character === CharacterType.RULER);
-        if (rulerPlayer) {
-            if (rulerPlayer.id === 'p1') {
-                setAbilityMode('RULER_SETUP');
-            } else {
-                // AI Ruler: Auto-Assign
-                const availableTasks = [...TASKS].sort(() => Math.random() - 0.5);
-                newPlayers = newPlayers.map(p => {
-                    if (p.id !== rulerPlayer.id) {
-                        const task = availableTasks.pop();
-                        if (task) return { ...p, tasks: [task] };
-                    }
-                    return p;
-                });
-                addLog(`${rulerPlayer.name} (Gobernante) ha dictado sus leyes.`);
-            }
+        if (rulerPlayer && rulerPlayer.id === 'p1') {
+            setAbilityMode('RULER_SETUP');
         }
 
-        // Phantom Thief Setup
+        // Phantom Thief Setup (Human)
         const thiefPlayer = newPlayers.find(p => p.character === CharacterType.PHANTOM_THIEF);
         if (thiefPlayer && thiefPlayer.id === 'p1') {
             setAbilityMode('PHANTOM_THIEF_SETUP');
         }
 
-        // Clear inheritance after processing
-        // Check for Adventurer Setup
+        // Adventurer Setup (Human)
         const humanAdv = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.ADVENTURER);
         if (humanAdv && humanAdv.items.length === 0) {
             setAbilityMode('ADVENTURER_SETUP');
             addLog("Aventurero: Selecciona tus 2 objetos iniciales.");
         }
 
-        // Check for Berserker Setup
-        // Human: Trigger UI
+        // Berserker Setup (Human)
         const humanBerserker = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.BERSERKER);
         if (humanBerserker) {
             setAbilityMode('BERSERKER_SETUP');
             addLog("Berserker: ¡Prepárate para la batalla!");
         }
 
-        // AI: Auto-Setup
-        newPlayers = newPlayers.map(p => {
-            if (p.id !== 'p1' && p.character === CharacterType.BERSERKER) {
-                const logic = getCharacterLogic(CharacterType.BERSERKER) as any;
-                if (logic.drawBerserkerHand && p.berserkerDeck) {
-                    const { hand, remaining } = logic.drawBerserkerHand(p.berserkerDeck);
-                    addLog(`${p.name} (Berserker) ruge y prepara su hacha.`);
-                    return { ...p, hand, berserkerDeck: remaining };
-                }
-            }
-            return p;
-        });
-
-        // Check for King Setup (Discard 1 card if > 5)
+        // King Setup (Human)
         const humanKing = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.KING);
         if (humanKing && humanKing.hand.length > 5) {
             setAbilityMode('KING_SETUP');
@@ -358,19 +331,20 @@ const App: React.FC = () => {
         }
     };
 
-    const resolveRound = () => {
+    const resolveRound = (currentPlayers?: Player[]) => {
+        const playersToUse = currentPlayers || players;
         addLog(`--- FINAL DE LA RONDA ${round} ---`);
 
         // 1. Calculate Results without modifying state yet
-        const scoringResults = players.map(p => {
+        const scoringResults = playersToUse.map(p => {
             const scoringLogic = getScoringLogic(p.character);
-            const result = scoringLogic.getScore(p, round, players);
+            const result = scoringLogic.getScore(p, round, playersToUse);
             return { playerId: p.id, pts: result.score, logs: result.logs };
         });
 
-        const maxWins = Math.max(...players.map(p => p.wins));
+        const maxWins = Math.max(...playersToUse.map(p => p.wins));
         let blackCrownsGiven = 0;
-        const crownResults = players.map(p => {
+        const crownResults = playersToUse.map(p => {
             let gold = 0; let black = 0;
             if (p.character !== CharacterType.COLLECTOR) {
                 if (p.wins === maxWins && maxWins > 0) gold = 1;
@@ -386,7 +360,7 @@ const App: React.FC = () => {
         // Apply scoring logs
         scoringResults.forEach(sr => sr.logs.forEach(msg => addLog(msg)));
         crownResults.forEach(cr => {
-            const p = players.find(pl => pl.id === cr.playerId)!;
+            const p = playersToUse.find(pl => pl.id === cr.playerId)!;
             if (cr.gold > 0) addLog(`${p.name} obtiene una Corona Dorada.`);
             if (cr.black > 0) addLog(`${p.name} obtiene una Corona Negra.`);
         });
@@ -414,7 +388,7 @@ const App: React.FC = () => {
 
         setRoundResults({
             round,
-            playerResults: players.map(p => {
+            playerResults: playersToUse.map(p => {
                 const sr = scoringResults.find(s => s.playerId === p.id)!;
                 const cr = crownResults.find(c => c.playerId === p.id)!;
                 return {
@@ -431,7 +405,7 @@ const App: React.FC = () => {
         });
 
         setTimeout(() => {
-            const strategist = players.find(p => p.character === CharacterType.STRATEGIST && p.id === 'p1');
+            const strategist = playersToUse.find(p => p.character === CharacterType.STRATEGIST && p.id === 'p1');
             const needsChoice = strategist && (strategist.wins === 0 || strategist.wins === 1);
             if (!needsChoice) {
                 setPhase(GamePhase.ROUND_SUMMARY);
@@ -457,7 +431,7 @@ const App: React.FC = () => {
             const winnerChar = players[winnerIdx].character ? CHARACTERS[players[winnerIdx].character!].name : 'Sin personaje';
             addLog(`¡${winnerName} (${winnerChar}) gana la baza!`);
 
-            setPlayers(prev => prev.map(p => {
+            let updatedPlayers = players.map(p => {
                 // Determine if Collector is in this trick loss
                 const isCollector = p.character === CharacterType.COLLECTOR;
                 const hasReservedCard = p.reservedCardId !== null;
@@ -512,16 +486,6 @@ const App: React.FC = () => {
                         adventurerUsedItem: false,
                         gamblerUsedAbility: false
                     };
-                    // Time Traveler: Change the Past Redistribution
-                    // If the winner was Time Traveler and they have tokens, they could have redistibuted.
-                    // For simplicity, let's assume they always do it if they have tokens? Or let's just implement the scoring impact.
-                    // Actually, the redistribution adds cards to others' hands.
-                    const winnerP = players[winnerIdx];
-                    if (winnerP.character === CharacterType.TIME_TRAVELER && winnerP.timeTravelTokens > 0) {
-                        // This is a bit complex as it should be optional. 
-                        // But let's check if we can add a log and a simple redistribution.
-                        // Actually, I'll stick to REWIND for now as it's the more disruptive ability.
-                    }
 
                     // Collector Reservation: If Collector loses, they take their reserved card
                     if (isCollector && hasReservedCard) {
@@ -538,31 +502,38 @@ const App: React.FC = () => {
                     }
                     return { ...p, ...resetFlags };
                 }
-            }));
+            });
 
             // Character-Specific Post-Win Logic
-            const winnerP = players[winnerIdx];
+            const winnerP = updatedPlayers[winnerIdx];
             if (winnerP) {
-                // Alchemist Element: Win the trick
-                if (winnerP.character === CharacterType.ALCHEMIST) {
-                    setPlayers(prev => prev.map(p => p.id === winnerId ? {
-                        ...p,
-                        magicElements: [...(p.magicElements || []), 'TRICK_WIN']
-                    } : p));
-                    addLog("Alquimista: Obtuvo elemento por ganar la baza.");
-                }
-
                 const logic = getCharacterLogic(winnerP.character);
                 if (logic.onTrickWon) {
                     const updates = logic.onTrickWon(winnerP, cards, round);
                     if (Object.keys(updates).length > 0) {
-                        setPlayers(prev => prev.map(p => p.id === winnerId ? { ...p, ...updates } : p));
+                        updatedPlayers = updatedPlayers.map(p => p.id === winnerId ? { ...p, ...updates } : p);
                         if (winnerP.character === CharacterType.ADVENTURER && updates.items) {
                             addLog(`El Aventurero ha subido de nivel y tiene un nuevo objeto.`);
                         }
                     }
                 }
             }
+
+            // Resistance Logic: Reset Kakumei (Revolt Trick is 1 trick only)
+            if (isKakumei) {
+                setIsKakumei(false);
+                addLog("La Revolución ha terminado. La jerarquía se restablece.");
+            }
+
+            // Reset Hermit Ability for next trick
+            updatedPlayers = updatedPlayers.map(p => p.character === CharacterType.HERMIT ? { ...p, hermitUsedAbility: false } : p);
+
+            // Reset Adventurer Item usage
+            updatedPlayers = updatedPlayers.map(p => ({
+                ...p,
+                adventurerUsedItem: false,
+                pendingItemEffect: null
+            }));
 
             // Next Trap Logic
             if (trick < 4) {
@@ -583,28 +554,14 @@ const App: React.FC = () => {
             setCurrentPlayerIdx(winnerIdx);
             isResolvingRef.current = false;
 
-            // Character Logic Resets (Baza a Baza)
-            setPlayers(prev => prev.map(p => ({
-                ...p,
-                adventurerUsedItem: false,
-                pendingItemEffect: null
-            })));
-
-            // Resistance Logic: Reset Kakumei (Revolt Trick is 1 trick only)
-            if (isKakumei) {
-                setIsKakumei(false);
-                addLog("La Revolución ha terminado. La jerarquía se restablece.");
-            }
-
-            // Reset Hermit Ability for next trick
-            setPlayers(prev => prev.map(p => p.character === CharacterType.HERMIT ? { ...p, hermitUsedAbility: false } : p));
-
             if (trick < 5) {
+                setPlayers(updatedPlayers);
                 setTrick(t => t + 1);
             } else {
                 if (!isRoundResolvingRef.current) {
                     isRoundResolvingRef.current = true;
-                    resolveRound();
+                    setPlayers(updatedPlayers);
+                    resolveRound(updatedPlayers);
                 }
             }
         }, 1500);
@@ -1075,29 +1032,19 @@ const App: React.FC = () => {
 
             {/* King Setup Modal */}
             {
-                abilityMode === 'KING_SETUP' && (
-                    <div className="fixed inset-0 z-[100] bg-black/80 flex flex-col items-center justify-start pt-20">
-                        {/* The hand is rendered below in the main UI, but we can overlay instructions or force interaction */}
-                        {/* Render a special hand view here for discarding to ensure focus and clarity */}
-                        <div className="mt-10 flex gap-4 max-w-4xl flex-wrap justify-center animate-in slide-in-from-bottom-10 duration-500">
-                            {players.find(p => p.id === 'p1')?.hand.map(card => (
-                                <GameCard
-                                    key={card.id}
-                                    card={card}
-                                    onClick={() => {
-                                        setPlayers(prev => {
-                                            const p1 = prev.find(p => p.id === 'p1')!;
-                                            const newHand = p1.hand.filter(c => c.id !== card.id);
-                                            return prev.map(p => p.id === 'p1' ? { ...p, hand: newHand } : p);
-                                        });
-                                        setAbilityMode('NONE');
-                                        addLog(`Rey ha descartado ${card.suit} ${card.value}.`);
-                                    }}
-                                    selected={false}
-                                />
-                            ))}
-                        </div>
-                    </div>
+                abilityMode === 'KING_SETUP' && players.find(p => p.id === 'p1') && (
+                    <KingSetupModal
+                        player={players.find(p => p.id === 'p1')!}
+                        onDiscard={(card) => {
+                            setPlayers(prev => {
+                                const p1 = prev.find(p => p.id === 'p1')!;
+                                const newHand = p1.hand.filter(c => c.id !== card.id);
+                                return prev.map(p => p.id === 'p1' ? { ...p, hand: newHand } : p);
+                            });
+                            setAbilityMode('NONE');
+                            addLog(`Rey ha descartado ${card.suit} ${card.value}.`);
+                        }}
+                    />
                 )
             }
 

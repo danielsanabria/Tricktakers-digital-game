@@ -33,4 +33,10 @@ export class AlchemistLogic extends BaseCharacterLogic {
       )
     );
   }
+
+  onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
+    return {
+      magicElements: [...(player.magicElements || []), 'TRICK_WIN']
+    };
+  }
 }
