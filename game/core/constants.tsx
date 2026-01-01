@@ -7,91 +7,91 @@ export const CHARACTERS: Record<CharacterType, CharacterData> = {
     id: CharacterType.KING, name: 'King', catchphrase: 'The royal road is the right road', difficulty: 'EASY',
     description: 'Starts with the King Rare card. Scores double points in the final round.',
     abilityName: 'Kings Privilege', pointsByWins: { 0: 0, 1: 20, 2: 50, 3: 80, 4: 120, 5: 999 },
-    winConditionText: '5 Wins', imagePath: '1A.webp', thumbnailPath: '1A-thumb.jpg'
+    winConditionText: '5 Wins', imagePath: '1A.webp', thumbnailPath: '1A-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/1A-no-bg.png'
   },
   [CharacterType.STRATEGIST]: {
     id: CharacterType.STRATEGIST, name: 'Strategist', catchphrase: 'To see the big picture', difficulty: 'DIFFICULT',
     description: 'Use Trap Cards to penalize others. Exclusive Black 7 card.',
     abilityName: 'Strategize', pointsByWins: { 0: 50, 1: 30, 2: -50, 3: 50, 4: 80, 5: 999 },
-    winConditionText: '5 Wins', imagePath: '1C.webp', thumbnailPath: '1C-thumb.jpg'
+    winConditionText: '5 Wins', imagePath: '1C.webp', thumbnailPath: '1C-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/1C-no-bg.png'
   },
   [CharacterType.GAMBLER]: {
     id: CharacterType.GAMBLER, name: 'Gambler', catchphrase: "It's not luck, it's guidance", difficulty: 'MODERATE',
     description: 'Bid on wins. Discard/Draw to fix hand.',
     abilityName: 'Gamble', pointsByWins: { 0: 30, 1: 60, 2: 90, 3: 150, 4: 999, 5: 999 },
-    winConditionText: '4 Wins (if bid 4) or 5 Wins', imagePath: '2A.webp', thumbnailPath: '2A-thumb.jpg'
+    winConditionText: '4 Wins (if bid 4) or 5 Wins', imagePath: '2A.webp', thumbnailPath: '2A-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/2A-no-bg.png'
   },
   [CharacterType.SUMMONER]: {
     id: CharacterType.SUMMONER, name: 'Summoner', catchphrase: 'Come order, come chaos', difficulty: 'HARD',
     description: 'Summon beasts (EL, MIRIA, etc.) to modify rules using MP.',
     abilityName: 'Summon', pointsByWins: { 0: -20, 1: 20, 2: 40, 3: 70, 4: 100, 5: 999 },
-    winConditionText: '5 Wins', imagePath: '2C.webp', thumbnailPath: '2C-thumb.jpg'
+    winConditionText: '5 Wins', imagePath: '2C.webp', thumbnailPath: '2C-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/2C-no-bg.png'
   },
   [CharacterType.NINJA]: {
     id: CharacterType.NINJA, name: 'Ninja', catchphrase: "I'm nowhere!", difficulty: 'MODERATE',
     description: 'Play cards Face Down (Shadow Cloning). High risk.',
     abilityName: 'Shadow Cloning', pointsByWins: { 0: 70, 1: -20, 2: 70, 3: -20, 4: 140, 5: 999 },
-    winConditionText: '5 Wins', imagePath: '2D.webp', thumbnailPath: '2D-thumb.jpg'
+    winConditionText: '5 Wins', imagePath: '2D.webp', thumbnailPath: '2D-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/2D-no-bg.png'
   },
   [CharacterType.RESISTANCE]: {
     id: CharacterType.RESISTANCE, name: 'Resistance', catchphrase: 'Opportunity always comes', difficulty: 'MODERATE',
     description: 'Win with low cards (Revolt). Revolution (Kakumei) reverses strength.',
     abilityName: 'Kakumei', pointsByWins: { 0: 0, 1: 30, 2: 60, 3: 90, 4: 120, 5: 150 },
-    imagePath: '3A.webp', thumbnailPath: '3A-thumb.jpg'
+    imagePath: '3A.webp', thumbnailPath: '3A-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/3A-no-bg.png'
   },
   [CharacterType.ADVENTURER]: {
     id: CharacterType.ADVENTURER, name: 'Adventurer', catchphrase: "Don't let luck be your friend", difficulty: 'DIFFICULT',
     description: 'Use Items. Gain points for unused items.',
     abilityName: 'Using Items', pointsByWins: { 0: 20, 1: 10, 2: 20, 3: 40, 4: 60, 5: 999 },
-    winConditionText: '5 Wins', imagePath: '3B.webp', thumbnailPath: '3B-thumb.jpg'
+    winConditionText: '5 Wins', imagePath: '3B.webp', thumbnailPath: '3B-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/3B-no-bg.png'
   },
   [CharacterType.ALCHEMIST]: {
     id: CharacterType.ALCHEMIST, name: 'Alchemist', catchphrase: 'Because the law is the truth', difficulty: 'HARD',
     description: 'Play 3 cards at once. Form Magic Circles for points/Crowns.',
     abilityName: 'Alchemy', pointsByWins: { 0: 0, 1: 20, 2: 40, 3: 60, 4: 80, 5: 120 },
-    imagePath: '3C.webp', thumbnailPath: '3C-thumb.jpg'
+    imagePath: '3C.webp', thumbnailPath: '3C-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/3C-no-bg.png'
   },
   [CharacterType.SAMURAI]: {
     id: CharacterType.SAMURAI, name: 'Samurai', catchphrase: 'To master is to discard', difficulty: 'MODERATE',
     description: 'Red cards are as strong as Black. Discard Black to draw.',
     abilityName: 'Spirit of Red', pointsByWins: { 0: 0, 1: 30, 2: 80, 3: 120, 4: 999, 5: -100 },
-    winConditionText: '4 Wins', imagePath: '3D.webp', thumbnailPath: '3D-thumb.jpg'
+    winConditionText: '4 Wins', imagePath: '3D.webp', thumbnailPath: '3D-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/3D-no-bg.png'
   },
   [CharacterType.HERMIT]: {
     id: CharacterType.HERMIT, name: 'Hermit', catchphrase: 'Evil ways are also ways', difficulty: 'EASY',
     description: 'White Flag beats Rare. Draw/Discard action.',
     abilityName: 'Dexterous Hand', pointsByWins: { 0: 50, 1: -10, 2: -30, 3: 70, 4: 100, 5: 999 },
-    winConditionText: '5 Wins', imagePath: '4A.webp', thumbnailPath: '4A-thumb.jpg'
+    winConditionText: '5 Wins', imagePath: '4A.webp', thumbnailPath: '4A-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/4A-no-bg.png'
   },
   [CharacterType.COLLECTOR]: {
     id: CharacterType.COLLECTOR, name: 'Collector', catchphrase: 'Looking for romance', difficulty: 'MODERATE',
     description: 'Reserve cards. Score for sets (Flush, Straight, etc.).',
     abilityName: 'Reservation', pointsByWins: { 0: 0, 1: 20, 2: 40, 3: 60, 4: 80, 5: 120 },
-    winConditionText: '9 Card Straight Flush', imagePath: '4B.webp', thumbnailPath: '4B-thumb.jpg'
+    winConditionText: '9 Card Straight Flush', imagePath: '4B.webp', thumbnailPath: '4B-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/4B-no-bg.png'
   },
   [CharacterType.TIME_TRAVELER]: {
     id: CharacterType.TIME_TRAVELER, name: 'Time Traveler', catchphrase: "I'm ready to change...", difficulty: 'DIFFICULT',
     description: 'Rewind time or Change the Past. Predict winners.',
     abilityName: 'Time Travel', pointsByWins: { 0: 30, 1: 60, 2: 90, 3: 120, 4: 180, 5: 300 },
-    imagePath: '4C.webp', thumbnailPath: '4C-thumb.jpg'
+    imagePath: '4C.webp', thumbnailPath: '4C-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/4C-no-bg.png'
   },
   [CharacterType.BERSERKER]: {
     id: CharacterType.BERSERKER, name: 'Berserker', catchphrase: 'Rooooar!!', difficulty: 'EASY',
     description: 'Strongest 10s. Weakest to 1s. Win with 0 tricks.',
     abilityName: 'Fierce Uplifting', pointsByWins: { 0: -30, 1: -10, 2: 30, 3: 50, 4: 80, 5: -50 },
-    winConditionText: '0 Wins', imagePath: '5A.webp', thumbnailPath: '5A-thumb.jpg'
+    winConditionText: '0 Wins', imagePath: '5A.webp', thumbnailPath: '5A-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/5A-no-bg.png'
   },
   [CharacterType.RULER]: {
     id: CharacterType.RULER, name: 'Ruler', catchphrase: 'Challenges open the way', difficulty: 'MODERATE',
     description: 'Give tasks to players. Avoid rules with tokens.',
     abilityName: 'Giving Tasks', pointsByWins: { 0: 0, 1: 20, 2: 40, 3: 60, 4: 80, 5: 100 },
-    winConditionText: '2+ Wins (No R/B/G)', imagePath: '5B.webp', thumbnailPath: '5B-thumb.jpg'
+    winConditionText: '2+ Wins (No R/B/G)', imagePath: '5B.webp', thumbnailPath: '5B-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/5B-no-bg.png'
   },
   [CharacterType.PHANTOM_THIEF]: {
     id: CharacterType.PHANTOM_THIEF, name: 'Phantom Thief', catchphrase: 'Having fun?', difficulty: 'HARD',
     description: 'Exchange cards via Notice Letters. Steal crowns.',
     abilityName: 'Art of Theft', pointsByWins: { 0: 0, 1: -20, 2: 50, 3: -50, 4: 100, 5: 999 },
-    winConditionText: '5 Wins', imagePath: '5C.webp', thumbnailPath: '5C-thumb.jpg'
+    winConditionText: '5 Wins', imagePath: '5C.webp', thumbnailPath: '5C-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/5C-no-bg.png'
   }
 };
 

@@ -58,6 +58,7 @@ export interface CharacterData {
   winConditionText?: string;
   imagePath: string;
   thumbnailPath?: string;
+  summaryThumbnailPath?: string;
 }
 
 export interface Item {

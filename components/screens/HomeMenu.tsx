@@ -13,7 +13,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode, onOpenRules })
 
             <div className="relative z-10 w-full max-w-6xl flex flex-col items-center pt-8 md:pt-0 pb-12 md:pb-0">
                 {/* Logo Replacement */}
-                <div className="mb-10 md:mb-16">
+                <div className="mb-14 md:mb-16">
                     <img
                         src="/assets/logo/logo.svg"
                         alt="Tricktakers Logo"

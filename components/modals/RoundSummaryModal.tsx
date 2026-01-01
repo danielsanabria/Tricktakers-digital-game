@@ -29,12 +29,12 @@ export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, on
                         return (
                             <div key={pr.playerId} className="bg-slate-50 rounded-2xl p-4 flex items-center gap-6 border border-slate-100 transition-all hover:bg-slate-100">
                                 <div className="relative">
-                                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-200 border-2 border-white shadow-md">
+                                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm flex items-center justify-center p-1">
                                         {char && (
                                             <img
-                                                src={char.imagePath}
+                                                src={char.summaryThumbnailPath || char.thumbnailPath}
                                                 alt={char.name}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-contain"
                                             />
                                         )}
                                     </div>

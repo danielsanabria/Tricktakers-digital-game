@@ -94,32 +94,18 @@ export class BerserkerLogic extends BaseCharacterLogic {
   getCardPower(context: PowerContext): number {
     const { card, onesInSuits, isKakumei, isRevolt } = context;
 
-    // Berserker cards are usually very strong (3000+)
-    const isBerserkerCard = card.id.startsWith('berserker-');
-    if (!isBerserkerCard) return super.getCardPower(context);
+    const isBerserkerMain = card.id.startsWith('berserker-main-');
+    if (!isBerserkerMain) return super.getCardPower(context);
 
-    // Base Strength
+    // If we are here, it's the Berserker Main Card
     let power = 3000;
 
-    // RULE: Berserker cards must follow suit to be strong (unless they are the Colorless Main card)
-    const isColorless = card.suit === Suit.COLORLESS;
-    const isBerserkerMain = card.id.startsWith('berserker-main-');
-    if (context.leadSuit && card.suit !== context.leadSuit && !isColorless) {
-      power = card.value; // Revert to normal value (10), losing the 3000 buff.
-    }
-
-    // Special Exception: 1 vs Berserker in Standard.
-    if (!(context.isKakumei || context.isRevolt)) {
-      if (isBerserkerMain && context.onesInSuits.length > 0) {
-        power = -1;
-      } else if (card.value === 10 && context.onesInSuits.includes(card.suit)) {
+    // Special Exception: 1 vs Berserker in Standard (Non-Revolt/Kakumei).
+    if (!(isKakumei || isRevolt)) {
+      if (onesInSuits.length > 0) {
         power = -1;
       }
     }
-
-    // Standard Bonuses
-    if (card.suit === Suit.BLACK) power += 1000;
-    else if (context.leadSuit && card.suit === context.leadSuit) power += 500;
 
     return power;
   }
