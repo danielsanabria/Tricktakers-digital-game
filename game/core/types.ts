@@ -125,6 +125,8 @@ export interface Player {
   revoltUsed?: boolean;
   isKakumeiActive?: boolean;
   hermitUsedAbility?: boolean;
+  gamblerUsedAbility?: boolean;
+  berserkerUsedRound3?: boolean;
   strategistUsedIgnore?: boolean;
   wonRevolutionTrick?: boolean;
   revoltsLeft?: number;
@@ -170,7 +172,9 @@ export interface PowerContext {
   isRevolt: boolean;
   isKakumei: boolean;
   trickContainsRare: boolean;
-  trickContainsOne: boolean;
+  onesInSuits: Suit[]; // Suits that have a '1' in the current trick
+  berserker10Suits: Suit[]; // Suits that have a Berserker 10 in the trick
+  berserkerMainInPlay: boolean; // Whether the Berserker Main card is in the trick
   whiteFlagInPlay: boolean;
   hermitInPlay: boolean;
   berserkerInPlay: boolean;

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Player, Card, Suit, CharacterType, GamePhase, GameMode, CardType, Item, Trap } from './game/core/types';
 import { CHARACTERS, ITEMS, TRAPS, BEASTS, TASKS } from './game/core/constants';
-import { createDeck, getValidMoves, calculateAlchemyValue, determineWinner, calculateCollectorScore, getAiMove } from './game/core/gameLogic';
+import { createDeck, getValidMoves, calculateAlchemyValue, determineWinner, getAiMove } from './game/core/gameLogic';
 import { getCharacterLogic } from './logic/logic_Registry';
+import { getScoringLogic } from './logic/scoring/scoring_Registry';
 import { PhantomThiefLogic } from './logic/characters/logic_PhantomThief';
 import PlayerBoard from './components/PlayerBoard';
 import GameCard from './components/GameCard';
@@ -13,6 +14,8 @@ import { LogsPanel } from './components/LogsPanel';
 import { GameOverScreen } from './components/screens/GameOverScreen';
 import { AdventurerSetupModal } from './components/modals/AdventurerSetupModal';
 import { BerserkerSetupModal } from './components/modals/BerserkerSetupModal';
+import { RulerSetupModal } from './components/modals/RulerSetupModal';
+import { PhantomThiefSetupModal } from './components/modals/PhantomThiefSetupModal';
 import { StrategistModal } from './components/modals/StrategistModal';
 import { determineTournamentWinner } from './game/core/gameLogic';
 
@@ -244,17 +247,26 @@ const App: React.FC = () => {
         // Ruler Task Assignment
         const rulerPlayer = newPlayers.find(p => p.character === CharacterType.RULER);
         if (rulerPlayer) {
-            const availableTasks = [...TASKS].sort(() => Math.random() - 0.5);
-            newPlayers = newPlayers.map(p => {
-                if (p.id !== rulerPlayer.id) {
-                    const task = availableTasks.pop(); // Assign unique task
-                    if (task) {
-                        return { ...p, tasks: [task] };
+            if (rulerPlayer.id === 'p1') {
+                setAbilityMode('RULER_SETUP');
+            } else {
+                // AI Ruler: Auto-Assign
+                const availableTasks = [...TASKS].sort(() => Math.random() - 0.5);
+                newPlayers = newPlayers.map(p => {
+                    if (p.id !== rulerPlayer.id) {
+                        const task = availableTasks.pop();
+                        if (task) return { ...p, tasks: [task] };
                     }
-                }
-                return p;
-            });
-            addLog("El Gobernante ha asignado tareas a sus súbditos.");
+                    return p;
+                });
+                addLog(`${rulerPlayer.name} (Gobernante) ha dictado sus leyes.`);
+            }
+        }
+
+        // Phantom Thief Setup
+        const thiefPlayer = newPlayers.find(p => p.character === CharacterType.PHANTOM_THIEF);
+        if (thiefPlayer && thiefPlayer.id === 'p1') {
+            setAbilityMode('PHANTOM_THIEF_SETUP');
         }
 
         // Clear inheritance after processing
@@ -322,6 +334,8 @@ const App: React.FC = () => {
         else if (p.character === CharacterType.KING && p.hand.length > 5) setAbilityMode('KING_SETUP');
         else if (p.character === CharacterType.ADVENTURER && p.items.length === 0) setAbilityMode('ADVENTURER_SETUP');
         else if (p.character === CharacterType.BERSERKER) setAbilityMode('BERSERKER_SETUP');
+        else if (p.character === CharacterType.RULER && p.tasks.length === 0) setAbilityMode('RULER_SETUP');
+        else if (p.character === CharacterType.PHANTOM_THIEF && !p.thiefTargetIds) setAbilityMode('PHANTOM_THIEF_SETUP');
         else setAbilityMode('NONE');
     };
 
@@ -348,101 +362,38 @@ const App: React.FC = () => {
 
             // 1. Calcular Puntos por Personaje
             updated = updated.map(p => {
-                const char = p.character ? CHARACTERS[p.character] : null;
-                let pts = char ? (char.pointsByWins[p.wins] || 0) : 0;
+                // Modular Scoring Refactor
+                const scoringLogic = getScoringLogic(p.character);
+                const result = scoringLogic.getScore(p, round, updated);
 
-                // Logic King: Kings Privilege (x2 in Round 3)
-                if (p.character === CharacterType.KING && round === 3) {
-                    pts *= 2;
-                    addLog(`El Rey duplica sus puntos en la Ronda Final: ${pts / 2} x 2 = ${pts}`);
-                }
+                let pts = result.score;
+                result.logs.forEach(msg => addLog(msg));
 
-                // Logic Strategist: End of Round Choice (0 or 1 wins)
+                // Special UI-related logic (cannot easily be in modular logic without passing setters)
                 if (p.character === CharacterType.STRATEGIST && p.id === 'p1') {
-                    if (p.wins === 0) {
-                        setStrategistPendingChoice({ type: 'RARE', pointsObj: 50 });
-                        pts = 0;
-                    } else if (p.wins === 1) {
-                        setStrategistPendingChoice({ type: 'BLACK7', pointsObj: 30 });
-                        pts = 0;
-                    }
-                } else if (p.character === CharacterType.STRATEGIST && p.id !== 'p1') {
-                    if (p.wins === 0) pts = 50;
-                    if (p.wins === 1) pts = 30;
+                    if (p.wins === 0) setStrategistPendingChoice({ type: 'RARE', pointsObj: 50 });
+                    else if (p.wins === 1) setStrategistPendingChoice({ type: 'BLACK7', pointsObj: 30 });
                 }
 
-                // Lógica Tahúr
-                if (p.character === CharacterType.GAMBLER) {
-                    const success = p.bid === p.wins;
-                    if (success) {
-                        const bonus = (p.betAmount || 0);
-                        pts += bonus;
-                        addLog(`Tahúr: ¡Apuesta acertada! (+${bonus} pts)`);
-                    } else {
-                        const penalty = (p.betAmount || 0);
-                        pts = -penalty;
-                        addLog(`Tahúr: Falló apuesta. (-${penalty} pts)`);
-                    }
-                }
-
-                // Logic Adventurer: Unused Items
-                if (p.character === CharacterType.ADVENTURER) {
-                    let itemBonus = 0;
-                    p.items.forEach(it => {
-                        itemBonus += (it.unusedPoints || 0);
-                    });
-                    if (itemBonus !== 0) {
-                        addLog(`Aventurero: Items no usados (${itemBonus} pts).`);
-                        pts += itemBonus;
-                    }
-                }
-
-                // Logic Samurai: Greedy Penalty
-                if (p.character === CharacterType.SAMURAI && p.wins === 5) {
-                    pts = -100;
-                    addLog("Samurai: ¡Penalización por CODICIA (5 victorias)! -100 pts.");
-                }
-
-                // Logic Hermit: Scoring Table
-                if (p.character === CharacterType.HERMIT) {
-                    const hermitMap: Record<number, number> = { 0: 50, 1: -10, 2: -30, 3: 70, 4: 100, 5: 999 };
-                    pts = hermitMap[p.wins] || 0;
-                    if (pts !== 999) addLog(`Ermitaño: Puntos por victorias (${p.wins} bazas): ${pts} pts.`);
-                }
-
-                // Logic Collector: Poker Sets
-                if (p.character === CharacterType.COLLECTOR) {
-                    const collectionResult = calculateCollectorScore(p.collectedCards);
-                    pts = collectionResult.score;
-                    addLog(`Coleccionista: Puntos por Colección (${p.collectedCards.length} cartas): ${pts} pts.`);
-                    if (collectionResult.isInstantWin) {
-                        pts = 999;
-                        addLog("¡Coleccionista: GRAN COLECCIÓN! Victoria Instantánea.");
-                    }
-                }
-
-                // Logic Berserker: 0 Wins = Instant Victory
-                if (p.character === CharacterType.BERSERKER && p.wins === 0) {
-                    pts = 999;
-                    addLog("¡Berserker: 0 Victorias! Victoria Instantánea (Furia Desatanada).");
-                }
-
-                // Logic Ruler: Tyranny (2+ Wins, No Color Cards Captured)
-                if (p.character === CharacterType.RULER && p.wins >= 2) {
-                    const hasColorCards = p.wonCards.some(c =>
-                        c.suit === Suit.RED || c.suit === Suit.BLUE || c.suit === Suit.GREEN
-                    );
-                    if (!hasColorCards) {
-                        pts = 999;
-                        addLog("¡Gobernante: TIRANÍA! (2+ Victorias sin cartas de color). Victoria Instantánea.");
-                    }
-                }
-
-                return { ...p, score: pts === 999 ? 999 : Math.max(0, p.score + pts) };
+                return {
+                    ...p,
+                    score: pts === 999 ? 999 : Math.max(0, p.score + pts),
+                    magicElements: [],
+                    tasks: [],
+                    wonCards: [],
+                    collectedCards: [],
+                    bid: undefined,
+                    betAmount: 0,
+                    wonRevolutionTrick: false,
+                    revoltUsed: false,
+                    isKakumeiActive: false,
+                    wins: 0
+                };
             });
 
             // 2. Coronas
             const maxWins = Math.max(...updated.map(p => p.wins));
+            let blackCrownsGiven = 0;
             updated = updated.map(p => {
                 // Rule: Collector cannot get crowns
                 if (p.character === CharacterType.COLLECTOR) return p;
@@ -454,8 +405,9 @@ const App: React.FC = () => {
 
                 // Resistance Special: 1 win (if Kakumei) counts for Black Crown
                 const isResistanceBlackCrown = p.character === CharacterType.RESISTANCE && p.wins === 1 && p.wonRevolutionTrick;
-                if (p.wins === 0 || isResistanceBlackCrown) {
+                if ((p.wins === 0 || isResistanceBlackCrown) && blackCrownsGiven < 2) {
                     addLog(`${p.name} obtiene una Corona Negra.`);
+                    blackCrownsGiven++;
                     return { ...p, blackCrowns: p.blackCrowns + 1 };
                 }
                 return p;
@@ -463,53 +415,7 @@ const App: React.FC = () => {
 
             // 3. Phantom Thief Stealing Logic (After Crowns Assigned)
             updated = PhantomThiefLogic.resolveSteal(updated, addLog);
-
-            const thief = updated.find(p => p.character === CharacterType.PHANTOM_THIEF);
-            if (thief && thief.wins === 0) {
-                updated = updated.map(p => p.id === thief.id ? { ...p, score: p.score - 20 } : p);
-                addLog("Phantom Thief: 0 victorias. Gana corona negra pero pierde 20 puntos.");
-            } else if (thief && thief.wins === 2) {
-                updated = updated.map(p => {
-                    // Deduct base points for 2 wins if any? Standard logic handled in Step 1.
-                    // Just add points to partner.
-                    if (p.id === thief.thiefPartnerId) {
-                        addLog(`Phantom Thief otorga 50 puntos a su socio ${p.name}.`);
-                        return { ...p, score: p.score + 50 };
-                    }
-                    return p;
-                });
-            }
-
-            // 4. Time Traveler Predictions
-            const roundGoldWinner = updated.find(p => p.wins === maxWins && maxWins > 0);
-            const roundBlackWinners = updated.filter(p => p.wins === 0 || (p.character === CharacterType.RESISTANCE && p.wins === 1 && p.wonRevolutionTrick));
-
-            updated = updated.map(p => {
-                if (p.character === CharacterType.TIME_TRAVELER) {
-                    let predictionBonus = 0;
-                    const predictions = p.timeTravelPredictions || [];
-
-                    if (predictions[0] && roundGoldWinner && predictions[0] === roundGoldWinner.id) {
-                        predictionBonus += 50;
-                        addLog("Viajero del Tiempo: ¡Predicción de Corona Dorada ACERTADA! (+50 pts)");
-                    }
-                    if (predictions[1] && roundBlackWinners.some(bw => bw.id === predictions[1])) {
-                        predictionBonus += 50;
-                        addLog("Viajero del Tiempo: ¡Predicción de Corona Negra 1 ACERTADA! (+50 pts)");
-                    }
-                    if (predictions[2] && roundBlackWinners.some(bw => bw.id === predictions[2])) {
-                        predictionBonus += 50;
-                        addLog("Viajero del Tiempo: ¡Predicción de Corona Negra 2 ACERTADA! (+50 pts)");
-                    }
-
-                    if (round === 3 && predictionBonus === 150) {
-                        addLog("¡VIAJERO DEL TIEMPO: PREDICCIÓN PERFECTA! Victoria Instantánea.");
-                        return { ...p, score: 999 };
-                    }
-                    return { ...p, score: p.score + predictionBonus };
-                }
-                return p;
-            });
+            updated = PhantomThiefLogic.resolveBonus(updated, addLog);
 
             return updated;
         });
@@ -543,11 +449,23 @@ const App: React.FC = () => {
 
                 if (p.id === winnerId) {
                     let bonus = 0;
+                    // Reset per-trick flags
+                    const resetFlags = {
+                        hermitUsedAbility: false,
+                        adventurerUsedItem: false,
+                        gamblerUsedAbility: false
+                    };
                     // Strategist Pool Collection
                     if (p.character === CharacterType.STRATEGIST && trapPool > 0) {
                         bonus = trapPool;
                         addLog(`¡Estratega reclama el Pozo! (+${bonus} pts)`);
                         setTrapPool(0);
+                    }
+
+                    // Resistance Bonus: +30 for every trick won in Kakumei/Revolt
+                    if (p.character === CharacterType.RESISTANCE && (isKakumei || isRevolt)) {
+                        bonus += 30;
+                        addLog(`La Resistencia gana 30 pts extra por victoria en Revolución.`);
                     }
 
                     // Resistance Instant Win Check
@@ -566,6 +484,7 @@ const App: React.FC = () => {
 
                     return {
                         ...p,
+                        ...resetFlags,
                         wins: p.wins + 1,
                         wonCards: [...p.wonCards, ...cards],
                         score: p.score + bonus,
@@ -573,6 +492,11 @@ const App: React.FC = () => {
                         collectedCards: nextCollected
                     };
                 } else {
+                    const resetFlags = {
+                        hermitUsedAbility: false,
+                        adventurerUsedItem: false,
+                        gamblerUsedAbility: false
+                    };
                     // Time Traveler: Change the Past Redistribution
                     // If the winner was Time Traveler and they have tokens, they could have redistibuted.
                     // For simplicity, let's assume they always do it if they have tokens? Or let's just implement the scoring impact.
@@ -591,18 +515,28 @@ const App: React.FC = () => {
                             addLog(`Coleccionista: Recupera carta reservada (${reservedCard.suit} ${reservedCard.value}).`);
                             return {
                                 ...p,
+                                ...resetFlags,
                                 collectedCards: [...p.collectedCards, reservedCard],
                                 reservedCardId: null
                             };
                         }
                     }
+                    return { ...p, ...resetFlags };
                 }
-                return p;
             }));
 
             // Character-Specific Post-Win Logic
             const winnerP = players[winnerIdx];
             if (winnerP) {
+                // Alchemist Element: Win the trick
+                if (winnerP.character === CharacterType.ALCHEMIST) {
+                    setPlayers(prev => prev.map(p => p.id === winnerId ? {
+                        ...p,
+                        magicElements: [...(p.magicElements || []), 'TRICK_WIN']
+                    } : p));
+                    addLog("Alquimista: Obtuvo elemento por ganar la baza.");
+                }
+
                 const logic = getCharacterLogic(winnerP.character);
                 if (logic.onTrickWon) {
                     const updates = logic.onTrickWon(winnerP, cards, round);
@@ -663,7 +597,7 @@ const App: React.FC = () => {
 
     const { performAction } = useGameActions({
         drawPile, setDrawPile, players, setPlayers, selectedCards, setSelectedCards,
-        setAbilityMode, playedCards, setPlayedCards, setLeadSuit, setCurrentPlayerIdx,
+        setAbilityMode, playedCards, setPlayedCards, setLeadSuit, leadSuit, setCurrentPlayerIdx,
         trickStarterIdx, setIsKakumei, addLog, resolveTrick, currentPlayerIdx,
         isResolvingRef, trick, setItemCardToShow
     });
@@ -1175,6 +1109,21 @@ const App: React.FC = () => {
                         ))}
                     </div>
                 </div>
+            )}
+
+            {/* Ruler Setup Modal */}
+            {abilityMode === 'RULER_SETUP' && (
+                <RulerSetupModal
+                    otherPlayers={players.filter(p => p.id !== 'p1')}
+                    onConfirm={(assignments) => performAction('RULER_ASSIGN_TASKS', assignments)}
+                />
+            )}
+
+            {/* Phantom Thief Setup Modal */}
+            {abilityMode === 'PHANTOM_THIEF_SETUP' && (
+                <PhantomThiefSetupModal
+                    onConfirm={(suits) => performAction('PHANTOM_THIEF_SETUP', suits)}
+                />
             )}
 
         </div>

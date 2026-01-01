@@ -50,11 +50,21 @@ export class BaseCharacterLogic implements ICharacterLogic {
     } else {
       // Suit Bonuses for Number cards
       if (card.suit === Suit.BLACK) {
-        // In Kakumei/Revolt, Black cards are the weakest, so they get a huge penalty to win in "Lowest Wins" mode.
-        power += (context.isKakumei || context.isRevolt) ? -1000 : 1000;
+        // Black is always high power (Trump). 
+        // In Normal Mode (Highest Wins), this makes it win.
+        // In Kakumei/Revolt (Lowest Wins), this makes it lose (Colores > Negro).
+        power += 1000;
       } else if (leadSuit && card.suit === leadSuit && !(context.isKakumei || context.isRevolt)) {
         // User Feedback: "Invalidez del Palo Líder: En modo Rebelión, no existe la ventaja por palo líder"
         power += 500;
+      }
+
+      // Rule of 1 vs 10: Only if Berserker is in play
+      if (!(context.isKakumei || context.isRevolt) && context.berserkerInPlay) {
+        // Nerf 10 if same-suit 1 is present
+        if (card.value === 10 && context.onesInSuits.includes(card.suit)) {
+          power = -1; // Loses to everything, including the 1 and any intermediate 2-9
+        }
       }
     }
 

@@ -1,8 +1,7 @@
-
 import React, { useCallback } from 'react';
 import { Player, Card, Suit, CharacterType, Item, Trap, CardType } from './game/core/types';
 import { calculateAlchemyValue } from './game/core/gameLogic';
-import { BEASTS, ITEMS } from './game/core/constants';
+import { BEASTS, ITEMS, TASKS } from './game/core/constants';
 
 interface GameActionsProps {
     drawPile: Card[];
@@ -15,6 +14,7 @@ interface GameActionsProps {
     playedCards: Card[];
     setPlayedCards: React.Dispatch<React.SetStateAction<Card[]>>;
     setLeadSuit: React.Dispatch<React.SetStateAction<Suit | null>>;
+    leadSuit: Suit | null;
     setCurrentPlayerIdx: React.Dispatch<React.SetStateAction<number>>;
     trickStarterIdx: number;
     setIsKakumei: React.Dispatch<React.SetStateAction<boolean>>;
@@ -37,6 +37,7 @@ export const useGameActions = ({
     playedCards,
     setPlayedCards,
     setLeadSuit,
+    leadSuit,
     setCurrentPlayerIdx,
     trickStarterIdx,
     setIsKakumei,
@@ -61,7 +62,6 @@ export const useGameActions = ({
                     const newHand = [...p.hand.filter(c => !selectedCards.includes(c.id)), ...newCards];
                     const remainingSwaps = (p.gambleSwaps || 0) - 1;
 
-                    // If no swaps left, change mode immediately
                     if (remainingSwaps <= 0) {
                         setAbilityMode('GAMBLE_BID');
                     }
@@ -97,7 +97,29 @@ export const useGameActions = ({
             setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, hand: p.hand.filter(c => c.id !== cardId) } : p));
             setSelectedCards([]);
             setAbilityMode('NONE');
-            addLog(`El Rey descartó una carta para mantener su mano.`);
+            addLog(`Has descartado 1 carta.`);
+        }
+        else if (actionName === 'RULER_ASSIGN_TASKS') {
+            const assignments = payload as Record<string, string>;
+            setPlayers(prev => prev.map(p => {
+                if (p.id !== 'p1') {
+                    const taskId = assignments[p.id];
+                    const task = TASKS.find(t => t.id === taskId);
+                    if (task) return { ...p, tasks: [task] };
+                }
+                return p;
+            }));
+            setAbilityMode('NONE');
+            addLog("Has promulgado tus decretos reales.");
+        }
+        else if (actionName === 'PHANTOM_THIEF_SETUP') {
+            const selectedSuits = payload as Suit[];
+            setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+                ...p,
+                thiefTargetIds: selectedSuits.map(s => s.toString())
+            } : p));
+            setAbilityMode('NONE');
+            addLog(`Has enviado avisos para los colores: ${selectedSuits.join(', ')}.`);
         }
         else if (actionName === 'TRIGGER_KAKUMEI') {
             setIsKakumei(prev => !prev);
@@ -105,9 +127,7 @@ export const useGameActions = ({
             addLog(`¡LA RESISTENCIA HA INICIADO UNA REVOLUCIÓN!`);
         }
         else if (actionName === 'TIME_TRAVEL_REWIND') {
-            // Rewind logic: Return played cards to hands, reset trick.
             if (playedCards.length === 0) return;
-
             const cardsToReturn = [...playedCards];
             setPlayers(prev => prev.map(p => {
                 const returned = cardsToReturn.find(c => c.ownerId === p.id);
@@ -118,21 +138,28 @@ export const useGameActions = ({
             }));
             setPlayedCards([]);
             setLeadSuit(null);
-            setCurrentPlayerIdx(trickStarterIdx); // Back to starter
+            setCurrentPlayerIdx(trickStarterIdx);
             addLog(`¡EL TIEMPO HA SIDO REBOBINADO!`);
             setAbilityMode('NONE');
         }
         else if (actionName === 'ALCHEMIST_PLAY') {
             if (selectedCards.length !== 3) return;
-            // Combine cards
             const p = players[0];
             const actualCards = p.hand.filter(c => selectedCards.includes(c.id));
-            const sumValue = calculateAlchemyValue(actualCards).value;
+            const alchemy = calculateAlchemyValue(actualCards);
+            const sumValue = alchemy.value;
 
-            // Create a "Combined Card" to put on table
+            const newElements = [...alchemy.elements];
+            if (leadSuit && playedCards.length > 0) {
+                const leadCard = playedCards[0];
+                if (leadCard.value === sumValue) {
+                    newElements.push('SAME_AS_LEAD');
+                }
+            }
+
             const combinedCard: Card = {
                 id: `alchemy-${Date.now()}`,
-                suit: Suit.COLORLESS, // Alchemist creates "gold/magic" usually, assume colorless or first card suit? Logic says Modulo sum.
+                suit: leadSuit || Suit.COLORLESS,
                 value: sumValue,
                 type: CardType.NUMBER,
                 ownerId: 'p1',
@@ -141,7 +168,6 @@ export const useGameActions = ({
 
             setPlayedCards(prev => [...prev, combinedCard]);
 
-            // Alchemist Replenishment
             let newHand = p.hand.filter(c => !selectedCards.includes(c.id));
             if (trick < 5) {
                 const currentDrawPile = [...drawPile];
@@ -151,8 +177,16 @@ export const useGameActions = ({
                 addLog(`Alquimista repone 3 cartas.`);
             }
 
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? { ...pl, hand: newHand } : pl));
+            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+                ...pl,
+                hand: newHand,
+                magicElements: [...(pl.magicElements || []), ...newElements]
+            } : pl));
             setSelectedCards([]);
+
+            if (newElements.length > 0) {
+                addLog(`¡Alquimista obtuvo ${newElements.length} elemento(s)! (${newElements.join(', ')})`);
+            }
             addLog(`Alquimista transmuta 3 cartas en valor ${sumValue}.`);
 
             if (playedCards.length + 1 < players.length) {
@@ -178,7 +212,7 @@ export const useGameActions = ({
                 setDrawPile(currentDrawPile);
                 setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, hand: [...p.hand, newCard] } : p));
                 setAbilityMode('HERMIT_DISCARD');
-                addLog("Ermitaño roba una carta extra. Debe descartar 1.");
+                addLog("Ermitaño usa Mano Diestra: Roba una carta extra. Debe descartar 1.");
             } else {
                 addLog("No quedan cartas en el mazo.");
             }
@@ -194,34 +228,6 @@ export const useGameActions = ({
             setSelectedCards([]);
             setAbilityMode('NONE');
             addLog("Ermitaño descartó una carta.");
-        }
-        else if (actionName === 'TIME_TRAVEL_REWIND') {
-            const p = players.find(pl => pl.id === 'p1');
-            if (!p || (p.timeTravelTokens || 0) < 1) return;
-
-            setPlayers(prev => prev.map(pl => {
-                const ownedCards = playedCards.filter(c => c.ownerId === pl.id);
-                if (pl.id === 'p1') {
-                    return {
-                        ...pl,
-                        hand: [...pl.hand, ...ownedCards],
-                        timeTravelTokens: pl.timeTravelTokens - 1
-                    };
-                }
-                return {
-                    ...pl,
-                    hand: [...pl.hand, ...ownedCards]
-                };
-            }));
-            setPlayedCards([]);
-            setLeadSuit(null);
-            // CurrentPlayerIdx should be the one who started the trick?
-            // Actually, keep it as is, or reset to trick starter.
-            // Let's reset to trick starter.
-            // But I don't have trickStarterIdx in useGameActions easily unless I pass it.
-            // Wait, I can see it in App.tsx. I might need to pass it or just let the current player continue if it was their turn.
-            // Rule: "The current trick is restarted".
-            addLog("¡REBOBINAR TIEMPO! Las cartas vuelven a los jugadores.");
         }
         else if (actionName === 'SUMMONER_COMMAND_DRAW') {
             const p = players.find(x => x.id === 'p1');
@@ -260,27 +266,21 @@ export const useGameActions = ({
             addLog(`Aventurero eligió sus objetos iniciales: ${redItem.name} y ${blueItem.name}.`);
         }
         else if (actionName === 'PHANTOM_TOGGLE_CHIP') {
-            const player = players.find(p => p.id === 'p1');
-            if (player) {
-                setPlayers(prev => prev.map(p => {
-                    if (p.id === player.id) {
-                        const current = p.thiefChipValue || 0;
-                        return { ...p, thiefChipValue: current === 0 ? 1 : 0 };
-                    }
-                    return p;
-                }));
-            }
+            setPlayers(prev => prev.map(p => {
+                if (p.id === 'p1') {
+                    const current = p.thiefChipValue || 0;
+                    return { ...p, thiefChipValue: current === 0 ? 1 : 0 };
+                }
+                return p;
+            }));
         }
         else if (actionName === 'PHANTOM_TOGGLE_BETRAYAL') {
-            const player = players.find(p => p.id === 'p1');
-            if (player) {
-                setPlayers(prev => prev.map(p => {
-                    if (p.id === player.id) {
-                        return { ...p, thiefBetrayalMode: !p.thiefBetrayalMode };
-                    }
-                    return p;
-                }));
-            }
+            setPlayers(prev => prev.map(p => {
+                if (p.id === 'p1') {
+                    return { ...p, thiefBetrayalMode: !p.thiefBetrayalMode };
+                }
+                return p;
+            }));
         }
         else if (actionName === 'PHANTOM_EXCHANGE_REQUEST') {
             const player = players.find(p => p.id === 'p1');
@@ -295,12 +295,10 @@ export const useGameActions = ({
             const partner = players.find(p => p.id === player.thiefPartnerId);
 
             if (cardToGive && partner) {
-                // Simplified: Partner gives random card
                 if (partner.hand.length > 0) {
                     const partnerCardIndex = Math.floor(Math.random() * partner.hand.length);
                     const partnerCard = partner.hand[partnerCardIndex];
 
-                    // Swap
                     const newPlayerHand = player.hand.filter(c => c.id !== cardToGiveId).concat({ ...partnerCard, ownerId: player.id });
                     const newPartnerHand = partner.hand.filter(c => c.id !== partnerCard.id).concat({ ...cardToGive, ownerId: partner.id });
 
@@ -335,12 +333,10 @@ export const useGameActions = ({
             if (!p || playedCards.length === 0) return;
 
             const beast = BEASTS.find(b => b.id === beastId);
-            const card = playedCards[playedCards.length - 1]; // The card just played by this player
+            const card = playedCards[playedCards.length - 1];
 
             let cost = 0;
             if (beast && card) {
-                // Rule: Gratis if color or value match.
-                // Special case: OKO (Black) costs 2 MP if no match.
                 const match = (beast.suit && card.suit === beast.suit) || (card.value === 10);
                 if (!match) {
                     cost = (beastId === 'b-oko') ? 2 : 1;
@@ -366,7 +362,6 @@ export const useGameActions = ({
             setPlayers(prev => prev.map(pl => {
                 if (pl.id === 'p1') {
                     const newItems = [...pl.items, item];
-                    // If we have 1 Red and 1 Blue, close setup
                     const hasRed = newItems.some(i => i.type === 'RED');
                     const hasBlue = newItems.some(i => i.type === 'BLUE');
                     if (hasRed && hasBlue) setAbilityMode('NONE');
@@ -404,7 +399,6 @@ export const useGameActions = ({
                     pendingEffect = item.effect;
                 }
 
-                // Replacement draw
                 const possibleItems = ITEMS.filter(i => i.id !== item.id && !filteredItems.map(x => x.id).includes(i.id));
                 let updatedItems = filteredItems;
                 if (possibleItems.length > 0) {
@@ -426,11 +420,37 @@ export const useGameActions = ({
             setItemCardToShow(payload);
         }
         else if (actionName === 'RULER_IGNORE_RULES') {
-            // Toggle mode. If already active, cancel it?
             setAbilityMode(prev => prev === 'RULER_IGNORE_RULES' ? 'NONE' : 'RULER_IGNORE_RULES');
-            addLog("Ruler: Modo 'Ignorar Reglas' activado (o desactivado). Juega cualquier carta.");
+            addLog("Ruler: Modo 'Ignorar Reglas' activado. Juega cualquier carta.");
         }
-    }, [drawPile, selectedCards, players, playedCards, currentPlayerIdx, trickStarterIdx, isResolvingRef, trick, setItemCardToShow]);
+        else if (actionName === 'BERSERKER_START_ROUND3') {
+            setAbilityMode('BERSERKER_ROUND3_DISCARD');
+            addLog("Berserker se prepara para la Batalla Final. Selecciona 1 o 2 cartas para descartar.");
+        }
+        else if (actionName === 'BERSERKER_EXECUTE_ROUND3') {
+            if (selectedCards.length < 1 || selectedCards.length > 2) return;
+            setPlayers(prev => prev.map(p => {
+                if (p.id === 'p1' && p.berserkerDeck) {
+                    const cardsInHandIds = p.hand.map(c => c.id);
+                    const unselectedReserved = p.berserkerDeck.filter(c => !cardsInHandIds.includes(c.id));
+                    const count = selectedCards.length;
+                    const drawnCards = unselectedReserved.slice(0, count);
+                    const newHand = p.hand.filter(c => !selectedCards.includes(c.id)).concat(drawnCards);
+
+                    return {
+                        ...p,
+                        hand: newHand,
+                        blackCrowns: p.blackCrowns - 1,
+                        berserkerUsedRound3: true
+                    };
+                }
+                return p;
+            }));
+            setSelectedCards([]);
+            setAbilityMode('NONE');
+            addLog("¡Berserker usó una Corona Negra! Descartó sus cartas y robó del mazo exclusivo.");
+        }
+    }, [drawPile, selectedCards, players, playedCards, currentPlayerIdx, trickStarterIdx, isResolvingRef, trick, setItemCardToShow, setAbilityMode, setDrawPile, setPlayers, setSelectedCards, setPlayedCards, setLeadSuit, setIsKakumei, addLog, resolveTrick, leadSuit]);
 
     return { performAction };
 };

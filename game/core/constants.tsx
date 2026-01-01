@@ -54,7 +54,7 @@ export const CHARACTERS: Record<CharacterType, CharacterData> = {
   [CharacterType.SAMURAI]: {
     id: CharacterType.SAMURAI, name: 'Samurai', catchphrase: 'To master is to discard', difficulty: 'MODERATE',
     description: 'Red cards are as strong as Black. Discard Black to draw.',
-    abilityName: 'Spirit of Red', pointsByWins: { 0: 0, 1: 30, 2: 80, 3: 120, 4: 250, 5: -100 },
+    abilityName: 'Spirit of Red', pointsByWins: { 0: 0, 1: 30, 2: 80, 3: 120, 4: 999, 5: -100 },
     winConditionText: '4 Wins', imagePath: '3D.webp', thumbnailPath: '3D-thumb.jpg'
   },
   [CharacterType.HERMIT]: {

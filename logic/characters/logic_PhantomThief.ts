@@ -108,4 +108,17 @@ export class PhantomThiefLogic extends BaseCharacterLogic {
 
     return updated;
   }
+
+  static resolveBonus(players: Player[], addLog: (msg: string) => void): Player[] {
+    const thief = players.find(p => p.character === CharacterType.PHANTOM_THIEF);
+    if (!thief || thief.wins !== 2) return players;
+
+    return players.map(p => {
+      if (p.id === thief.thiefPartnerId) {
+        addLog(`Phantom Thief otorga 50 puntos a su socio ${p.name}.`);
+        return { ...p, score: p.score + 50 };
+      }
+      return p;
+    });
+  }
 }

@@ -1,6 +1,6 @@
-
+import React from 'react';
 import { BaseCharacterLogic } from '../logic_Interface';
-import { SetupContext, Player, CardType, Suit, PowerContext, Card } from '../../game/core/types';
+import { SetupContext, Player, CardType, Suit, PowerContext, Card, UIContext } from '../../game/core/types';
 
 export class BerserkerLogic extends BaseCharacterLogic {
 
@@ -92,52 +92,29 @@ export class BerserkerLogic extends BaseCharacterLogic {
   }
 
   getCardPower(context: PowerContext): number {
-    const { card, trickContainsOne, isKakumei, isRevolt } = context;
+    const { card, onesInSuits, isKakumei, isRevolt } = context;
 
     // Berserker cards are usually very strong (3000+)
     const isBerserkerCard = card.id.startsWith('berserker-');
-    if (!isBerserkerCard) return card.value;
+    if (!isBerserkerCard) return super.getCardPower(context);
 
     // Base Strength
     let power = 3000;
 
     // RULE: Berserker cards must follow suit to be strong (unless they are the Colorless Main card)
-    // If Lead Suit exists, and card is NOT Lead Suit AND NOT Colorless -> It's an off-suit play.
-    // Off-suit play should not win against Lead Suit (unless Trump, but Berserker is not Trump).
-    if (context.leadSuit && card.suit !== context.leadSuit && card.suit !== Suit.COLORLESS) {
+    const isColorless = card.suit === Suit.COLORLESS;
+    const isBerserkerMain = card.id.startsWith('berserker-main-');
+    if (context.leadSuit && card.suit !== context.leadSuit && !isColorless) {
       power = card.value; // Revert to normal value (10), losing the 3000 buff.
     }
 
-    // Kakumei: Revolution makes Strongest -> Weakest.
-    // If we assume the engine inverts logic (Low = Win), then 3000 is "Weak" (Loses).
-    // If the engine keeps High = Win but changes Card Values, then we need to set this to 0.
-    // Let's assume the engine handles specific "Strength Inversion" by flipping the sort order. 
-    // IF the engine flips sort: 3000 is Worst. Perfect.
-    // IF the engine DOES NOT flip sort but expects us to return "Inverted Power":
-    // We need to verify GameLogic. But usually "Revolution" means "3 is stronger than 2", etc.
-    // Standard: 3 > 2. Revolution: 2 > 3. 
-    // If I return 3000, and opponent returns 5.
-    // Standard: 3000 > 5. Win.
-    // Revolution: 5 > 3000? No, 5 is "better" than 3000? (Closer to 0?)
-    // Yes if "Low Wins".
-
-    // However, the rule says: "The rule that 1 beats Berserker is ANNULLED in Revolution".
-    // So 1 vs Berserker in Rev:
-    // 1 (Value 1). Berserker (3000).
-    // If Rev = Low Wins: 1 is "Better" than 3000. So 1 beats Berserker?
-    // User: "El Berserker se convierte en la carta más débil".
-    // Meaning it should LOSE to everything.
-    // In Rev (Low Wins): To lose to everything, it must be the "Highest" value (worst).
-    // So 3000 is correct for "Weakest" in Low-Wins mode.
-
     // Special Exception: 1 vs Berserker in Standard.
-    // 1 beats Berserker.
-    // 1 has value 1. Berserker 3000.
-    // 3000 > 1. Berserker wins.
-    // We need 1 to win.
-    // So if `trickContainsOne`, force Berserker Power to -1 (so 1 > -1).
-    if (!(isKakumei || isRevolt) && trickContainsOne) {
-      power = -1;
+    if (!(context.isKakumei || context.isRevolt)) {
+      if (isBerserkerMain && context.onesInSuits.length > 0) {
+        power = -1;
+      } else if (card.value === 10 && context.onesInSuits.includes(card.suit)) {
+        power = -1;
+      }
     }
 
     // Standard Bonuses
@@ -145,5 +122,44 @@ export class BerserkerLogic extends BaseCharacterLogic {
     else if (context.leadSuit && card.suit === context.leadSuit) power += 500;
 
     return power;
+  }
+
+  renderActions(context: UIContext): React.ReactNode {
+    const { isCurrentPlayer, performAction, player, abilityMode, selectedCards, round } = context;
+    if (!isCurrentPlayer) return null;
+
+    // RULE: In Round 3, spend a black crown to discard/draw from exclusive deck.
+    const canUseRound3 = round === 3 && player.blackCrowns > 0 && !player.berserkerUsedRound3;
+    const isRound3Discard = abilityMode === 'BERSERKER_ROUND3_DISCARD';
+
+    if (canUseRound3 || isRound3Discard) {
+      return (
+        React.createElement("div", { className: "flex flex-col gap-2 items-center bg-white px-4 py-3 rounded-2xl shadow-xl border-2 border-red-600" },
+          React.createElement("div", { className: "flex items-center gap-2 mb-1" },
+            React.createElement("i", { className: "fa-solid fa-crown text-slate-800" }),
+            React.createElement("span", { className: "text-[10px] font-black text-red-700 uppercase tracking-widest" }, "Furia de Batalla Final")
+          ),
+          !isRound3Discard ? (
+            React.createElement("button", {
+              onClick: () => performAction('BERSERKER_START_ROUND3'),
+              className: "btn bg-red-600 text-white !py-1.5 !px-4 text-[10px] font-bold"
+            }, "USAR CORONA NEGRA (ROBO EXTRA)")
+          ) : (
+            React.createElement("div", { className: "flex flex-col gap-2 items-center" },
+              React.createElement("span", { className: "text-[9px] font-bold text-red-800" }, "DESCARTA 1 O 2 CARTAS (NO EL BERSERKER)"),
+              React.createElement("div", { className: "flex gap-2" },
+                React.createElement("button", {
+                  disabled: selectedCards.length < 1 || selectedCards.length > 2 || selectedCards.some(id => id.startsWith('berserker-main-')),
+                  onClick: () => performAction('BERSERKER_EXECUTE_ROUND3'),
+                  className: "btn bg-red-600 text-white !py-1.5 !px-4 text-[10px]"
+                }, "CONFIRMAR")
+              )
+            )
+          )
+        )
+      );
+    }
+
+    return null;
   }
 }

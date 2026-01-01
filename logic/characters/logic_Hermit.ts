@@ -38,7 +38,6 @@ export class HermitLogic extends BaseCharacterLogic {
 
         return updates;
     }
-
     renderActions(context: UIContext): React.ReactNode {
         const { isCurrentPlayer, performAction, abilityMode, player, selectedCards } = context;
         if (!isCurrentPlayer) return null;
