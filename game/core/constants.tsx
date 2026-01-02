@@ -142,10 +142,35 @@ export const TRAPS: Trap[] = [
 ];
 
 export const TASKS: Task[] = [
-  { id: 'task-1', name: 'Do not take Red', difficulty: 'NORMAL', points: 10, description: 'Failure: -10 pts.', condition: (p) => !p.wonCards.some(c => c.suit === Suit.RED) },
-  { id: 'task-2', name: 'Do not take Blue', difficulty: 'NORMAL', points: 10, description: 'Failure: -10 pts.', condition: (p) => !p.wonCards.some(c => c.suit === Suit.BLUE) },
-  { id: 'task-3', name: 'Take a Red', difficulty: 'HARD', points: 20, description: 'Failure: -10 pts.', condition: (p) => p.wonCards.some(c => c.suit === Suit.RED) },
-  { id: 'task-4', name: 'Take Green', difficulty: 'HARD', points: 20, description: 'Failure: -10 pts.', condition: (p) => p.wonCards.some(c => c.suit === Suit.GREEN) }
+  // Normal
+  { id: 'task-take-1', name: 'Take a 1', difficulty: 'NORMAL', points: 10, description: 'Win at least one "1" card.', condition: (p) => p.wonCards.some(c => c.value === 1), imagePath: '/assets/5b-ruler-tasks/normal-take-1.jpg' },
+  { id: 'task-take-10', name: 'Take a 10', difficulty: 'NORMAL', points: 10, description: 'Win at least one "10" card.', condition: (p) => p.wonCards.some(c => c.value === 10), imagePath: '/assets/5b-ruler-tasks/normal-take-10.jpg' },
+  { id: 'task-take-black', name: 'Take Black', difficulty: 'NORMAL', points: 10, description: 'Win at least one Black card.', condition: (p) => p.wonCards.some(c => c.suit === Suit.BLACK), imagePath: '/assets/5b-ruler-tasks/normal-take-black.jpg' },
+  { id: 'task-no-blue', name: 'No Blue', difficulty: 'NORMAL', points: 10, description: 'Do not win any Blue cards.', condition: (p) => !p.wonCards.some(c => c.suit === Suit.BLUE), imagePath: '/assets/5b-ruler-tasks/normal-not-take-blue.jpg' },
+  { id: 'task-no-green', name: 'No Green', difficulty: 'NORMAL', points: 10, description: 'Do not win any Green cards.', condition: (p) => !p.wonCards.some(c => c.suit === Suit.GREEN), imagePath: '/assets/5b-ruler-tasks/normal-not-take-green.jpg' },
+  { id: 'task-no-red', name: 'No Red', difficulty: 'NORMAL', points: 10, description: 'Do not win any Red cards.', condition: (p) => !p.wonCards.some(c => c.suit === Suit.RED), imagePath: '/assets/5b-ruler-tasks/normal-not-take-red.jpg' },
+
+  // Hard
+  { id: 'task-0-tricks', name: 'Win 0 Tricks', difficulty: 'HARD', points: 20, description: 'Do not win any tricks.', condition: (p) => p.wins === 0, imagePath: '/assets/5b-ruler-tasks/hard-0-tricks.jpg' },
+  { id: 'task-1-trick', name: 'Win 1 Trick', difficulty: 'HARD', points: 20, description: 'Win exactly 1 trick.', condition: (p) => p.wins === 1, imagePath: '/assets/5b-ruler-tasks/hard-1-trick.jpg' },
+  { id: 'task-2-tricks', name: 'Win 2+ Tricks', difficulty: 'HARD', points: 20, description: 'Win 2 or more tricks.', condition: (p) => p.wins >= 2, imagePath: '/assets/5b-ruler-tasks/hard-win-2-tricks.jpg' },
+  { id: 'task-black-crown', name: 'Black Crown', difficulty: 'HARD', points: 20, description: 'Win a Black 10.', condition: (p) => p.wonCards.some(c => c.suit === Suit.BLACK && c.value === 10), imagePath: '/assets/5b-ruler-tasks/hard-take-black-crown.jpg' },
+  { id: 'task-take-blue', name: 'Take Blue', difficulty: 'HARD', points: 20, description: 'Win at least one Blue card.', condition: (p) => p.wonCards.some(c => c.suit === Suit.BLUE), imagePath: '/assets/5b-ruler-tasks/hard-take-blue.jpg' },
+  { id: 'task-take-green', name: 'Take Green', difficulty: 'HARD', points: 20, description: 'Win at least one Green card.', condition: (p) => p.wonCards.some(c => c.suit === Suit.GREEN), imagePath: '/assets/5b-ruler-tasks/hard-take-green.jpg' },
+  { id: 'task-take-red', name: 'Take Red', difficulty: 'HARD', points: 20, description: 'Win at least one Red card.', condition: (p) => p.wonCards.some(c => c.suit === Suit.RED), imagePath: '/assets/5b-ruler-tasks/hard-take-red.jpg' },
+  { id: 'task-rare', name: 'Take Rare', difficulty: 'HARD', points: 20, description: 'Win a trick with a Rare card.', condition: (p) => p.wonCards.some(c => c.type === 'RARE'), imagePath: '/assets/5b-ruler-tasks/hard-win-trick-rare.jpg' },
+
+  // Difficult
+  { id: 'task-gold-crown', name: 'Gold Crown', difficulty: 'DIFFICULT', points: 30, description: 'Win the Gold Crown (Rare King).', condition: (p) => p.wonCards.some(c => c.type === 'RARE' && c.value === 0), imagePath: '/assets/5b-ruler-tasks/difficult-take-gold-crown.jpg' },
+  {
+    id: 'task-avoid-lead',
+    name: 'Avoid Lead Suit',
+    difficulty: 'DIFFICULT',
+    points: 30,
+    description: 'Do not follow suit in any winning trick.', // Best guess
+    condition: (p) => true, // Placeholder logic as it requires per-trick tracking
+    imagePath: '/assets/5b-ruler-tasks/difficult-avoid-lead-suit-all-tricks.jpg'
+  }
 ];
 
 export const SUIT_COLORS: Record<Suit, string> = {

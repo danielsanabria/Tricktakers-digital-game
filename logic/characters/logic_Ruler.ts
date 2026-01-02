@@ -33,10 +33,7 @@ export class RulerLogic extends BaseCharacterLogic {
 
     return (
       React.createElement("div", { className: "flex gap-2" },
-        React.createElement("button", {
-          onClick: () => performAction('RULER_ASSIGN_TASK'),
-          className: "btn btn-slate !py-1.5 !px-4 text-[11px]"
-        }, "ASIGNAR TAREA"),
+
 
         !usedToken && React.createElement("button", {
           onClick: () => performAction('RULER_IGNORE_RULES'),

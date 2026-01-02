@@ -88,6 +88,7 @@ export interface Task {
   description: string;
   points: number;
   condition: (player: Player) => boolean;
+  imagePath?: string;
 }
 
 export interface Trap {
