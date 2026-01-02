@@ -46,17 +46,16 @@ export class SamuraiLogic extends BaseCharacterLogic {
     else if (leadSuit && effectiveSuit === leadSuit) power += 500;
 
     // Weakness Logic (simplified inheritance)
-    if (context.trickContainsOne && !isKakumei && card.value === 10) power = 1;
+    if (context.onesInSuits.length > 0 && !isKakumei && card.value === 10) power = 1;
 
     return power;
   }
 
   onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
-    const newWins = (player.wins || 0) + 1;
     // Exactly 4 wins = Instant Win
-    if (newWins === 4) {
-      return { score: 999, wins: newWins };
+    if (player.wins === 4) {
+      return { score: 999 };
     }
-    return { wins: newWins };
+    return {};
   }
 }

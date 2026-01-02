@@ -66,7 +66,7 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
     <div className={`
       relative rounded-[2rem] transition-all duration-500 border overflow-hidden
       ${isCurrentPlayer ? 'bg-white shadow-2xl border-teal-200 scale-[1.01] z-10' : 'bg-slate-50/80 border-slate-200'}
-      ${isHuman ? 'p-4 sm:p-6' : 'p-4 flex flex-col justify-between'}
+      ${isHuman ? 'p-3 sm:p-4 md:p-3' : 'p-4 flex flex-col justify-between'}
     `}>
 
       {/* Header Info: Nombre, Avatar, Stats */}
@@ -79,10 +79,10 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
           title="Ver detalles del personaje"
         >
           <div className={`relative rounded-2xl border-2 shadow-sm overflow-hidden bg-white shrink-0 transition-all
-             ${isHuman ? 'w-16 h-16 sm:w-20 sm:h-20' : 'w-12 h-12'}
+             ${isHuman ? 'w-16 h-16 sm:w-20 sm:h-20 md:w-16 md:h-16' : 'w-12 h-12'}
              ${isCurrentPlayer ? 'border-teal-400 ring-2 ring-teal-100' : 'border-slate-200'}
           `}>
-            {char ? (
+            {char && imgSrc ? (
               <img
                 key={imgSrc}
                 src={imgSrc}

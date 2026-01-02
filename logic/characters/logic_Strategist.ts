@@ -64,10 +64,9 @@ export class StrategistLogic extends BaseCharacterLogic {
   // rather than an active button press, so standard human logic applies.
 
   onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
-    const newWins = (player.wins || 0) + 1;
-    if (newWins === 5) {
-      return { score: 999, wins: newWins }; // Instant Win
+    if (player.wins >= 5) {
+      return { score: 999 }; // Instant Win
     }
-    return { wins: newWins };
+    return {};
   }
 }

@@ -64,7 +64,7 @@ const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) =
 
         <div className="bg-white rounded-3xl overflow-hidden shadow-2xl ring-4 ring-white/10 transform transition-all flex flex-col w-full">
           <div className="bg-slate-100 flex-1 relative min-h-[400px]">
-            {!hasFinalError ? (
+            {!hasFinalError && imgSrc ? (
               <img
                 key={imgSrc} // Force re-render on src change to trigger onError
                 src={imgSrc}

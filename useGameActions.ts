@@ -19,7 +19,7 @@ interface GameActionsProps {
     trickStarterIdx: number;
     setIsKakumei: React.Dispatch<React.SetStateAction<boolean>>;
     addLog: (msg: string) => void;
-    resolveTrick: (cards: Card[]) => void;
+    resolveTrick: (cards: Card[], currentPlayers?: Player[]) => void;
     currentPlayerIdx: number;
     isResolvingRef: React.MutableRefObject<boolean>;
     trick: number;
@@ -177,11 +177,13 @@ export const useGameActions = ({
                 addLog(`Alquimista repone 3 cartas.`);
             }
 
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+            const updatedPlayersAlchemist = players.map(pl => pl.id === 'p1' ? {
                 ...pl,
                 hand: newHand,
                 magicElements: [...(pl.magicElements || []), ...newElements]
-            } : pl));
+            } : pl);
+
+            setPlayers(updatedPlayersAlchemist);
             setSelectedCards([]);
 
             if (newElements.length > 0) {
@@ -194,7 +196,7 @@ export const useGameActions = ({
                 setCurrentPlayerIdx(nextIdx);
             } else {
                 isResolvingRef.current = true;
-                resolveTrick([...playedCards, combinedCard]);
+                resolveTrick([...playedCards, combinedCard], updatedPlayersAlchemist);
             }
         }
         else if (actionName === 'COLLECTOR_RESERVE_CONFIRM') {

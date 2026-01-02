@@ -36,9 +36,9 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
             </div>
 
             {/* Grid de Personajes - Estilo Clásico/Premium */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                    {characterPool.map(ct => {
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 pb-48">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 relative z-10">
+                    {(characterPool || []).map(ct => {
                         const char = CHARACTERS[ct];
                         const taker = players.find(p => p.character === ct);
                         const isTaken = !!taker;
@@ -103,6 +103,18 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
                         );
                     })}
                 </div>
+            </div>
+
+            {/* Character Illustrations Footer (Similar to HomeMenu) */}
+            <div className="fixed bottom-0 left-0 w-full h-[25vh] pointer-events-none z-0 overflow-hidden hidden md:block">
+                <img src="/assets/chars-no-bg/1A-no-bg.png" className="absolute -bottom-10 -left-10 h-full object-contain opacity-10 blur-[1px] transform -scale-x-100" />
+                <img src="/assets/chars-no-bg/5A-no-bg.png" className="absolute -bottom-10 -right-10 h-full object-contain opacity-10 blur-[1px]" />
+            </div>
+
+            {/* Mobile Footer Decor */}
+            <div className="fixed bottom-0 left-0 w-full h-[150px] md:hidden flex justify-between pointer-events-none z-0 overflow-hidden opacity-20">
+                <img src="/assets/chars-no-bg/1A-no-bg.png" className="h-full object-contain -ml-8 transform translate-y-4" />
+                <img src="/assets/chars-no-bg/5A-no-bg.png" className="h-full object-contain -mr-8 transform translate-y-4" />
             </div>
         </div>
     );

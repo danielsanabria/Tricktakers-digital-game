@@ -5,14 +5,13 @@ import { SetupContext, Player, UIContext, Card } from '../../game/core/types';
 
 export class GamblerLogic extends BaseCharacterLogic {
     onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
-        const newWins = (player.wins || 0) + 1;
         // Gambler Win Conditions:
         // 1. Bid 4 and Won 4
         // 2. Won 5 (Automatic)
-        if (newWins === 5 || (player.bid === 4 && newWins === 4)) {
-            return { score: 999, wins: newWins }; // Trigger Instant Win
+        if (player.wins >= 5 || (player.bid === 4 && player.wins === 4)) {
+            return { score: 999 }; // Trigger Instant Win
         }
-        return { wins: newWins };
+        return {};
     }
 
     setup(context: SetupContext): Partial<Player> {

@@ -191,6 +191,7 @@ export interface PowerContext {
   isKakumei: boolean;
   trickContainsRare: boolean;
   onesInSuits: Suit[]; // Suits that have a '1' in the current trick
+  tensInSuits: Suit[]; // Suits that have a '10' in the current trick
   berserker10Suits: Suit[]; // Suits that have a Berserker 10 in the trick
   berserkerMainInPlay: boolean; // Whether the Berserker Main card is in the trick
   whiteFlagInPlay: boolean;

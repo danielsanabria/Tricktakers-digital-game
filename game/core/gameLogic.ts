@@ -87,6 +87,7 @@ export const determineWinner = (
   // Global Context Flags
   const trickContainsRare = playedCards.some(c => c.type === CardType.RARE);
   const onesInSuits = playedCards.filter(c => c.value === 1).map(c => c.suit);
+  const tensInSuits = playedCards.filter(c => c.value === 10).map(c => c.suit);
   const berserker10Suits = playedCards
     .filter(c => c.id.startsWith('berserker-10-'))
     .map(c => c.suit);
@@ -108,6 +109,7 @@ export const determineWinner = (
       isRevolt,
       isKakumei,
       onesInSuits: miriaPassive ? [] : onesInSuits,
+      tensInSuits: miriaPassive ? [] : tensInSuits,
       berserker10Suits: miriaPassive ? [] : berserker10Suits,
       berserkerMainInPlay: miriaPassive ? false : berserkerMainInPlay,
       trickContainsRare,

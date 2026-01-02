@@ -96,12 +96,21 @@ export const CHARACTERS: Record<CharacterType, CharacterData> = {
 };
 
 export const ITEMS: Item[] = [
-  { id: 'it-1', name: 'Map of Destiny', type: 'BLUE', description: 'Discard X cards, draw X cards.', effect: 'DRAW_X', unusedPoints: 10, imagePath: 'map.webp', itemCardPath: '01-map-of-destiny.jpg' },
-  { id: 'it-2', name: 'Invisibility Potion', type: 'BLUE', description: 'Play your card facedown.', effect: 'FACEDOWN', unusedPoints: 10, imagePath: 'potion.webp', itemCardPath: '02-invisibility-potion.jpg' },
-  { id: 'it-3', name: 'Timid Boots', type: 'BLUE', description: 'Play last in the trick.', effect: 'PLAY_LAST', unusedPoints: 10, imagePath: 'boots.webp', itemCardPath: '03-timid-boots.jpg' },
-  { id: 'it-4', name: 'Miracle Sword', type: 'RED', description: 'Value ± 5 (Min 1, Max 9).', effect: 'VALUE_MODIFY', unusedPoints: -30, imagePath: 'sword.webp', itemCardPath: '04-miracle-sword.jpg' },
-  { id: 'it-5', name: 'Ruler\'s Wand', type: 'RED', description: 'Card becomes color of lead suit.', effect: 'COLOR_SHIFT', unusedPoints: -30, imagePath: 'wand.webp', itemCardPath: '05-ruler-wand.jpg' },
-  { id: 'it-6', name: 'Berserker\'s Axe', type: 'RED', description: 'Value becomes 10 (Loses to 1).', effect: 'FIX_10', unusedPoints: -30, imagePath: 'axe.webp', itemCardPath: '06-berserker-axe.jpg' }
+  { id: 'it-1', name: 'Map of Destiny', type: 'BLUE', description: 'Discard X cards, draw X cards.', effect: 'DRAW_X', unusedPoints: 10, imagePath: 'map.webp', itemCardPath: '/assets/3b-cards/01-map-of-destiny.jpg' },
+  { id: 'it-2', name: 'Invisibility Potion', type: 'BLUE', description: 'Play your card facedown.', effect: 'FACEDOWN', unusedPoints: 10, imagePath: 'potion.webp', itemCardPath: '/assets/3b-cards/02-invisibility-potion.jpg' },
+  { id: 'it-3', name: 'Timid Boots', type: 'BLUE', description: 'Play last in the trick.', effect: 'PLAY_LAST', unusedPoints: 10, imagePath: 'boots.webp', itemCardPath: '/assets/3b-cards/03-timid-boots.jpg' },
+  { id: 'it-4', name: 'Miracle Sword', type: 'RED', description: 'Value ± 5 (Min 1, Max 9).', effect: 'VALUE_MODIFY', unusedPoints: -30, imagePath: 'sword.webp', itemCardPath: '/assets/3b-cards/04-miracle-sword.jpg' },
+  { id: 'it-5', name: 'Ruler\'s Wand', type: 'RED', description: 'Card becomes color of lead suit.', effect: 'COLOR_SHIFT', unusedPoints: -30, imagePath: 'wand.webp', itemCardPath: '/assets/3b-cards/05-ruler-wand.jpg' },
+  { id: 'it-6', name: 'Berserker\'s Axe', type: 'RED', description: 'Value becomes 10 (Loses to 1).', effect: 'FIX_10', unusedPoints: -30, imagePath: 'axe.webp', itemCardPath: '/assets/3b-cards/06-berserker-axe.jpg' },
+  { id: 'it-7', name: 'Golden Treasure', type: 'GOLD', description: 'Immediately gain 30 points.', effect: 'GAIN_30', unusedPoints: 0, imagePath: '', itemCardPath: '/assets/3b-cards/07-golden-treasure.jpg' },
+  { id: 'it-8', name: 'Hermit\'s Secret Book', type: 'BLUE', description: 'Played card stays hidden.', effect: 'STAY_HIDDEN', unusedPoints: 10, imagePath: '', itemCardPath: '/assets/3b-cards/08-hermit-book-of-secrets.jpg' },
+  { id: 'it-9', name: 'White Orb', type: 'BLUE', description: 'Treat as Colorless/White Flag.', effect: 'WHITE_FLAG', unusedPoints: 10, imagePath: '', itemCardPath: '/assets/3b-cards/09-white-orb.jpg' },
+  { id: 'it-10', name: 'Proactive Wing', type: 'BLUE', description: 'Pass lead to next player.', effect: 'PASS_LEAD', unusedPoints: 10, imagePath: '', itemCardPath: '/assets/3b-cards/10-proactive-wing.jpg' },
+  { id: 'it-11', name: 'Crystal', type: 'GOLD', description: 'Initial bonus +20 points.', effect: 'GAIN_20', unusedPoints: 0, imagePath: '', itemCardPath: '/assets/3b-cards/11-crystal.jpg' },
+  { id: 'it-12', name: 'Fairy Mischief', type: 'RED', description: 'Draw 1, Discard Item.', effect: 'DRAW_DISCARD', unusedPoints: -30, imagePath: '', itemCardPath: '/assets/3b-cards/12-fairy-mischief.jpg' },
+  { id: 'it-13', name: 'Dragon Doll', type: 'RED', description: 'Win ties.', effect: 'WIN_TIES', unusedPoints: -30, imagePath: '', itemCardPath: '/assets/3b-cards/13-dragon-doll.jpg' },
+  { id: 'it-14', name: 'Castle Visit', type: 'RED', description: 'Change number to 10.', effect: 'CHANGE_10', unusedPoints: -30, imagePath: '', itemCardPath: '/assets/3b-cards/14-castle-visit.jpg' },
+  { id: 'it-15', name: 'Rock Crystal', type: 'GOLD', description: 'Initial bonus +30 points.', effect: 'GAIN_30', unusedPoints: 0, imagePath: '', itemCardPath: '/assets/3b-cards/15-rock-crystal.jpg' }
 ];
 
 export const BEASTS: Beast[] = [

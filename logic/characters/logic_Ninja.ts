@@ -6,11 +6,10 @@ import { UIContext, Player, Card } from '../../game/core/types';
 export class NinjaLogic extends BaseCharacterLogic {
 
   onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
-    const newWins = (player.wins || 0) + 1;
-    if (newWins === 5) {
-      return { score: 999, wins: newWins }; // Instant Win
+    if (player.wins >= 5) {
+      return { score: 999 }; // Instant Win
     }
-    return { wins: newWins };
+    return {};
   }
 
   renderActions(context: UIContext): React.ReactNode {

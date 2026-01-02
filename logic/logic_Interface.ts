@@ -60,10 +60,28 @@ export class BaseCharacterLogic implements ICharacterLogic {
       }
 
       // Rule of 1 vs 10: Only if Berserker is in play
-      if (!(context.isKakumei || context.isRevolt) && context.berserkerInPlay) {
-        // Nerf 10 if same-suit 1 is present
+      if (context.berserkerInPlay) {
+        // 1 beats 10 of same suit
+        if (card.value === 1 && context.tensInSuits.includes(card.suit)) {
+          if (context.isKakumei || context.isRevolt) {
+            power += 10.1 - 1; // 1 -> 10.1 (stronger than 10 but loses to 2-9 in Revolution)
+          }
+          // Standard: stay power 1.
+        }
         if (card.value === 10 && context.onesInSuits.includes(card.suit)) {
-          power = -1; // Loses to everything, including the 1 and any intermediate 2-9
+          if (context.isKakumei || context.isRevolt) {
+            power += 10.2 - 10; // 10 -> 10.2 (weaker than 10.1)
+          } else {
+            power = -1; // Standard: nerf to bottom so 2 beats both 1 and 10.
+          }
+        }
+
+        // 1 beats Berserker Main Card
+        if (card.value === 1 && context.berserkerMainInPlay) {
+          if (!(context.isKakumei || context.isRevolt)) {
+            power = 3001; // Standard: 1 wins.
+          }
+          // Revolution: power stays 1. 1 wins naturally (1 < 3000).
         }
       }
     }

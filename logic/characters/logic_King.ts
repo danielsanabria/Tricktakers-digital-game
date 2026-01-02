@@ -63,8 +63,7 @@ export class KingLogic extends BaseCharacterLogic {
   }
   onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
     // King Instant Win Condition: 5 Wins
-    // Note: player.wins is the count BEFORE this trick. So we check if wins + 1 >= 5.
-    if (player.wins + 1 >= 5) {
+    if (player.wins >= 5) {
       return { score: 999 }; // Trigger Instant Win (Priority 1)
     }
     return {};

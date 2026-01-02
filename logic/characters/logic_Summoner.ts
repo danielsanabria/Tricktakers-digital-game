@@ -61,14 +61,12 @@ export class SummonerLogic extends BaseCharacterLogic {
         let mpGain = 1;
         if (player.rearBeasts.includes('b-el')) mpGain += 1;
 
-        const newWins = (player.wins || 0) + 1;
         let updates: Partial<Player> = {
             mp: Math.min(player.mp + mpGain, 10),
             frontBeastId: null, // La bestia del frente vuelve a la caja (o se agota)
-            wins: newWins
         };
 
-        if (newWins === 5) {
+        if (player.wins >= 5) {
             updates.score = 999;
         }
 

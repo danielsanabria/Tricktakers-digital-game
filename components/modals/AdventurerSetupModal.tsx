@@ -22,7 +22,7 @@ export const AdventurerSetupModal: React.FC<AdventurerSetupModalProps> = ({ onCo
                     <div>
                         <label className="block text-sm font-bold text-red-400 mb-2 uppercase tracking-wider">Objeto Rojo</label>
                         <div className="grid grid-cols-1 gap-2">
-                            {ITEMS.filter(i => i.type === 'RED').map(item => (
+                            {ITEMS.filter(i => i.type === 'RED' && ['it-4', 'it-5', 'it-6'].includes(i.id)).map(item => (
                                 <button
                                     key={item.id}
                                     onClick={() => setRed(item.id)}
@@ -31,7 +31,7 @@ export const AdventurerSetupModal: React.FC<AdventurerSetupModalProps> = ({ onCo
                                         : 'bg-slate-700 border-slate-600 hover:bg-slate-600'}`}
                                 >
                                     <div className="font-bold text-white">{item.name}</div>
-                                    <div className="text-xs text-slate-400 mt-1">{item.effect}</div>
+                                    <div className="text-xs text-slate-400 mt-1">{item.description}</div>
                                     <div className="text-xs text-amber-500/80 mt-1">No usado: {item.unusedPoints} pts</div>
                                 </button>
                             ))}
@@ -41,7 +41,7 @@ export const AdventurerSetupModal: React.FC<AdventurerSetupModalProps> = ({ onCo
                     <div>
                         <label className="block text-sm font-bold text-blue-400 mb-2 uppercase tracking-wider">Objeto Azul</label>
                         <div className="grid grid-cols-1 gap-2">
-                            {ITEMS.filter(i => i.type === 'BLUE').map(item => (
+                            {ITEMS.filter(i => i.type === 'BLUE' && ['it-1', 'it-2', 'it-3'].includes(i.id)).map(item => (
                                 <button
                                     key={item.id}
                                     onClick={() => setBlue(item.id)}
@@ -50,7 +50,7 @@ export const AdventurerSetupModal: React.FC<AdventurerSetupModalProps> = ({ onCo
                                         : 'bg-slate-700 border-slate-600 hover:bg-slate-600'}`}
                                 >
                                     <div className="font-bold text-white">{item.name}</div>
-                                    <div className="text-xs text-slate-400 mt-1">{item.effect}</div>
+                                    <div className="text-xs text-slate-400 mt-1">{item.description}</div>
                                     <div className="text-xs text-amber-500/80 mt-1">No usado: {item.unusedPoints} pts</div>
                                 </button>
                             ))}

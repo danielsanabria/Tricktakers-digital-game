@@ -110,14 +110,6 @@ export class BerserkerLogic extends BaseCharacterLogic {
 
     // If we are here, it's the Berserker Main Card
     let power = 3000;
-
-    // Special Exception: 1 vs Berserker in Standard (Non-Revolt/Kakumei).
-    if (!(isKakumei || isRevolt)) {
-      if (onesInSuits.length > 0) {
-        power = -1;
-      }
-    }
-
     return power;
   }
 

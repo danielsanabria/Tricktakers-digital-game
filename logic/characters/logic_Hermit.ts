@@ -21,9 +21,7 @@ export class HermitLogic extends BaseCharacterLogic {
     onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
         const hermitPlayedWhiteFlag = cards.some(c => c.ownerId === player.id && c.type === CardType.WHITE_FLAG);
         const trickHadRare = cards.some(c => c.type === CardType.RARE);
-        const newWins = (player.wins || 0) + 1;
-
-        let updates: Partial<Player> = { wins: newWins };
+        let updates: Partial<Player> = {};
 
         if (hermitPlayedWhiteFlag && trickHadRare) {
             // Bonificación inmediata por "pesca" de carta Rara
@@ -32,7 +30,7 @@ export class HermitLogic extends BaseCharacterLogic {
         }
 
         // Hermit Instant Win: 5 Wins
-        if (newWins === 5) {
+        if (player.wins >= 5) {
             updates.score = 999;
         }
 
