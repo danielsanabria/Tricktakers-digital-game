@@ -7,6 +7,7 @@ import { KingSetupModal } from './KingSetupModal';
 import { RulerSetupModal } from './RulerSetupModal';
 import { PhantomThiefSetupModal } from './PhantomThiefSetupModal';
 import { StrategistModal } from './StrategistModal';
+import { GamblerSetupModal } from './GamblerSetupModal';
 
 interface ModalsContainerProps {
     abilityMode: string;
@@ -117,6 +118,20 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                 <RulerSetupModal
                     otherPlayers={players.filter(p => p.id !== 'p1')}
                     onConfirm={(assignments) => performAction('RULER_ASSIGN_TASKS', assignments)}
+                />
+            )}
+
+
+            {/* Gambler Setup Modal */}
+            {(abilityMode === 'GAMBLER_SWAP' || abilityMode === 'GAMBLE_BID' || abilityMode === 'GAMBLER_BETTING') && (
+                <GamblerSetupModal
+                    player={players.find(p => p.id === 'p1')!}
+                    mode={abilityMode === 'GAMBLER_SWAP' ? 'SWAP' : abilityMode === 'GAMBLE_BID' ? 'BID' : 'BET'}
+                    round={1} // Ideally pass round from props, assuming 1 or passed via props if added. ModalsContainer usually needs round prop.
+                    onSwap={(cardIds) => performAction('GAMBLER_EXECUTE_SWAP', { cardIds })}
+                    onSkipSwap={() => performAction('GAMBLER_SKIP_SWAP')}
+                    onBid={(bid) => performAction('GAMBLER_BID', bid)}
+                    onBet={(bet) => performAction('GAMBLER_SET_BET', bet)}
                 />
             )}
 

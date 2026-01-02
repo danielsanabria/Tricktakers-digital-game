@@ -31,68 +31,6 @@ export class GamblerLogic extends BaseCharacterLogic {
     }
 
     renderActions(context: UIContext): React.ReactNode {
-        const { isCurrentPlayer, performAction, player, abilityMode, setAbilityMode, selectedCards, round } = context;
-        if (!isCurrentPlayer) return null;
-
-        // Paso 1: Filtrado de mano (2 oportunidades)
-        if (player.gambleSwaps !== undefined && player.gambleSwaps > 0 && player.bid === undefined) {
-            return (
-                React.createElement("div", { className: "flex flex-col gap-2 items-center bg-white px-4 py-3 rounded-2xl shadow-xl border-2 border-amber-400" },
-                    React.createElement("span", { className: "text-[10px] font-black text-amber-600 uppercase" }, `Filtrado de Mano (${player.gambleSwaps} veces)`),
-                    React.createElement("div", { className: "flex gap-2" },
-                        React.createElement("button", {
-                            disabled: selectedCards.length === 0,
-                            onClick: () => performAction('GAMBLER_EXECUTE_SWAP'),
-                            className: "btn btn-amber !py-1.5 !px-4 text-[10px]"
-                        }, "CAMBIAR SELECCIONADAS"),
-                        React.createElement("button", {
-                            onClick: () => performAction('GAMBLER_SKIP_SWAP'),
-                            className: "btn btn-slate !py-1.5 !px-4 text-[10px]"
-                        }, "ESTOY LISTO")
-                    )
-                )
-            );
-        }
-
-        // Paso 2: La Apuesta de Bazas (Bid)
-        if (player.bid === undefined) {
-            return (
-                React.createElement("div", { className: "flex flex-col gap-2 items-center bg-white px-4 py-3 rounded-2xl shadow-xl border-2 border-amber-400" },
-                    React.createElement("span", { className: "text-[10px] font-black text-amber-600 uppercase" }, "Declara tus victorias (0-5)"),
-                    React.createElement("div", { className: "flex gap-1.5" },
-                        [0, 1, 2, 3, 4, 5].map(num =>
-                            React.createElement("button", {
-                                key: num,
-                                onClick: () => performAction('GAMBLER_BID', num),
-                                className: "w-8 h-8 rounded-xl bg-slate-100 hover:bg-amber-400 hover:text-white text-xs font-black transition-all"
-                            }, num.toString())
-                        )
-                    )
-                )
-            );
-        }
-
-        // Paso 3: La Apuesta de Puntos (Bet)
-        if (player.betAmount === 0 || abilityMode === 'GAMBLER_BETTING') {
-            const maxBet = round === 3 ? 100 : 50;
-            const betValues = [10, 20, 30, 40, 50, 100].filter(v => v <= maxBet);
-
-            return (
-                React.createElement("div", { className: "flex flex-col gap-2 items-center bg-white px-4 py-3 rounded-2xl shadow-xl border-2 border-amber-400" },
-                    React.createElement("span", { className: "text-[10px] font-black text-amber-600 uppercase" }, `Apuesta puntos (Máx ${maxBet})`),
-                    React.createElement("div", { className: "flex gap-1.5" },
-                        [0, ...betValues].map(val =>
-                            React.createElement("button", {
-                                key: val,
-                                onClick: () => performAction('GAMBLER_SET_BET', val),
-                                className: "px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-amber-500 hover:text-white text-[10px] font-black transition-all"
-                            }, val === 0 ? "PASAR" : `${val} PTS`)
-                        )
-                    )
-                )
-            );
-        }
-
         return null;
     }
 }

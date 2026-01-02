@@ -51,15 +51,17 @@ export const useGameActions = ({
 
     const performAction = useCallback((actionName: string, payload?: any) => {
         if (actionName === 'GAMBLER_EXECUTE_SWAP') {
-            if (selectedCards.length === 0) return;
+            const cardsToSwap = payload?.cardIds || selectedCards;
+            if (cardsToSwap.length === 0) return;
+
             const currentDrawPile = [...drawPile];
-            const count = selectedCards.length;
+            const count = cardsToSwap.length;
             const newCards = currentDrawPile.splice(0, count).map(c => ({ ...c, ownerId: 'p1' }));
 
             setDrawPile(currentDrawPile);
             setPlayers(prev => prev.map(p => {
                 if (p.id === 'p1') {
-                    const newHand = [...p.hand.filter(c => !selectedCards.includes(c.id)), ...newCards];
+                    const newHand = [...p.hand.filter(c => !cardsToSwap.includes(c.id)), ...newCards];
                     const remainingSwaps = (p.gambleSwaps || 0) - 1;
 
                     if (remainingSwaps <= 0) {
