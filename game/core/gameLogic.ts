@@ -108,12 +108,18 @@ export const determineWinner = (
     const power = getStrength(card);
 
     if (!(isKakumei || isRevolt)) {
-      if (power > bestPower) {
+      // Normal: Higher wins.
+      // Tie-breaker: Usually First Played (FIFO).
+      // "Win Ties" effect: Allows Late Player to win on equality.
+      if (power > bestPower || (power === bestPower && card.winTies)) {
         bestPower = power;
         winnerCard = card;
       }
     } else {
-      if (power < bestPower) {
+      // Revolution: Lower wins.
+      // If power < bestPower -> Win.
+      // Tie? If power === bestPower && card.winTies -> Win.
+      if (power < bestPower || (power === bestPower && card.winTies)) {
         bestPower = power;
         winnerCard = card;
       }

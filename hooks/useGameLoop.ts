@@ -8,15 +8,16 @@ import { PhantomThiefLogic } from '../logic/characters/logic_PhantomThief';
 import { useGameActions } from '../useGameActions';
 
 const getInitialPlayers = (): Player[] => [
-    { id: 'p1', name: 'Tú', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} },
-    { id: 'p2', name: 'Rival 1', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} },
-    { id: 'p3', name: 'Rival 2', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} }
+    { id: 'p1', name: 'Tú', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, hermitDiscarding: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} },
+    { id: 'p2', name: 'Rival 1', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, hermitDiscarding: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} },
+    { id: 'p3', name: 'Rival 2', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, hermitDiscarding: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} }
 ];
 
 export const useGameLoop = () => {
     const [gameMode, setGameMode] = useState<GameMode>(GameMode.BASIC);
     const [players, setPlayers] = useState<Player[]>(getInitialPlayers());
     const [phase, setPhase] = useState<GamePhase>(GamePhase.MODE_SELECTION);
+
 
     const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
     const [trickStarterIdx, setTrickStarterIdx] = useState(0);
@@ -80,6 +81,8 @@ export const useGameLoop = () => {
         setStrategistPendingChoice(null);
         setIsRevolt(false);
         setIsKakumei(false);
+        isResolvingRef.current = false;
+        isRoundResolvingRef.current = false;
     };
 
     const checkPlayerAbilityMode = (p: Player) => {
@@ -202,6 +205,7 @@ export const useGameLoop = () => {
         setTrick(1);
         setIsRevolt(false);
         setIsKakumei(false);
+        isResolvingRef.current = false;
         isRoundResolvingRef.current = false;
         addLog(`--- COMIENZA LA RONDA ${round} ---`);
 
@@ -534,7 +538,7 @@ export const useGameLoop = () => {
                 addLog("La Revolución ha terminado. La jerarquía se restablece.");
             }
 
-            updatedPlayers = updatedPlayers.map(p => p.character === CharacterType.HERMIT ? { ...p, hermitUsedAbility: false } : p);
+            updatedPlayers = updatedPlayers.map(p => p.character === CharacterType.HERMIT ? { ...p, hermitUsedAbility: false, hermitDiscarding: false } : p);
 
             updatedPlayers = updatedPlayers.map(p => ({
                 ...p,
@@ -620,10 +624,13 @@ export const useGameLoop = () => {
         if (isResolvingRef.current) return;
         const p = players[currentPlayerIdx];
         const isUser = p.id === 'p1';
+        // Check character specific phases
         const isKingDiscardPhase = p.character === CharacterType.KING && p.hand.length > 5;
         const isGamblerSwapPhase = p.character === CharacterType.GAMBLER && (p.gambleSwaps || 0) > 0 && p.bid === undefined;
+        // Robust check: Use hermitDiscarding flag
+        const isHermitDiscardPhase = p.character === CharacterType.HERMIT && (p as any).hermitDiscarding;
 
-        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD', 'SUMMONER_SELECT_CARD', 'SAMURAI_DISCARD'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase)) {
+        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD', 'SUMMONER_SELECT_CARD', 'SAMURAI_DISCARD'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase || isHermitDiscardPhase)) {
             if (abilityMode === 'SAMURAI_DISCARD') {
                 performAction('SAMURAI_EXECUTE_DISCARD', { cardId });
                 return;
@@ -661,15 +668,15 @@ export const useGameLoop = () => {
 
         const playerInEffectState = playersWithStatusEffects.find(pl => pl.id === p.id)!;
 
-        if (playedCards.length === 0 && card.suit !== Suit.COLORLESS) {
+        if (leadSuit === null && card.suit !== Suit.COLORLESS) {
             setLeadSuit(card.suit);
         }
 
         let finalCard = { ...card, ownerId: p.id };
         if (playerInEffectState.pendingItemEffect) {
-            if (playerInEffectState.pendingItemEffect === 'FIX_10') {
+            if (playerInEffectState.pendingItemEffect === 'FIX_10' || playerInEffectState.pendingItemEffect === 'CHANGE_10') {
                 finalCard.value = 10;
-                addLog(`¡Hacha de Berserker! Valor cambiado a 10.`);
+                addLog(`¡Objeto activado! Valor cambiado a 10.`);
             } else if (playerInEffectState.pendingItemEffect === 'COLOR_SHIFT' && leadSuit) {
                 finalCard.suit = leadSuit;
                 addLog(`¡Varita del Gobernante! Color cambiado a ${leadSuit}.`);
@@ -680,6 +687,14 @@ export const useGameLoop = () => {
             } else if (playerInEffectState.pendingItemEffect === 'FACEDOWN') {
                 finalCard.isFacedown = true;
                 addLog(`¡Poción de Invisibilidad! Carta jugada boca abajo.`);
+            } else if (playerInEffectState.pendingItemEffect === 'WHITE_FLAG') {
+                finalCard.type = CardType.WHITE_FLAG;
+                finalCard.suit = Suit.COLORLESS;
+                finalCard.value = 0;
+                addLog(`¡Orbe Blanco! La carta se convierte en Bandera Blanca.`);
+            } else if (playerInEffectState.pendingItemEffect === 'WIN_TIES') {
+                finalCard.winTies = true;
+                addLog(`¡Muñeca de Dragón! Ganarás los empates.`);
             }
         }
 

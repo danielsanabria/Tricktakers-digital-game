@@ -63,7 +63,7 @@ export class HermitLogic extends BaseCharacterLogic {
         if (!isCurrentPlayer) return null;
 
         const hasUsedThisTrick = player.hermitUsedAbility;
-        const isDiscarding = abilityMode === 'HERMIT_DISCARD';
+        const isDiscarding = abilityMode === 'HERMIT_DISCARD' || !!(player as any).hermitDiscarding;
 
         if (hasUsedThisTrick && !isDiscarding) return null;
 

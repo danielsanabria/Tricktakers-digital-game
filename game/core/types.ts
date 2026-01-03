@@ -27,6 +27,7 @@ export interface Card {
   combinedCards?: Card[];
   imagePath?: string;
   name?: string;
+  winTies?: boolean;
 }
 
 export enum CharacterType {
@@ -128,6 +129,7 @@ export interface Player {
   revoltUsed?: boolean;
   isKakumeiActive?: boolean;
   hermitUsedAbility?: boolean;
+  hermitDiscarding?: boolean;
   gamblerUsedAbility?: boolean;
   berserkerUsedRound3?: boolean;
   strategistUsedIgnore?: boolean;

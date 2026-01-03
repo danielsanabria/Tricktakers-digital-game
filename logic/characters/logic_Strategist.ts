@@ -48,6 +48,26 @@ export class StrategistLogic extends BaseCharacterLogic {
 
     const usedIgnore = (player as any).strategistUsedIgnore;
 
+    // Setup Phase: Define Trap Order
+    if (abilityMode === 'STRATEGIST_SETUP') {
+      // Mock UI for Trap Ordering.
+      // Ideally we show list of traps and allow dragging or numbering.
+      // For MVP: "Cycle Order" or "Default Shuffle".
+      // As a simple fix, we just allow confirming the current random shuffle or a preset list.
+      // Real implementation requires complex DND logic which is weird in React.createElement.
+      // We will just show "Confirm Trap Plan".
+      // And maybe allow simple "Swap Top Trap" with another?
+
+      return React.createElement("div", { className: "fixed top-20 left-1/2 -translate-x-1/2 bg-slate-900 p-6 rounded-xl border border-amber-600 shadow-2xl z-50" },
+        React.createElement("h3", { className: "text-amber-500 font-bold text-lg mb-2" }, "Plan Maestro de Trampas"),
+        React.createElement("p", { className: "text-white text-sm mb-4" }, "Tus trampas han sido barajadas. ¿Deseas mantener este orden?"),
+        React.createElement("button", {
+          onClick: () => performAction('STRATEGIST_SET_TRAPS', { traps: context.trapDeck || [] }), // Pass current deck back as 'set'
+          className: "btn btn-amber w-full"
+        }, "CONFIRMAR PLAN")
+      );
+    }
+
     return (
       React.createElement("div", { className: "flex flex-col gap-2" },
         !usedIgnore && (

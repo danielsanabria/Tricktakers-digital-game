@@ -49,8 +49,7 @@ export class AlchemistLogic extends BaseCharacterLogic {
 
     const actualCards = player.hand.filter(c => selectedCards.includes(c.id));
     // Safe fallback if function missing (will add import next)
-    // @ts-ignore
-    const result = typeof calculateAlchemyValue !== 'undefined' ? calculateAlchemyValue(actualCards) : { value: 0, elements: [] };
+    const result = calculateAlchemyValue(actualCards);
 
     const elements = result.elements || [];
 
