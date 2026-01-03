@@ -12,8 +12,8 @@ export class TimeTravelerLogic extends BaseCharacterLogic {
     };
   }
   renderActions(context: UIContext): React.ReactNode {
-    const { isCurrentPlayer, performAction } = context;
-    if (!isCurrentPlayer) return null;
+    const { isCurrentPlayer, performAction, playedCards, player } = context;
+    if (!isCurrentPlayer || !player || player.timeTravelTokens <= 0 || playedCards.length === 0) return null;
 
     return (
       React.createElement("button", {

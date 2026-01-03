@@ -53,8 +53,8 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
                                 key={card.id}
                                 onClick={() => toggleCard(card.id)}
                                 className={`transform transition-all cursor-pointer ${selectedForSwap.includes(card.id)
-                                        ? '-translate-y-4 shadow-[0_0_30px_rgba(245,158,11,0.4)] ring-2 ring-amber-500 rounded-lg'
-                                        : 'hover:-translate-y-2 opacity-90 hover:opacity-100'
+                                    ? '-translate-y-4 shadow-[0_0_30px_rgba(245,158,11,0.4)] ring-2 ring-amber-500 rounded-lg'
+                                    : 'hover:-translate-y-2 opacity-90 hover:opacity-100'
                                     }`}
                             >
                                 <GameCard card={card} selected={selectedForSwap.includes(card.id)} />
@@ -89,8 +89,8 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
 
     if (mode === 'BID') {
         return (
-            <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
-                <div className="bg-slate-900 rounded-2xl border border-amber-500/30 p-8 max-w-2xl w-full text-center space-y-8 animate-in zoom-in duration-300">
+            <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm gap-8">
+                <div className="bg-slate-900 rounded-2xl border border-amber-500/30 p-8 max-w-2xl w-full text-center space-y-8 animate-in zoom-in duration-300 shadow-2xl">
                     <div>
                         <h2 className="text-3xl font-black text-amber-500 uppercase tracking-tight mb-2">Declara tu Destino</h2>
                         <p className="text-slate-400">¿Cuántas bazas ganarás en esta ronda?</p>
@@ -118,6 +118,18 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
                         </ul>
                     </div>
                 </div>
+
+                {/* VISIBLE HAND REFERENCE */}
+                <div className="w-full max-w-4xl">
+                    <p className="text-center text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">Tu Mano</p>
+                    <div className="flex justify-center gap-2 flex-wrap">
+                        {player.hand.map(card => (
+                            <div key={card.id} className="transform scale-75 origin-top">
+                                <GameCard card={card} disabled />
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
@@ -127,8 +139,8 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
         const betValues = [10, 20, 30, 40, 50, 100].filter(v => v <= maxBet);
 
         return (
-            <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
-                <div className="bg-slate-900 rounded-2xl border border-amber-500/30 p-8 max-w-xl w-full text-center space-y-8 animate-in zoom-in duration-300">
+            <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm gap-8">
+                <div className="bg-slate-900 rounded-2xl border border-amber-500/30 p-8 max-w-xl w-full text-center space-y-8 animate-in zoom-in duration-300 shadow-2xl">
                     <div>
                         <h2 className="text-3xl font-black text-amber-500 uppercase tracking-tight mb-2">Dobla la Apuesta</h2>
                         <p className="text-slate-400">Apuesta puntos adicionales. Si aciertas tu predicción, ganas estos puntos extra. Si fallas, los pierdes.</p>
@@ -149,6 +161,18 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
                             >
                                 {val} PTS
                             </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* VISIBLE HAND REFERENCE */}
+                <div className="w-full max-w-4xl">
+                    <p className="text-center text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">Tu Mano</p>
+                    <div className="flex justify-center gap-2 flex-wrap">
+                        {player.hand.map(card => (
+                            <div key={card.id} className="transform scale-75 origin-top">
+                                <GameCard card={card} disabled />
+                            </div>
                         ))}
                     </div>
                 </div>

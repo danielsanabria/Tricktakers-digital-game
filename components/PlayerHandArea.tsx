@@ -1,5 +1,5 @@
 import React from 'react';
-import { Player, CharacterType } from '../game/core/types';
+import { Player, CharacterType, Card } from '../game/core/types';
 import PlayerBoard from './PlayerBoard';
 import { getCharacterLogic } from '../logic/logic_Registry';
 
@@ -14,7 +14,10 @@ interface PlayerHandAreaProps {
     performAction: (actionName: string, payload?: any) => void;
     round: number;
     setViewingCharacter: (char: CharacterType | null) => void;
+
     setItemCardToShow: (item: any) => void;
+    onReviewTraps: () => void;
+    playedCards: Card[];
 }
 
 export const PlayerHandArea: React.FC<PlayerHandAreaProps> = ({
@@ -28,7 +31,9 @@ export const PlayerHandArea: React.FC<PlayerHandAreaProps> = ({
     performAction,
     round,
     setViewingCharacter,
-    setItemCardToShow
+    setItemCardToShow,
+    onReviewTraps,
+    playedCards
 }) => {
     return (
         <div className="shrink-0 z-40 bg-white/90 backdrop-blur-lg border-t border-slate-200 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] relative">
@@ -44,7 +49,8 @@ export const PlayerHandArea: React.FC<PlayerHandAreaProps> = ({
                             setSelectedCards,
                             performAction,
                             isCurrentPlayer: true,
-                            round
+                            round,
+                            playedCards
                         })}
                     </div>
                 </div>
@@ -59,7 +65,9 @@ export const PlayerHandArea: React.FC<PlayerHandAreaProps> = ({
                     canPlay={isCurrentPlayer}
                     onCharacterClick={() => setViewingCharacter(player.character)}
                     onItemClick={setItemCardToShow}
+
                     selectedCards={selectedCards}
+                    onReviewTraps={onReviewTraps}
                 />
             </div>
         </div>

@@ -145,6 +145,7 @@ export interface Player {
   thiefChipValue?: number; // 0 or 1 (represented as ±1)
   thiefBetrayalMode?: boolean;
   tasksAssigned?: Record<string, string[]>;
+  alchemistDeck?: Card[];
 }
 
 export interface PlayerRoundResult {
@@ -211,4 +212,5 @@ export interface UIContext {
   performAction: (actionName: string, payload?: any) => void;
   isCurrentPlayer: boolean;
   round: number;
+  playedCards: Card[];
 }

@@ -104,8 +104,11 @@ const App = () => {
                             setSelectedCards={game.setSelectedCards}
                             performAction={game.performAction} // From useGameLoop -> useGameActions
                             round={game.round}
+
                             setViewingCharacter={game.setViewingCharacter}
                             setItemCardToShow={game.setItemCardToShow}
+                            onReviewTraps={() => game.setViewingTraps(true)}
+                            playedCards={game.playedCards}
                         />
                     </div>
 
@@ -134,7 +137,12 @@ const App = () => {
                         }}
                         strategistInheritedCard={game.strategistInheritedCard}
                         setStrategistInheritedCard={game.setStrategistInheritedCard}
+
                         addLog={game.addLog}
+                        viewingTraps={game.viewingTraps}
+                        setViewingTraps={game.setViewingTraps}
+                        trapDeck={game.trapDeck}
+                        trick={game.trick}
                     />
 
                     {/* Logs Panel */}

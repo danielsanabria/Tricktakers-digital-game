@@ -9,6 +9,11 @@ import { PhantomThiefSetupModal } from './PhantomThiefSetupModal';
 import { StrategistModal } from './StrategistModal';
 import { GamblerSetupModal } from './GamblerSetupModal';
 import { StrategistTrapModal } from './StrategistTrapModal';
+import { StrategistReviewModal } from './StrategistReviewModal';
+import { TimeTravelerSetupModal } from './TimeTravelerSetupModal';
+import { TimeTravelerDiscardModal } from './TimeTravelerDiscardModal';
+import { TimeTravelerWinModal } from './TimeTravelerWinModal';
+import { TimeTravelerDistributeModal } from './TimeTravelerDistributeModal';
 
 interface ModalsContainerProps {
     abilityMode: string;
@@ -23,6 +28,10 @@ interface ModalsContainerProps {
     setStrategistPendingChoice: (choice: any) => void;
     phase: any; // GamePhase
     addLog: (msg: string) => void;
+    viewingTraps: boolean;
+    setViewingTraps: (viewing: boolean) => void;
+    trapDeck: any[];
+    trick: number;
 }
 
 export const ModalsContainer: React.FC<ModalsContainerProps> = ({
@@ -37,11 +46,24 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
     setPhase,
     setStrategistPendingChoice,
     phase,
-    addLog
+    addLog,
+    viewingTraps,
+    setViewingTraps,
+    trapDeck,
+    trick
 }) => {
     console.log('ModalsContainer rendering with abilityMode:', abilityMode);
     return (
         <>
+            {/* Strategist Review Modal */}
+            {viewingTraps && (
+                <StrategistReviewModal
+                    traps={trapDeck}
+                    onClose={() => setViewingTraps(false)}
+                    currentTrick={trick}
+                />
+            )}
+
             {/* Strategist Choice Modal */}
             <StrategistModal
                 choice={strategistPendingChoice}
@@ -144,6 +166,39 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
             {abilityMode === 'PHANTOM_THIEF_SETUP' && (
                 <PhantomThiefSetupModal
                     onConfirm={(suits) => performAction('PHANTOM_THIEF_SETUP', suits)}
+                />
+            )}
+
+            {/* Time Traveler Setup Modal */}
+            {abilityMode === 'TIME_TRAVELER_SETUP' && (
+                <TimeTravelerSetupModal
+                    players={players}
+                    onConfirm={(gold, black1, black2) => performAction('TIME_TRAVEL_PREDICT', { gold, black1, black2 })}
+                />
+            )}
+
+            {/* Time Traveler Discard Modal */}
+            {abilityMode === 'TIME_TRAVEL_DRAW_DISCARD' && (
+                <TimeTravelerDiscardModal
+                    player={players.find(p => p.id === 'p1')!}
+                    onConfirm={(ids) => performAction('TIME_TRAVEL_FINISH_REWIND', { discardedCardIds: ids })}
+                />
+            )}
+
+            {/* Time Traveler Win Choice Modal */}
+            {abilityMode === 'TIME_TRAVEL_WIN_CHOICE' && (
+                <TimeTravelerWinModal
+                    onConfirm={() => performAction('TIME_TRAVEL_CHANGE_PAST')}
+                    onSkip={() => performAction('COMPLETE_TRICK_NORMAL')}
+                />
+            )}
+
+            {/* Time Traveler Distribute Modal */}
+            {abilityMode === 'TIME_TRAVEL_DISTRIBUTE' && (
+                <TimeTravelerDistributeModal
+                    player={players.find(p => p.id === 'p1')!}
+                    opponents={players.filter(p => p.id !== 'p1')}
+                    onConfirm={(assignments) => performAction('TIME_TRAVEL_EXECUTE_DISTRIBUTION', assignments)}
                 />
             )}
         </>

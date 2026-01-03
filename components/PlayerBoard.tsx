@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Player, CharacterType } from '../game/core/types';
 import { CHARACTERS } from '../game/core/constants';
 import GameCard from './GameCard';
+import { SummonerBoard } from './SummonerBoard';
+import { AlchemistBoard } from './AlchemistBoard';
 
 interface PlayerBoardProps {
   player: Player;
@@ -11,7 +13,9 @@ interface PlayerBoardProps {
   canPlay: boolean;
   onCharacterClick?: () => void;
   onItemClick?: (itemCardPath: string) => void;
+
   selectedCards?: string[];
+  onReviewTraps?: () => void;
 }
 
 const PlayerBoard: React.FC<PlayerBoardProps> = ({
@@ -21,7 +25,8 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
   canPlay,
   onCharacterClick,
   onItemClick,
-  selectedCards = []
+  selectedCards = [],
+  onReviewTraps
 }) => {
   const char = player.character ? CHARACTERS[player.character] : null;
   const [imgSrc, setImgSrc] = useState<string>('');
@@ -142,6 +147,16 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
         </div>
       )}
 
+      {/* Strategist Trap Review Button */}
+      {player.character === CharacterType.STRATEGIST && isHuman && onReviewTraps && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onReviewTraps(); }}
+          className="w-full mb-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-500 border border-amber-500/30 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors"
+        >
+          <i className="fa-solid fa-eye"></i> Ver Trampas
+        </button>
+      )}
+
       {/* ÁREA DE ESTADÍSTICAS (Below header, good for mobile) */}
       <div className="flex justify-between items-center bg-slate-100 rounded-2xl p-3 mb-4 relative overflow-hidden">
         {/* Gambler Bid Overlay/Badge */}
@@ -193,6 +208,9 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
           </div>
         </div>
       </div>
+
+      {player.character === CharacterType.SUMMONER && <SummonerBoard player={player} />}
+      {player.character === CharacterType.ALCHEMIST && <AlchemistBoard player={player} />}
 
       {/* ÁREA DE MANO DIFERENCIADA */}
       {

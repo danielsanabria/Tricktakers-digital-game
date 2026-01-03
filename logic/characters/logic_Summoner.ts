@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BaseCharacterLogic } from '../logic_Interface';
 import { SetupContext, Player, PowerContext, UIContext, CardType, Card, Suit } from '../../game/core/types';
@@ -25,31 +24,30 @@ export class SummonerLogic extends BaseCharacterLogic {
         if (activeBeastId) {
             const beast = BEASTS.find(b => b.id === activeBeastId);
             if (beast) {
-                let virtualCard = { ...card };
-
-                if (beast.id === 'b-el') {
-                    virtualCard.type = CardType.WHITE_FLAG;
-                    virtualCard.suit = Suit.COLORLESS;
-                    virtualCard.value = 0;
-                } else if (beast.id === 'b-miria') {
-                    virtualCard.type = CardType.BERSERKER;
-                    virtualCard.value = 10;
-                } else if (beast.suit) {
-                    virtualCard.suit = beast.suit;
-                    virtualCard.value = 10;
-                    virtualCard.type = CardType.NUMBER;
+                // Miria (Front): Berserker Logic
+                // Stronger than Rare (3000 vs 2000), but loses to ANY 1.
+                if (beast.id === 'b-miria') {
+                    // Check if any "1" is in play.
+                    // context.onesInSuits contains suits with '1'.
+                    if (context.onesInSuits.length > 0 && !(context.isKakumei || context.isRevolt)) {
+                        return -1; // Lose to 1
+                    }
+                    return 3000;
                 }
 
-                // Invocamos el calculador base con la carta "transformada"
-                const newContext = { ...context, card: virtualCard };
-                let power = super.getCardPower(newContext);
+                // El (Front): White Flag Logic (0 Power) BUT beats Rare.
+                if (beast.id === 'b-el') {
+                    if (context.trickContainsRare) return 5000; // Beats Rare
+                    return 0; // White Flag standard power
+                }
 
-                // Lógica específica de El (Vence a Rara)
-                if (beast.id === 'b-el' && context.trickContainsRare) return 5000;
-                // Lógica de Miria (Fuerza Berserker)
-                if (beast.id === 'b-miria') return 3000;
-
-                return power;
+                // Generic Color Beasts: Value 10
+                if (beast.suit) {
+                    let virtualCard = { ...card, suit: beast.suit, value: 10, type: CardType.NUMBER };
+                    // Use Base Logic for standard calculations (Suit bonuses, etc.)
+                    const newContext = { ...context, card: virtualCard };
+                    return super.getCardPower(newContext);
+                }
             }
         }
 
@@ -61,16 +59,10 @@ export class SummonerLogic extends BaseCharacterLogic {
         let mpGain = 1;
         if (player.rearBeasts.includes('b-el')) mpGain += 1;
 
-        let updates: Partial<Player> = {
+        return {
             mp: Math.min(player.mp + mpGain, 10),
-            frontBeastId: null, // La bestia del frente vuelve a la caja (o se agota)
+            frontBeastId: null, // La bestia del frente vuelve a la caja (o se agota, en este caso se resetea)
         };
-
-        if (player.wins >= 5) {
-            updates.score = 999;
-        }
-
-        return updates;
     }
 
     renderActions(context: UIContext): React.ReactNode {
@@ -79,6 +71,27 @@ export class SummonerLogic extends BaseCharacterLogic {
 
         const isSummonMode = abilityMode === 'SUMMONER_REAR';
         const isFrontMode = abilityMode === 'SUMMONER_FRONT';
+        const isAttackMode = abilityMode === 'SUMMONER_SELECT_CARD';
+
+        // Si estamos en modo selección de carta para ataque, mostrar instrucciones o botón cancelar/confirmar especial?
+        // La UI principal (PlayerHandArea) debería mostrar cartas seleccionables.
+        // Aquí mostramos "Confirmar Ataque" si hay carta seleccionada.
+        if (isAttackMode) {
+            const hasCard = context.selectedCards.length === 1;
+            return React.createElement("div", { className: "flex gap-2" },
+                React.createElement("button", {
+                    onClick: () => hasCard ? performAction('SUMMONER_EXECUTE_ATTACK') : null,
+                    className: `btn ${hasCard ? 'btn-rose animate-pulse' : 'btn-slate opacity-50'} !py-1.5 !px-3 text-[10px]`
+                }, "CONFIRMAR ATAQUE"),
+                React.createElement("button", {
+                    onClick: () => {
+                        setAbilityMode('NONE');
+                        performAction('SUMMONER_CANCEL_ATTACK'); // To clear frontBeastId if needed, though state is local in hook? No, stored in player.
+                    },
+                    className: "btn btn-slate !bg-white !text-slate-500 !py-1.5 !px-3 text-[10px]"
+                }, "CANCELAR")
+            );
+        }
 
         return (
             React.createElement("div", { className: "flex gap-2" },
@@ -95,37 +108,41 @@ export class SummonerLogic extends BaseCharacterLogic {
                         React.createElement("div", { className: "absolute bottom-full mb-4 bg-white p-3 rounded-2xl shadow-2xl border border-indigo-100 grid grid-cols-2 gap-2 w-80 z-50 animate-in slide-in-from-bottom-2 duration-300" },
                             BEASTS.map(b => {
                                 const isOwned = player.rearBeasts.includes(b.id);
+                                const canAfford = player.mp >= b.mpCost;
                                 return React.createElement("div", {
                                     key: b.id,
-                                    onClick: () => !isOwned && performAction('SUMMON_TO_REAR', b.id),
-                                    className: `p-2 border-2 rounded-xl cursor-pointer transition-all ${isOwned ? 'bg-indigo-50 border-indigo-500 opacity-50' : 'bg-slate-50 border-slate-100 hover:border-indigo-200 hover:scale-[1.02]'}`
+                                    onClick: () => {
+                                        if (!isOwned && canAfford) performAction('SUMMON_TO_REAR', b.id);
+                                    },
+                                    className: `p-2 border-2 rounded-xl transition-all ${isOwned ? 'bg-indigo-50 border-indigo-500 opacity-50' : canAfford ? 'bg-slate-50 border-slate-100 cursor-pointer hover:border-indigo-200 hover:scale-[1.02]' : 'bg-slate-100 grayscale opacity-80 cursor-not-allowed'}`
                                 },
                                     React.createElement("p", { className: "font-black text-[10px] text-indigo-900" }, b.name),
                                     React.createElement("p", { className: "text-[8px] text-slate-500 leading-tight" }, b.description),
-                                    !isOwned && React.createElement("span", { className: "text-[9px] font-black text-indigo-600" }, `Coste: ${b.mpCost} MP`)
+                                    !isOwned && React.createElement("span", { className: `text-[9px] font-black ${canAfford ? 'text-indigo-600' : 'text-red-500'}` }, `Coste: ${b.mpCost} MP`)
                                 );
                             })
                         )
                     )
                 ),
 
-                // Botón para mover al Frente (si ya jugó carta)
+                // Botón para mover al Frente (si hay bestias en retaguardia)
                 player.rearBeasts.length > 0 && React.createElement("div", { className: "relative" },
                     React.createElement("button", {
                         onClick: () => setAbilityMode(isFrontMode ? 'NONE' : 'SUMMONER_FRONT'),
                         className: `btn ${isFrontMode ? 'btn-rose scale-105 shadow-lg' : 'btn-slate !bg-white !text-slate-500 hover:!border-rose-500'} !py-1.5 !px-3 text-[10px]`
                     },
                         React.createElement("i", { className: "fa-solid fa-sword" }),
-                        "MOVER AL FRENTE"
+                        player.frontBeastId ? "BESTIA LISTA" : "MOVER AL FRENTE"
                     ),
                     isFrontMode && (
                         React.createElement("div", { className: "absolute bottom-full mb-4 bg-white p-3 rounded-2xl shadow-2xl border border-rose-100 grid grid-cols-2 gap-2 w-64 z-50 animate-in slide-in-from-bottom-2 duration-300" },
+                            React.createElement("p", { className: "col-span-2 text-[10px] text-slate-400 font-bold mb-1" }, "Selecciona una bestia para atacar con la siguiente carta:"),
                             player.rearBeasts.map(beastId => {
                                 const b = BEASTS.find(x => x.id === beastId)!;
                                 return React.createElement("button", {
                                     key: b.id,
-                                    onClick: () => performAction('MOVE_TO_FRONT', b.id),
-                                    className: "p-2 bg-slate-50 border-2 border-slate-100 rounded-xl hover:border-rose-400 font-black text-[10px] text-slate-700 hover:scale-[1.02] transition-transform"
+                                    onClick: () => performAction('SUMMONER_EQUIP_BEAST', b.id),
+                                    className: `p-2 bg-slate-50 border-2 ${player.frontBeastId === b.id ? 'border-rose-500 bg-rose-50' : 'border-slate-100 hover:border-rose-400'} rounded-xl font-black text-[10px] text-slate-700 hover:scale-[1.02] transition-transform`
                                 }, b.name);
                             })
                         )

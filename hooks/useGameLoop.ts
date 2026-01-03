@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Player, Card, Suit, CharacterType, GamePhase, GameMode, CardType, Item, Trap, RoundResult } from '../game/core/types';
 import { CHARACTERS, ITEMS, TRAPS, TASKS } from '../game/core/constants';
 import { createDeck, getValidMoves, determineWinner, getAiMove, determineTournamentWinner, TournamentResult } from '../game/core/gameLogic';
@@ -55,6 +55,8 @@ export const useGameLoop = () => {
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [viewingRules, setViewingRules] = useState(false);
 
+    const [viewingTraps, setViewingTraps] = useState(false);
+
     const addLog = (msg: string) => {
         setLogs(prev => [...prev, msg].slice(-50));
     };
@@ -93,6 +95,7 @@ export const useGameLoop = () => {
         else if (p.character === CharacterType.BERSERKER) setAbilityMode('BERSERKER_SETUP');
         else if (p.character === CharacterType.RULER && p.tasks.length === 0) setAbilityMode('RULER_SETUP');
         else if (p.character === CharacterType.PHANTOM_THIEF && !p.thiefTargetIds) setAbilityMode('PHANTOM_THIEF_SETUP');
+        else if (p.character === CharacterType.TIME_TRAVELER && (!p.timeTravelPredictions || p.timeTravelPredictions.length === 0)) setAbilityMode('TIME_TRAVELER_SETUP');
         else setAbilityMode('NONE');
     };
 
@@ -204,9 +207,16 @@ export const useGameLoop = () => {
 
         // Only check for other ability modes if Strategist setup is not active
         if (!humanStrategist) {
-            checkPlayerAbilityMode(newPlayers[trickStarterIdx]);
+            // Let the useEffect handle the ability mode check for the starter
         }
     }, [round, players, trickStarterIdx, strategistInheritedCard]);
+
+    // Check ability mode on turn change
+    useEffect(() => {
+        if (phase === GamePhase.TRICK_PLAYING && !isResolvingRef.current) {
+            checkPlayerAbilityMode(players[currentPlayerIdx]);
+        }
+    }, [currentPlayerIdx, phase, players]);
 
     const prepareRoundSelection = (
         r: number,
@@ -536,6 +546,30 @@ export const useGameLoop = () => {
                 setCurrentTrap(null);
             }
 
+            // 5. Check Time Traveler "Change the Past" Opportunity
+            // "Change the past (not applicable in the 5th trick)"
+            // Trick index is 1-based usually, or 0-based? Let's check `trick` state.
+            // `trick` from useGameLoop is 1-based (starts at 1).
+            // So if trick < 5.
+            const winner = updatedPlayers[winnerIdx];
+            if (winner.character === CharacterType.TIME_TRAVELER && trick < 5 && winner.timeTravelTokens > 0) {
+                // Trigger Interception
+                setAbilityMode('TIME_TRAVEL_WIN_CHOICE');
+                // We must NOT clear playedCards yet. They are needed if user chooses to Change Past.
+                // We should defer the cleanup.
+                // But wait, `resolveTrick` is usually called at end of animation.
+                // If we return here, we stop the loop.
+                // We need to store the "pending resolution" state if they choose NO.
+                // Or we can just handle the "No" by calling a "Continue Resolution" action.
+
+                // We'll set a ref or state to know who won, so we can resume if they cancel.
+                // Actually, simpler: The Modal will have "Confirm Change" and "Skip".
+                // "Skip" calls `COMPLETE_TRICK` action which finishes the job.
+                // "Confirm" calls `TIME_TRAVEL_CHANGE_PAST`.
+
+                return; // STOP execution here.
+            }
+
             setPlayedCards([]);
             setLeadSuit(null);
             setTrickStarterIdx(winnerIdx);
@@ -566,7 +600,12 @@ export const useGameLoop = () => {
         drawPile, setDrawPile, players, setPlayers, selectedCards, setSelectedCards,
         setAbilityMode, playedCards, setPlayedCards, setLeadSuit, leadSuit, setCurrentPlayerIdx,
         trickStarterIdx, setIsKakumei, addLog, resolveTrick, currentPlayerIdx,
-        isResolvingRef, trick, setItemCardToShow, setTrapDeck
+        isResolvingRef,
+        trick,
+        setItemCardToShow,
+        setTrapDeck,
+        setTrick,
+        setPhase
     });
 
     const playCard = (cardId: string) => {
@@ -576,7 +615,7 @@ export const useGameLoop = () => {
         const isKingDiscardPhase = p.character === CharacterType.KING && p.hand.length > 5;
         const isGamblerSwapPhase = p.character === CharacterType.GAMBLER && (p.gambleSwaps || 0) > 0 && p.bid === undefined;
 
-        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase)) {
+        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD', 'SUMMONER_SELECT_CARD'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase)) {
             setSelectedCards(prev => {
                 if (prev.includes(cardId)) return prev.filter(id => id !== cardId);
                 return [...prev, cardId];
@@ -676,9 +715,9 @@ export const useGameLoop = () => {
         selectionOrder, selectionIndex, characterPool, playedCards, drawPile,
         leadSuit, isRevolt, isKakumei, roundResults, logs, showLogs, strategistPendingChoice,
         strategistInheritedCard, abilityMode, selectedCards, viewingCharacter, itemCardToShow,
-        viewingRules, isResolvingRef, gameResult,
+        viewingRules, isResolvingRef, gameResult, viewingTraps, trapDeck,
         setPlayers, setPhase, setShowLogs, setViewingRules, setViewingCharacter, setItemCardToShow,
-        setSelectedCards, setAbilityMode, setStrategistInheritedCard, setStrategistPendingChoice,
+        setSelectedCards, setAbilityMode, setStrategistInheritedCard, setStrategistPendingChoice, setViewingTraps,
         initGame, resetGame, addLog, selectCharacter, playCard, proceedFromSummary, performAction
     };
 };

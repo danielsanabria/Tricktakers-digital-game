@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CharacterType, CharacterData, Suit, Item, Task, Trap, Beast } from './types';
+import { CharacterType, CharacterData, Suit, Item, Task, Trap, Beast, Card, CardType } from './types';
 
 export const CHARACTERS: Record<CharacterType, CharacterData> = {
   [CharacterType.KING]: {
@@ -206,3 +206,26 @@ export const SUIT_ICONS: Record<Suit, React.ReactNode> = {
   [Suit.BLACK]: <i className="fa-solid fa-dragon"></i>,
   [Suit.COLORLESS]: <i className="fa-solid fa-crown"></i>
 };
+
+export const ALCHEMIST_DECK: Card[] = [
+  // RED (Fire/Passion)
+  { id: 'alch-r-1', suit: Suit.RED, value: 1, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-red-01.jpg' },
+  { id: 'alch-r-2', suit: Suit.RED, value: 2, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-red-02.jpg' },
+  { id: 'alch-r-3', suit: Suit.RED, value: 3, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-red-03.jpg' },
+  { id: 'alch-r-4', suit: Suit.RED, value: 4, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-red-04.jpg' },
+  { id: 'alch-r-5', suit: Suit.RED, value: 5, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-red-05.jpg' },
+
+  // BLUE (Water/Wisdom)
+  { id: 'alch-b-1', suit: Suit.BLUE, value: 1, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-blue-01.jpg' },
+  { id: 'alch-b-2', suit: Suit.BLUE, value: 2, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-blue-02.jpg' },
+  { id: 'alch-b-3', suit: Suit.BLUE, value: 3, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-blue-03.jpg' },
+  { id: 'alch-b-4', suit: Suit.BLUE, value: 4, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-blue-04.jpg' },
+  { id: 'alch-b-5', suit: Suit.BLUE, value: 5, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-blue-05.jpg' },
+
+  // GREEN (Nature/Life)
+  { id: 'alch-g-1', suit: Suit.GREEN, value: 1, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-green-01.jpg' },
+  { id: 'alch-g-2', suit: Suit.GREEN, value: 2, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-green-02.jpg' },
+  { id: 'alch-g-3', suit: Suit.GREEN, value: 3, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-green-03.jpg' },
+  { id: 'alch-g-4', suit: Suit.GREEN, value: 4, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-green-04.jpg' },
+  { id: 'alch-g-5', suit: Suit.GREEN, value: 5, type: CardType.NUMBER, ownerId: '', imagePath: '/assets/3c-cards/alch-green-05.jpg' },
+];
