@@ -1,9 +1,31 @@
 
 import React from 'react';
 import { BaseCharacterLogic } from '../logic_Interface';
-import { PowerContext, CardType, UIContext, Player, Card } from '../../game/core/types';
+import { SetupContext, Player, Card, CardType, Suit, PowerContext, UIContext } from '../../game/core/types';
 
 export class HermitLogic extends BaseCharacterLogic {
+
+    setup(context: SetupContext): Partial<Player> {
+        const base = super.setup(context);
+        let hand = [...(base.hand || [])];
+
+        // Replace one card (e.g., the last one) with White Flag
+        if (hand.length > 0) {
+            hand.pop();
+            const whiteFlag: Card = {
+                id: 'c_white_flag',
+                name: 'White Flag',
+                suit: Suit.COLORLESS,
+                value: 0,
+                type: CardType.WHITE_FLAG,
+                ownerId: context.playerId,
+                imagePath: '/assets/color-cards/whiteflag.jpg'
+            };
+            hand.push(whiteFlag);
+        }
+
+        return { ...base, hand };
+    }
 
     getCardPower(context: PowerContext): number {
         const { card, trickContainsRare } = context;

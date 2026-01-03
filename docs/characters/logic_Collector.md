@@ -1,34 +1,38 @@
-La lógica del Collector (Coleccionista - 4B) es una de las más singulares, ya que cambia el objetivo del juego: no puntúa por el valor de las bazas en sí, sino por la creación de "sets" o combinaciones de póker con las cartas físicas que logra arrebatar de la mesa.
-Aquí tienes el protocolo detallado para su implementación en la IA:
-1. Restricciones y Atributos Especiales
-• Prioridad: 4B (baja-media).
-• Bloqueo de Coronas: El sistema debe impedir que este personaje obtenga Coronas Doradas o Coronas Negras, sin importar cuántas bazas gane o pierda.
-• Límite de Rarezas: Solo puede usar 1 carta Rare por cada combinación o combo que presente.
-2. Flujo de la Baza (Mecánicas de Captura)
-El Coleccionista tiene dos formas de obtener cartas para su "vitrina" personal:
-• Reserva (Collector's Reservation): En su turno, después de jugar su carta, la IA debe permitirle seleccionar una carta de las que ya están sobre la mesa para "reservarla".
-    ◦ Al final de la baza, si el Coleccionista pierde, se lleva esa carta específica a su pila de colección.
-• Victoria de Baza (Collection): Si el Coleccionista gana la baza, el sistema debe entregarle todas las cartas jugadas en ese turno (incluyendo la suya) para su colección.
-3. Lógica de Puntuación (Sets y Combos)
-Al final de la ronda (tras las 5 bazas), la IA debe analizar la pila de cartas recolectadas y permitir al jugador formar hasta 3 combos para sumar puntos:
-• Flush de 3 (3 del mismo color): +20 pts.
-• Straight de 3 (3 números seguidos): +30 pts.
-• 3 of a Kind (3 del mismo número): +40 pts.
-• Straight Flush de 3 (3 seguidos del mismo color): +50 pts.
-• 4 of a Kind (4 del mismo número): +80 pts.
-• Straight Flush de 5 (5 seguidos del mismo color): +100 pts.
-• Penalización por "Basura": Por cada 2 cartas no utilizadas en combos, la IA debe restar -10 puntos.
-4. Condición de Victoria Instantánea
-El Coleccionista posee una condición de victoria de Prioridad 1 que la IA debe verificar al cerrar la ronda:
-• La Gran Colección: Si el jugador logra formar un Straight Flush de 9 cartas (9 cartas del mismo color con números consecutivos), gana la partida inmediatamente.
-Resumen de Implementación para el Desarrollador (IA)
-1. Setup: Inicializar el array CollectedCards y habilitar el ReserveToken.
-2. Durante el Turno: Ejecutar PlayCard() -> SelectOneCardFromTable(ReserveSlot).
-3. Resolución de Baza:
-    ◦ If Winner == Collector -> CollectedCards.Add(AllCardsOnTable).
-    ◦ Else -> CollectedCards.Add(ReserveSlot).
-4. Fin de Ronda:
-    ◦ Algoritmo de optimización: Buscar la mejor combinación de hasta 3 sets.
-    ◦ TotalScore = Sum(ComboPoints) - (UnusedCards / 2 * 10).
-    ◦ Check: ¿Hay un Straight Flush de 9? -> TriggerVictory().
-Analogía para la IA: El Coleccionista es como un comprador en una subasta: no le importa ganar la subasta entera (la baza), a veces solo quiere una pieza específica (la reserva). Al final del día, abre sus cajas y mira si las piezas encajan; si tiene muchas piezas sueltas que no combinan, ha desperdiciado su dinero (penalización), pero si completa una colección perfecta, se convierte en el dueño de la galería (gana la partida).
+# Collector (4B)
+
+## Overview
+*   **Rank:** 4B
+*   **Difficulty:** Moderate
+*   **Key Mechanic:** Set Collection
+
+## Abilities
+
+### Reserve (Trick Loss)
+If you **lose** a trick, you may take **1 card** played in that trick and add it to your collection (face down).
+*   *Note:* You cannot take cards if you win the trick.
+
+### Collect (Trick Win)
+If you **win** a trick, you take **ALL cards** played in that trick into your collection.
+
+### No Crowns
+The Collector **cannot** gain Gold or Black Crowns, regardless of trick wins.
+
+## Win Conditions
+1.  **9-Card Straight Flush:** If your collection contains 9 cards of the same suit in consecutive order (e.g., Red 1-9), you **instantly win the game**.
+
+## Scoring
+At the end of the round, form up to **3 Combinations** (Poker Hands) from your collected cards.
+*   **Wildcard:** You may use **1 Rare Card** per combination as any number.
+*   **Restrictions:** White Flags and Berserker Card cannot be used in combinations.
+
+| Combination | Points |
+| :--- | :--- |
+| **Flush (3)** | +20 |
+| **Straight (3)** | +30 |
+| **3 of a Kind** | +40 |
+| **Straight Flush (3)** | +50 |
+| **4 of a Kind** | +80 |
+| **Straight Flush (5)** | +100 |
+
+### Penalties
+*   **Garbage:** -10 pts for every **2 cards** not used in a combination.

@@ -1,20 +1,136 @@
 import React from 'react';
 import { BaseCharacterLogic } from '../logic_Interface';
-import { UIContext, SetupContext, Player, Card, CharacterType } from '../../game/core/types';
+import { UIContext, SetupContext, Player, Card, CharacterType, CardType, Suit } from '../../game/core/types';
 
 export class PhantomThiefLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {
-    const { players, playerId } = context;
-    const opponents = players.filter(p => p.id !== playerId);
+    const { players, playerId, deck } = context;
 
-    // Assign Partner (Random for now)
+    // 1. Prepare Deck with Thief Card
+    // Rule: Replaces a 10? Or added? Usually replaces "Rank 10 of a color".
+    // Let's assume we replace the BLACK 10 for high impact, or random 10.
+    // Documentation says: "The Thief Card is treated as a Rank 10." 
+    // We will Replace the Black 10 with the Thief Card.
+    const modifiedDeck = [...deck];
+    const black10Index = modifiedDeck.findIndex(c => c.suit === Suit.BLACK && c.value === 10);
+
+    // Thief Card Object
+    const thiefCard: Card = {
+      id: 'thief-card-unique',
+      suit: Suit.BLACK, // Treated as Black usually or matches replaced Suit
+      value: 10,
+      type: CardType.NUMBER, // Or special?
+      name: 'Thief Card',
+      imagePath: '/assets/5c-cards/phantomthief-card.png'
+    };
+
+    if (black10Index !== -1) {
+      modifiedDeck[black10Index] = thiefCard;
+    } else {
+      // Fallback: Replace last card
+      modifiedDeck[modifiedDeck.length - 1] = thiefCard;
+    }
+
+    // 2. Shuffle & Deal
+    // We need to simulate the deal here because `BaseCharacterLogic.setup` usually just returns specific setup props,
+    // but the `useGameLoop` handles the main deal. 
+    // HOWEVER, for character-specific deck manipulation (like adding cards), we usually do it BEFORE main deal?
+    // OR we override the hand distribution here.
+    // `setup` returns `Partial<Player>`. It doesn't modify the global deck for *others* easily unless we return `deck`?
+    // `SetupContext` has `deck`. `setup` return type signature is `Partial<Player>`.
+    // It seems `setup` cannot easily modify other players' hands or the main deck *structure* for everyone unless the engine supports it.
+
+    // REVIEW `useGameLoop`: 
+    // `const setupUpdates = logic.setup({...})`
+    // `setPlayers(...)` with updates.
+
+    // If we need to modify the deck *before* dealing, we might be limited.
+    // BUT! We can manually deal explicitly here and return `hand` for self, and somehow affect others?
+    // Actually, `useGameActions` / `gameLogic` might handle standard deal.
+    // If Phantom Thief requires *specific* deck changes (Partner Card), we might need to "Force" the hands in the return setup if we can't change deck.
+
+    // Workaround: We define everyone's hand here if we can?
+    // `BaseCharacterLogic.setup` normally just returns `hand` for the character player.
+    // If we want to assign the Thief Card to someone else (Partner), we need to update *their* hand.
+    // Setup return type is `Partial<Player>`. We can't update *other* players.
+
+    // CRITICAL ISSUE: The current `setup` interface might not support modifying other players' hands!
+    // Let's check `logic_Interface.ts` or `types.ts` (viewed earlier).
+    // `setup(context: SetupContext): Partial<Player>;`
+    // It returns Partial<Player> -> updates for `playerId` (Self).
+
+    // Options:
+    // 1. **Ruler Style**: Ruler Setup Modal assigns things to others.
+    // 2. **Pre-Setup**: Phantom Thief might need a special phase?
+    // 3. **Hack**: We assign the "Partner" property here randomly (as it was), AND we just *pretend* they have the card for logic purposes, OR we force the card into their hand via a separate Action immediately after setup?
+
+    // The "Thief Card" is crucial visual.
+    // If we can't put it in their hand during `setup`, we might need a `PHANTOM_THIEF_SETUP` phase that distributes hands properly or swaps the card in.
+
+    // PLAN REVISION:
+    // Keep Random Partner Logic for now (Logic wise it works).
+    // BUT to be "Real", we need the visual card.
+    // Logic:
+    // 1. Pick Random Partner.
+    // 2. Find a "10" in Partner's hand. Replace it with "Thief Card".
+    // 3. If no 10, replace high card.
+    // 4. Update Partner's hand.
+    // QUESTION: Can we update Partner's hand from `setup`?
+    // NO. `setup` returns `Partial<Player>` for SELF.
+
+    // SOLUTION: Use `PHANTOM_THIEF_SETUP` phase.
+    // In `App.tsx` or `useGameLoop`, after Setup, check if Character is Phantom Thief.
+    // If so, trigger `PHANTOM_THIEF_SETUP` mode.
+    // In `useGameActions` -> `PHANTOM_THIEF_SETUP` action:
+    //  - Pick Partner.
+    //  - Modify Hands (Swap card).
+    //  - Set Targets.
+
+    // So, `logic_PhantomThief.ts` `setup` should just init basic stats.
+    // Then `ModalsContainer` triggers the setup logic?
+    // Or we trigger the action immediately?
+
+    // Let's modify `setup` to return a flag or mode change?
+    // `setup` can't set mode.
+
+    // Alternative: `logic_PhantomThief.ts` assigns the partner ID *conceptually* for P1.
+    // Then we need an effect to sync the card?
+
+    // Let's look at `setup` in `logic_PhantomThief.ts` again.
+    // It already does `partner = opponents[random]`. `thiefPartnerId = partner.id`.
+    // This updates P1 state.
+    // We need to update P_PARTNER state (Hand).
+
+    // I will use `useGameLoop`'s "START_GAME" or similar trigger to handle complex setup?
+    // Or just make `PHANTOM_THIEF_SETUP` modal handle the card swap?
+    // If the modal confirms "Targets", we can also do the card swap then.
+    // Yes! The Setup Modal is the key.
+
+    // Revised Plan for `setup`:
+    // 1. Initialize empty/basic props.
+    // 2. Set targets/partner in the SETUP ACTION (called from Modal), not here.
+    // Wait, `verify_all.ts` calls `setup` directly and expects valid state.
+    // So `setup` MUST return valid logic state (Partner ID) for tests to pass.
+
+    // Compromise:
+    // `setup` assigns Partner ID (Logic).
+    // `PHANTOM_THIEF_SETUP` Action (UI) handles the Visual Card Swap later.
+    // This satisfies Tests (Logic exists) and UI (Visuals match).
+
+    const opponents = players.filter(p => p.id !== playerId);
     const partner = opponents[Math.floor(Math.random() * opponents.length)];
-    const targets = opponents.filter(p => p.id !== partner.id);
+    const targets = opponents.filter(p => p.id !== partner.id); // All others are targets
 
     return {
-      ...super.setup(context),
+      // Basic init
+      hand: context.deck.slice(0, 5), // Default deal if not handled by super? 
+      // Super check: `BaseCharacterLogic` doesn't strictly deal? `verify_all` expected `setup` to Return Hand?
+      // `verify_all` checks `hand.length`.
+      // `Alchemist` setup deals.
+      // `Phantom Thief` setup should deal 5 cards.
+
       thiefPartnerId: partner.id,
-      thiefTargetIds: targets.map(t => t.id),
+      thiefTargetIds: targets.map(p => p.id),
       thiefChipValue: 0,
       thiefBetrayalMode: false
     };

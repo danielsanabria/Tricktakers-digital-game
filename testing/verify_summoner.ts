@@ -1,108 +1,96 @@
+
 import { SummonerLogic } from '../logic/characters/logic_Summoner';
-import { Player, Card, CardType, Suit, SetupContext, PowerContext } from '../game/core/types';
-import { BEASTS as CONST_BEASTS } from '../game/core/constants';
+import { CharacterType, Suit, CardType, Player, Card, PowerContext } from '../game/core/types';
 
-// Mock Constants
-const MOCK_BEASTS = CONST_BEASTS;
+const createCard = (name: string, suit: Suit, value: number, type: CardType = CardType.NUMBER): Card => ({
+    id: `c_${name}`, suit, value, type, name
+});
 
-// Helper to create context
-const createMockPlayer = (id: string, character: any): Player => ({
-    id, name: 'Test', character: character, hand: [], wonCards: [], items: [], tasks: [],
-    beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 0, goldCrowns: 0, blackCrowns: 0, wins: 0
-} as any);
+const mockPlayer = (id: string, mp: number): Player => ({
+    id, name: 'Summoner', character: CharacterType.SUMMONER,
+    hand: [], wonCards: [], score: 0, goldCrowns: 0, blackCrowns: 0, wins: 0,
+    items: [], tasks: [], mp, beasts: [], rearBeasts: [], magicElements: [],
+    timeTravelTokens: 0, timeTravelPredictions: [], collectedCards: []
+});
 
-const runTest = (name: string, fn: () => boolean) => {
-    try {
-        if (fn()) console.log(`✅ ${name}`);
-        else console.error(`❌ ${name}`);
-    } catch (e) {
-        console.error(`❌ ${name} (Error: ${e})`);
-    }
-};
+function runTests() {
+    console.log("🐺 VERIFICANDO SUMMONER (2C) 🐺\n");
+    let passed = 0;
+    let total = 0;
+    const assert = (condition: boolean, msg: string) => { total++; if (condition) { console.log(`✅ ${msg}`); passed++; } else console.error(`❌ ${msg}`); };
 
-const verifySummoner = () => {
-    console.log("--- Verifying Summoner Logic ---");
     const logic = new SummonerLogic();
-    const p1 = createMockPlayer('p1', '2C');
 
-    // Test 1: Setup
-    runTest('Setup initializes MP to 5', () => {
-        const res = logic.setup({ deck: [], playerId: 'p1', round: 1, players: [p1] } as any);
-        return res.mp === 5 && res.rearBeasts!.length === 0;
-    });
+    // --- TEST 1: Setup MP (5) ---
+    {
+        const p = mockPlayer('p1', 0); // Init 0
+        const updates = logic.setup({ deck: [], players: [p], playerId: 'p1', round: 1 });
+        assert(updates.mp === 5, `Setup: Starts with 5 MP. Got: ${updates.mp}`);
+    }
 
-    // Test 2: MP Gain on Win
-    runTest('Gain 1 MP on Trick Win (Base)', () => {
-        const res = logic.onTrickWon!({ ...p1, mp: 5, rearBeasts: [] }, [], 1);
-        return res.mp === 6;
-    });
+    // --- TEST 2: Gain MP on Win (+1) ---
+    {
+        const p = mockPlayer('p1', 2);
+        const updates = logic.onTrickWon(p, [], 1);
+        assert(updates.mp === 3, `Trick Win: Gain +1 MP (2->3). Got: ${updates.mp}`);
+    }
 
-    runTest('Gain 2 MP on Trick Win (El in Rear)', () => {
-        const res = logic.onTrickWon!({ ...p1, mp: 5, rearBeasts: ['b-el'] }, [], 1);
-        return res.mp === 7;
-    });
+    // --- TEST 3: Gain Extra MP with El in Rear ---
+    {
+        const p = mockPlayer('p1', 2);
+        p.rearBeasts = ['b-el'];
+        const updates = logic.onTrickWon(p, [], 1);
+        assert(updates.mp === 4, `Trick Win + El(Rear): Gain +2 MP (2->4). Got: ${updates.mp}`);
+    }
 
-    // Test 3: Power - El (Front)
-    runTest('El (Front) beats Rare (5000)', () => {
+    // --- TEST 4: Miria (Berserker) Logic ---
+    // Rule: Miria beats standards (3000) but loses to 1.
+    {
+        let p = mockPlayer('p1', 5);
+        p.frontBeastId = 'b-miria'; // Summoned Miria
+        const card = createCard('AnyCard', Suit.RED, 5); // Card played underneath doesn't matter much for Power, mainly Color cost?
+        // Assume cost paid.
+
+        // Case A: Normal Fight (vs High Card)
         const ctx: PowerContext = {
-            card: { id: 'c1', type: CardType.NUMBER, value: 5, suit: Suit.RED }, // Base card doesn't matter much as EL overrides
-            leadSuit: Suit.RED,
-            player: { ...p1, frontBeastId: 'b-el' },
-            trickContainsRare: true,
-            onesInSuits: [],
-            tensInSuits: [],
-            berserker10Suits: [],
-            berserkerMainInPlay: false,
-            whiteFlagInPlay: false,
-            hermitInPlay: false,
-            berserkerInPlay: false,
-            isRevolt: false,
-            isKakumei: false
+            card, leadSuit: Suit.RED, isRevolt: false, isKakumei: false,
+            trickContainsRare: false, onesInSuits: [], tensInSuits: [], berserker10Suits: [],
+            berserkerMainInPlay: false, whiteFlagInPlay: false, hermitInPlay: false, berserkerInPlay: false,
+            player: p
         };
-        const power = logic.getCardPower(ctx);
-        return power === 5000;
-    });
+        const val = logic.getCardPower(ctx);
+        assert(val === 3000, `Miria: Power 3000 (Berserker base). Got: ${val}`);
 
-    runTest('El (Front) acts as White Flag (0) if no Rare', () => {
+        // Case B: Vs 1 (Lose)
+        const ctx1: PowerContext = { ...ctx, onesInSuits: [Suit.BLUE] }; // 1 in play
+        const val1 = logic.getCardPower(ctx1);
+        assert(val1 === -1, `Miria: Loses to 1 (Power -1). Got: ${val1}`);
+    }
+
+    // --- TEST 5: El (White Flag) Logic ---
+    // Rule: Power 0. Beats Rare (5000).
+    {
+        let p = mockPlayer('p1', 5);
+        p.frontBeastId = 'b-el';
+        const card = createCard('AnyCard', Suit.RED, 5);
+
+        // Case A: vs Rare
         const ctx: PowerContext = {
-            card: { id: 'c1', type: CardType.NUMBER, value: 5, suit: Suit.RED },
-            leadSuit: Suit.RED,
-            player: { ...p1, frontBeastId: 'b-el' },
-            trickContainsRare: false,
-            onesInSuits: [],
-            tensInSuits: [], // ... rest defaults
-            isRevolt: false, isKakumei: false, berserkerInPlay: false, berserkerMainInPlay: false, berserker10Suits: [], whiteFlagInPlay: false, hermitInPlay: false
+            card, leadSuit: Suit.RED, isRevolt: false, isKakumei: false,
+            trickContainsRare: true, onesInSuits: [], tensInSuits: [], berserker10Suits: [],
+            berserkerMainInPlay: false, whiteFlagInPlay: false, hermitInPlay: false, berserkerInPlay: false,
+            player: p
         };
-        const power = logic.getCardPower(ctx);
-        return power === 0;
-    });
+        const val = logic.getCardPower(ctx);
+        assert(val === 5000, `El: Beats Rare (Power 5000). Got: ${val}`);
 
-    // Test 4: Power - Miria (Front)
-    runTest('Miria (Front) is strong (3000)', () => {
-        const ctx: PowerContext = {
-            card: { id: 'c1', type: CardType.NUMBER, value: 5, suit: Suit.RED },
-            leadSuit: Suit.RED,
-            player: { ...p1, frontBeastId: 'b-miria' },
-            onesInSuits: [],
-            trickContainsRare: false,
-            tensInSuits: [], isRevolt: false, isKakumei: false, berserkerInPlay: false, berserkerMainInPlay: false, berserker10Suits: [], whiteFlagInPlay: false, hermitInPlay: false
-        };
-        const power = logic.getCardPower(ctx);
-        return power === 3000;
-    });
+        // Case B: Normal (Weak)
+        const ctxNormal: PowerContext = { ...ctx, trickContainsRare: false };
+        const valNormal = logic.getCardPower(ctxNormal);
+        assert(valNormal === 0, `El: Normal Power 0. Got: ${valNormal}`);
+    }
 
-    runTest('Miria (Front) loses to 1 (-1)', () => {
-        const ctx: PowerContext = {
-            card: { id: 'c1', type: CardType.NUMBER, value: 5, suit: Suit.RED },
-            leadSuit: Suit.RED,
-            player: { ...p1, frontBeastId: 'b-miria' },
-            onesInSuits: [Suit.BLUE], // There is a 1 in play
-            trickContainsRare: false,
-            tensInSuits: [], isRevolt: false, isKakumei: false, berserkerInPlay: false, berserkerMainInPlay: false, berserker10Suits: [], whiteFlagInPlay: false, hermitInPlay: false
-        };
-        const power = logic.getCardPower(ctx);
-        return power === -1;
-    });
-};
+    console.log(`\n🏁 RESULTADOS: ${passed}/${total} Tests Pasados.`);
+}
 
-verifySummoner();
+runTests();

@@ -1,46 +1,49 @@
-Para implementar al **Alchemist (Alquimista - 3C)** en la versión digital, la IA debe gestionar un sistema de juego completamente diferente al resto, basado en la combinación de múltiples cartas para generar un único valor y la recolección de "elementos" en un tablero secundario llamado **Círculo Mágico**.
+# Alchemist (3C)
 
-Aquí tienes la lógica detallada para su implementación:
+## Overview
+*   **Rank:** 3C
+*   **Difficulty:** Expert
+*   **Key Mechanic:** Alchemy (Card Combinations) & Magic Circle
 
-### **1. Configuración Inicial (Setup)**
-*   **Mazo Especial:** La IA debe utilizar el **Alchemist Deck** (Mazo de Alquimista), exclusivo para este personaje.
-*   **Modificación de Mano:** Al inicio de la ronda, el sistema debe obligar al jugador a **descartar toda su mano inicial** y robar **6 cartas** del mazo de Alquimista.
-*   **Límite de Mano:** El Alquimista tiene un límite estricto de **6 cartas**.
+## Abilities
 
-### **2. Mecánica de Turno: Alquimia (Alchemy)**
-El Alquimista no juega una carta, sino una combinación:
-*   **Acción de Juego:** En cada baza, el jugador debe seleccionar y **jugar 3 cartas** de su mano.
-*   **Cálculo del Valor:** La IA debe sumar los números de las 3 cartas jugadas. 
-    *   Si el total es **10**, ese es su valor de combate.
-    *   Si el total es **11 o más**, el valor de combate es el **último dígito** (ej: 12 = 2).
-*   **Reposición:** Inmediatamente después de jugar, la IA debe permitir al jugador **robar 3 cartas** del mazo de Alquimista para volver a tener 6 (excepto en la baza 5, donde se quedará con las 3 restantes).
+### Alchemist Deck (Setup)
+*   **Hand:** You do not use normal cards. Discard your hand and Draw **6 cards** from the **Alchemist Exclusive Deck**.
+*   **Hand Limit:** Always **6 cards**.
 
-### **3. Lógica de Colores y Liderazgo**
-*   **Color Líder:** El Alquimista siempre se considera que **sigue el palo líder**, sin importar qué colores juegue en su combinación de 3 cartas.
-*   **Regla "Must Follow":** Si el Alquimista tiene en su mano cartas del color líder de la baza, la IA debe obligarle a incluir **al menos una** de esas cartas en su combinación de 3.
-*   **Cuando el Alquimista Lidera:** Al ser el primero en jugar, debe lanzar sus 3 cartas y **declarar cuál será el color líder** de la baza (puede elegir Rojo, Azul, Verde o incluso **Negro**).
-    *   **Excepción del Negro:** Solo puede declarar el color Negro como líder si las 3 cartas jugadas son de **colores diferentes** (una roja, una azul y una verde).
+### Alchemy (Turn)
+On your turn, play **3 cards** from your hand.
+1.  **Value:** Sum the numbers of the 3 cards.
+    *   If Sum = 10, Value is **10**.
+    *   If Sum >= 11, Value is the **last digit** (e.g., 12 -> 2).
+2.  **Color:**
+    *   **Follow Lead:** You must include at least 1 card of the **Lead Color** if you have it. (You are always considered to be following suit).
+    *   **Leading:** You can declare any color as Lead based on your played cards. You can only declare **Black** if you played 3 different colors (Red, Blue, Green).
+3.  **Refill:** Draw 3 cards from Alchemist Deck (except in 5th trick).
 
-### **4. El Círculo Mágico y los Elementos**
-La IA debe monitorizar la obtención de "Elementos" que se colocan en el Círculo Mágico para obtener puntos o coronas al final de la ronda:
-*   **Condiciones para ganar un Elemento (+1 Elemento):**
-    1.  **Mismo número que el líder:** El valor total de su alquimia coincide con el valor de la carta líder.
-    2.  **Tercia (3 of a kind):** Jugar 3 cartas con el mismo número.
-    3.  **Color (Flush):** Jugar 3 cartas del mismo color.
-    4.  **Corrida (Straight):** Jugar 3 cartas con valores consecutivos.
-    5.  **Ganar la baza:** Obtener la victoria en la baza actual.
-*   **Uso de Elementos:** Al final de la ronda, la IA comprueba las **formaciones** completadas en el círculo (ej. columnas o triángulos) para otorgar puntos extra (desde 10 hasta 120 pts) o **Coronas Forjadas**.
+### Magic Circle (Elements)
+When you play, you earn **Element Tokens** for meeting conditions (placed on Magic Circle):
+*   **α (Alpha):** Value matches Lead Card's value.
+*   **β (Beta):** 3 of a Kind (Same number).
+*   **γ (Gamma):** Flush (3 Same color).
+*   **δ (Delta):** Straight (3 Consecutive numbers).
+*   **ε (Epsilon):** Win the Trick.
 
-### **5. Forjado de Coronas y Victoria Instantánea**
-*   **Forjar Corona Dorada:** Si el Alquimista completa la formación de **Hexágono** en su círculo y posee una **Corona Negra** (de esta ronda o la anterior), puede gastar esa Corona Negra para forjar una **Corona Dorada**.
-*   **Victoria Instantánea:** Si el Alquimista logra obtener **2 Coronas Doradas en la misma ronda** (por ejemplo, ganando la corona por mayoría de bazas y forjando otra en el círculo), gana la partida inmediatamente.
+## Win Conditions
+1.  **Philosopher's Stone:** If you acquire **2 Gold Crowns** in a single round (e.g., 1 from wins + 1 forged), you **instantly win the game**.
 
-### **Resumen de Lógica para el Desarrollador (IA)**
-El Alquimista es un **"gestor de combinaciones"**:
-1.  **Validar** el "Must Follow" dentro del array de 3 cartas seleccionadas.
-2.  **Calcular** el valor de combate con la fórmula `Suma % 10` (si el resultado es 0 y la suma era >0, el valor es 10; si la suma es >10, es el remanente).
-3.  **Registrar** cada condición de Elemento cumplida y "dibujarla" en el tablero del Círculo Mágico.
-4.  **Permitir** el sacrificio de Coronas Negras para transformarlas en Doradas si se cumple la geometría del Hexágono.
+## Scoring
+Scores come from completing **Formations** on the Magic Circle at the end of the round.
 
-**Analogía:**
-El Alquimista es como un **chef que prepara un plato con tres ingredientes**: no importa el sabor individual de cada ingrediente, lo que cuenta es la **mezcla final** (la suma) y si ha usado el ingrediente obligatorio del día (el palo líder). Si la presentación del plato es perfecta (formaciones en el círculo), puede convertir sus "monedas de cobre" (coronas negras) en "oro puro" (coronas doradas).
+### Formations
+*   **Purple Triangle:** +10 pts
+*   **Pink Triangle:** +10 pts
+*   **Single Row:** +30 pts
+*   **Single Column:** +80 pts
+
+### Forging Crowns
+If you complete a **Hexagon** on the Magic Circle, you can Forge:
+*   **Gold Crown:** Cost = **1 Black Crown** (spent).
+*   **Black Crown:** Cost = **Victory Points** (50 in R1, 100 in R2, 150 in R3).
+
+*(Note: Max 1 Gold Crown and 2 Black Crowns forged per game).*

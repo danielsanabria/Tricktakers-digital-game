@@ -1,6 +1,6 @@
 import React from 'react';
 import { BaseCharacterLogic } from '../logic_Interface';
-import { SetupContext, Player, UIContext, Card } from '../../game/core/types';
+import { SetupContext, Player, UIContext, Card, PowerContext } from '../../game/core/types';
 import { ITEMS } from '../../game/core/constants';
 
 export class AdventurerLogic extends BaseCharacterLogic {
@@ -36,6 +36,29 @@ export class AdventurerLogic extends BaseCharacterLogic {
       }
     }
     return { itemSlots: newSlots };
+  }
+
+  getCardPower(context: PowerContext): number {
+    let power = super.getCardPower(context);
+    const { player, card, isKakumei, isRevolt } = context;
+
+    // Bonuses apply based on Wins (Level)
+    const wins = player.wins || 0;
+
+    // Level 2 (2 Wins): +2 to Even Cards
+    if (wins === 2 && card.value % 2 === 0) {
+      power += 2;
+    }
+    // Level 3 (3 Wins): +3 to Odd Cards
+    else if (wins === 3 && card.value % 2 !== 0) {
+      power += 3;
+    }
+    // Level 4 (4 Wins): +4 to All Cards
+    else if (wins >= 4) {
+      power += 4;
+    }
+
+    return power;
   }
 
   renderActions(context: UIContext): React.ReactNode {

@@ -92,7 +92,7 @@ export const useGameLoop = () => {
         }
         else if (p.character === CharacterType.KING && p.hand.length > 5) setAbilityMode('KING_SETUP');
         else if (p.character === CharacterType.ADVENTURER && p.items.length === 0) setAbilityMode('ADVENTURER_SETUP');
-        else if (p.character === CharacterType.BERSERKER) setAbilityMode('BERSERKER_SETUP');
+        else if (p.character === CharacterType.BERSERKER && p.berserkerDeck && p.berserkerDeck.length > 2) setAbilityMode('BERSERKER_SETUP');
         else if (p.character === CharacterType.RULER && p.tasks.length === 0) setAbilityMode('RULER_SETUP');
         else if (p.character === CharacterType.PHANTOM_THIEF && !p.thiefTargetIds) setAbilityMode('PHANTOM_THIEF_SETUP');
         else if (p.character === CharacterType.TIME_TRAVELER && (!p.timeTravelPredictions || p.timeTravelPredictions.length === 0)) setAbilityMode('TIME_TRAVELER_SETUP');
@@ -213,7 +213,7 @@ export const useGameLoop = () => {
 
     // Check ability mode on turn change
     useEffect(() => {
-        if (phase === GamePhase.TRICK_PLAYING && !isResolvingRef.current) {
+        if (phase === GamePhase.TRICK_PLAYING && !isResolvingRef.current && !isRoundResolvingRef.current) {
             checkPlayerAbilityMode(players[currentPlayerIdx]);
         }
     }, [currentPlayerIdx, phase, players]);
@@ -519,6 +519,14 @@ export const useGameLoop = () => {
                         }
                     }
                 }
+
+                // Check for Samurai Win Ability (Take Red Card)
+                const availableRedCards = cards.filter(c => c.suit === Suit.RED && c.ownerId !== winnerId);
+                if (winnerP.character === CharacterType.SAMURAI && availableRedCards.length > 0) {
+                    setAbilityMode('SAMURAI_WIN_CHOICE');
+                    // Pause resolution to wait for user input
+                    return;
+                }
             }
 
             if (isKakumei) {
@@ -615,7 +623,12 @@ export const useGameLoop = () => {
         const isKingDiscardPhase = p.character === CharacterType.KING && p.hand.length > 5;
         const isGamblerSwapPhase = p.character === CharacterType.GAMBLER && (p.gambleSwaps || 0) > 0 && p.bid === undefined;
 
-        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD', 'SUMMONER_SELECT_CARD'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase)) {
+        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD', 'SUMMONER_SELECT_CARD', 'SAMURAI_DISCARD'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase)) {
+            if (abilityMode === 'SAMURAI_DISCARD') {
+                performAction('SAMURAI_EXECUTE_DISCARD', { cardId });
+                return;
+            }
+
             setSelectedCards(prev => {
                 if (prev.includes(cardId)) return prev.filter(id => id !== cardId);
                 return [...prev, cardId];

@@ -43,6 +43,12 @@ export class BaseCharacterLogic implements ICharacterLogic {
     // 4. Follow Suit (Value)
     // 5. White Flag (0)
 
+    // 5. White Flag / Face Down (0)
+
+    if (card.isFacedown) {
+      return 0;
+    }
+
     if (card.type === CardType.RARE) {
       power = 2000;
     } else if (card.type === CardType.WHITE_FLAG) {

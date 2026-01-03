@@ -1,35 +1,34 @@
-Para implementar correctamente al Gambler (Tahúr - 2A) en la versión digital, la IA debe gestionar un flujo de juego que prioriza la predicción y el riesgo calculado. Su prioridad 2A es la segunda más alta del juego, lo que le da una gran ventaja competitiva, especialmente para asegurar bazas o reclamar coronas en caso de empate.
-Aquí tienes la configuración lógica detallada para la IA:
-1. Configuración Inicial (Setup)
-Esta fase es crítica y ocurre antes de que comience la primera baza de la ronda:
-• Bonificación de Entrada: El sistema debe otorgar inmediatamente +20 puntos al jugador al seleccionar este personaje.
-• Filtrado de Mano (Mecánica de Descarte): La IA debe permitir al jugador descartar cualquier número de cartas de su mano y robar la misma cantidad del mazo. Esta acción puede realizarse hasta dos veces.
-• La Apuesta de Bazas (Bid): El jugador debe declarar exactamente cuántas bazas (0 a 5) cree que ganará en la ronda.
-• Apuesta de Puntos (Bet):
-    ◦ El sistema debe permitir al jugador apostar puntos de su reserva actual a que cumplirá su predicción.
-    ◦ Límite estándar: Hasta 50 puntos.
-    ◦ Ronda 3 (The Final Battle): El límite aumenta hasta 100 puntos.
-2. Condiciones de Victoria Instantánea
-La IA debe monitorizar dos condiciones que terminan la partida inmediatamente si el Tahúr las cumple:
-1. Predicción Perfecta de 4: Si el jugador apuesta que ganará exactamente 4 bazas y lo logra, gana la partida automáticamente.
-2. Maestría de Bazas: Si el jugador logra ganar las 5 bazas de la ronda (independientemente de su apuesta inicial), gana la partida automáticamente.
-3. Lógica de Puntuación al Final de la Ronda
-Si no se cumplen las condiciones de victoria instantánea, la IA calcula los puntos basándose en si la apuesta (bid) fue exitosa (Bid Made) o fallida (Bid Missed):
-Si el número de bazas ganadas coincide con la apuesta:
-• 0 bazas apostadas y ganadas: +30 pts.
-• 1 baza apostada y ganada: +60 pts.
-• 2 bazas apostadas y ganadas: +90 pts.
-• 3 bazas apostadas y ganadas: +150 pts.
-• Ajuste de apuesta: Sumar los puntos apostados en el Setup (+BET pts).
-Si el número de bazas ganadas NO coincide con la apuesta:
-• Puntos de tabla: 0 pts (no recibe bonificación por bazas).
-• Penalización de apuesta: Restar los puntos apostados en el Setup (-BET pts).
-Resumen de Lógica para el Desarrollador (IA)
-La IA debe tratar al Tahúr como un "optimizador de probabilidades":
-1. Fase Setup: Ejecutar AddPoints(20) -> Repeat(2) { DiscardAndDraw() } -> Input(BidWins, BetPoints).
-2. Durante las bazas: Contador de CurrentWins.
-3. Resolución:
-    ◦ if CurrentWins == 5 OR (BidWins == 4 AND CurrentWins == 4) then TriggerVictory().
-    ◦ if CurrentWins == BidWins then Score = Table[BidWins] + BetPoints.
-    ◦ else Score = -BetPoints.
-Analogía para entender al personaje: El Tahúr es como un arquero que hace su propia diana: primero ajusta su equipo (descartes), luego anuncia dónde va a dar la flecha (apuesta de bazas) y pone dinero sobre la mesa. Si acierta exactamente donde dijo, el premio es enorme; si se queda corto o se pasa por una sola baza, pierde su dinero.
+# Gambler (2A)
+
+## Overview
+*   **Rank:** 2A
+*   **Difficulty:** Moderate
+*   **Key Mechanic:** Betting & Hand Adjustment
+
+## Abilities
+
+### Gamble (Setup)
+During **Step 3: Setup**, perform these steps in order:
+1.  **Gain Points:** Immediately gain +20 pts.
+2.  **Mulligan:** You may discard any number of cards from your hand and draw that many back. You may do this **twice**.
+3.  **Bid:** Predict how many tricks you will win (0-4).
+    *   *Note: You do not bid 5 because winning 5 is an instant win.*
+4.  **Bet:** You may bet up to 50 pts (100 pts in Round 3) on your bid.
+    *   If you succeed (Win Count == Bid), you gain the bet amount from the supply + your bet back.
+    *   If you fail, you lose the bet amount.
+
+## Win Conditions
+1.  **5 Tricks:** Win the game immediately.
+2.  **Successful 4 Bid:** If you bid 4 and win 4 tricks, you win the game immediately.
+
+## Scoring
+Scoring depends on hitting your **Bid**:
+
+| Bid | Tricks Won | Points |
+| :--- | :--- | :--- |
+| **0** | 0 | +30 |
+| **1** | 1 | +60 |
+| **2** | 2 | +90 |
+| **3** | 3 | +150 |
+
+*   If you miss your bid: **0 pts** from the table (plus loss of any bet).

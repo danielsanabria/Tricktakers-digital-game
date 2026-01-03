@@ -210,24 +210,47 @@ export const useGameActions = ({
             const sumValue = alchemyResult.value;
             let newElements = [...(p.magicElements || []), ...alchemyResult.elements];
 
-            // 2. Check "Same as Lead" Element
-            if (leadSuit && playedCards.length > 0) {
-                const leadCard = playedCards[0];
-                if (leadCard.value === sumValue) {
-                    newElements.push('SAME_AS_LEAD');
-                    addLog("¡Elemento obtenido: Resonancia (Mismo valor que líder)!");
+            // 2. Validate Follow Lead Rule
+            if (leadSuit) {
+                const hasLeadSuitInHand = p.hand.some(c => c.suit === leadSuit);
+                const hasLeadSuitInSelection = actualCards.some(c => c.suit === leadSuit);
+
+                if (hasLeadSuitInHand && !hasLeadSuitInSelection) {
+                    addLog(`¡Debes incluir al menos una carta del palo líder (${leadSuit})!`);
+                    return;
+                }
+
+                // Check "Same as Lead" Element (Only when following)
+                if (playedCards.length > 0) {
+                    const leadCard = playedCards[0];
+                    if (leadCard.value === sumValue) {
+                        newElements.push('SAME_AS_LEAD');
+                        addLog("¡Elemento obtenido: Resonancia (Mismo valor que líder)!");
+                    }
                 }
             }
 
+            // 3. Handle Leading vs Following
+            if (!leadSuit) {
+                // If Leading: Open Modal to decide suit
+                setAbilityMode('ALCHEMIST_DECIDE_LEAD');
+                return;
+            }
+
+            // 4. Execution (Following)
             // Log elements
             if (alchemyResult.elements.includes('3_OF_A_KIND')) addLog("¡Elemento obtenido: Tercia!");
             if (alchemyResult.elements.includes('FLUSH')) addLog("¡Elemento obtenido: Color!");
             if (alchemyResult.elements.includes('STRAIGHT')) addLog("¡Elemento obtenido: Corrida!");
 
-            // 3. Create Virtual Card
+            // Create Virtual Card
             const virtualCard: Card = {
                 id: `alchemy-play-${Date.now()}`,
-                suit: leadSuit || Suit.COLORLESS,
+                suit: leadSuit, // Following: Inherit lead suit or it acts as that suit? 
+                // Rule: "The combined card is treated as the Lead Color." (If strictly following? Or does it keep its own property?)
+                // Actually rule says: "If leading... declare color. If following... treat as Lead Color?"
+                // Checking logic_Alchemist.md: "The Suit of the Combined Card is treated as the Lead Suit."
+                // So yes, it becomes the lead suit effectively.
                 value: sumValue,
                 type: CardType.NUMBER,
                 ownerId: p.id,
@@ -235,24 +258,17 @@ export const useGameActions = ({
                 combinedCards: actualCards
             };
 
-            // Handle Lead Suit
-            if (!leadSuit) {
-                virtualCard.suit = actualCards[0].suit;
-                setLeadSuit(virtualCard.suit);
-                addLog(`Alquimista declara el palo: ${virtualCard.suit}`);
-            } else {
-                virtualCard.suit = leadSuit;
-            }
-
-            // 4. Replenish Hand (Draw 3 from alchemistDeck)
+            // Replenish Hand (Draw 3 from alchemistDeck) - ONLY if not 5th trick
             const alchemistDeck = [...(p.alchemistDeck || [])];
             let drawnCards: Card[] = [];
-            if (alchemistDeck.length > 0) {
+            // Assuming 5 tricks per round. If trick === 5, do not draw.
+            // Note: `trick` is 1-based usually. Let's verify usage. `trick < 5` increments. So trick 5 is the last one.
+            if (alchemistDeck.length > 0 && trick < 5) {
                 drawnCards = alchemistDeck.splice(0, 3).map(c => ({ ...c, ownerId: p.id }));
                 addLog(`Alquimista repone ${drawnCards.length} cartas.`);
             }
 
-            // 5. Update Player State
+            // Update Player State
             const remainingHand = p.hand.filter(c => !selectedCards.includes(c.id));
             const newHand = [...remainingHand, ...drawnCards];
 
@@ -263,11 +279,72 @@ export const useGameActions = ({
                 magicElements: newElements
             } : pl));
 
-            // 6. Play Virtual Card
+            // Play Virtual Card
             setPlayedCards(prev => [...prev, virtualCard]);
             setSelectedCards([]);
 
-            // Advance turn if trick not complete
+            // Advance turn
+            if (playedCards.length + 1 < players.length) {
+                setCurrentPlayerIdx(prev => (prev + 1) % players.length);
+            }
+
+            addLog(`Alquimista juega combinación: ${sumValue} (Poder: ${alchemyResult.isStrong ? '10 (Fuerte)' : sumValue})`);
+            setAbilityMode('NONE');
+        }
+        else if (actionName === 'ALCHEMIST_RESOLVE_LEAD') {
+            // Called from Modal when Leading
+            const { suit } = payload;
+            const p = players.find(player => player.id === 'p1');
+            if (!p) return;
+
+            // Recalculate (safe assuming selectedCards didn't change because modal blocks interaction)
+            const actualCards = p.hand.filter(c => selectedCards.includes(c.id));
+            const alchemyResult = calculateAlchemyValue(actualCards);
+            const sumValue = alchemyResult.value;
+            let newElements = [...(p.magicElements || []), ...alchemyResult.elements]; // Logic elements only
+
+            // Log elements
+            if (alchemyResult.elements.includes('3_OF_A_KIND')) addLog("¡Elemento obtenido: Tercia!");
+            if (alchemyResult.elements.includes('FLUSH')) addLog("¡Elemento obtenido: Color!");
+            if (alchemyResult.elements.includes('STRAIGHT')) addLog("¡Elemento obtenido: Corrida!");
+
+            // Create Virtual Card with DECLARED suit
+            const virtualCard: Card = {
+                id: `alchemy-play-${Date.now()}`,
+                suit: suit,
+                value: sumValue,
+                type: CardType.NUMBER,
+                ownerId: p.id,
+                name: `Alchemy Result (${sumValue})`,
+                combinedCards: actualCards
+            };
+
+            setLeadSuit(suit);
+            addLog(`Alquimista declara el palo: ${suit}`);
+
+            // Replenish Hand (Lead also draws, unless 5th trick)
+            const alchemistDeck = [...(p.alchemistDeck || [])];
+            let drawnCards: Card[] = [];
+            if (alchemistDeck.length > 0 && trick < 5) {
+                drawnCards = alchemistDeck.splice(0, 3).map(c => ({ ...c, ownerId: p.id }));
+                addLog(`Alquimista repone ${drawnCards.length} cartas.`);
+            }
+
+            // Update Player
+            const remainingHand = p.hand.filter(c => !selectedCards.includes(c.id));
+            const newHand = [...remainingHand, ...drawnCards];
+
+            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+                ...pl,
+                hand: newHand,
+                alchemistDeck: alchemistDeck,
+                magicElements: newElements
+            } : pl));
+
+            setPlayedCards(prev => [...prev, virtualCard]);
+            setSelectedCards([]);
+
+            // Advance turn
             if (playedCards.length + 1 < players.length) {
                 setCurrentPlayerIdx(prev => (prev + 1) % players.length);
             }
@@ -460,6 +537,44 @@ export const useGameActions = ({
                 setPhase(GamePhase.ROUND_END);
             }
         }
+        else if (actionName === 'SAMURAI_TAKE_CARD') {
+            const { cardId } = payload;
+            const takenCard = playedCards.find(c => c.id === cardId);
+
+            if (takenCard) {
+                setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+                    ...p,
+                    hand: [...p.hand, { ...takenCard, ownerId: 'p1', isFacedown: false }]
+                } : p));
+
+                addLog(`Samurai: Roba ${takenCard.suit} ${takenCard.value} de la baza.`);
+                setAbilityMode('SAMURAI_DISCARD');
+                addLog("Samurai: Debes descartar una carta para mantener el límite.");
+            } else {
+                setAbilityMode('NONE');
+                performAction('COMPLETE_TRICK_NORMAL');
+            }
+        }
+        else if (actionName === 'SAMURAI_PASS_WIN_BONUS') {
+            setAbilityMode('NONE');
+            addLog("Samurai: El honor dicta ignorar el botín.");
+            performAction('COMPLETE_TRICK_NORMAL');
+        }
+        else if (actionName === 'SAMURAI_EXECUTE_DISCARD') {
+            const { cardId } = payload;
+            if (!cardId) return;
+
+            setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+                ...p,
+                hand: p.hand.filter(c => c.id !== cardId)
+            } : p));
+
+            const discarded = players.find(p => p.id === 'p1')?.hand.find(c => c.id === cardId);
+            addLog(`Samurai descarta ${discarded?.suit} ${discarded?.value} como sacrificio.`);
+
+            setAbilityMode('NONE');
+            performAction('COMPLETE_TRICK_NORMAL');
+        }
         else if (actionName === 'COLLECTOR_RESERVE_CONFIRM') {
             if (selectedCards.length !== 1) return;
             const cardId = selectedCards[0];
@@ -529,6 +644,47 @@ export const useGameActions = ({
             setAbilityMode('NONE');
             addLog(`Aventurero eligió sus objetos iniciales: ${redItem.name} y ${blueItem.name}.`);
         }
+        else if (actionName === 'PHANTOM_THIEF_SETUP') {
+            const { chip } = payload;
+
+            // Logic to Finalize Setup (Visual Card Swap)
+            setPlayers(prev => {
+                const p1 = prev.find(p => p.id === 'p1');
+                if (!p1 || !p1.thiefPartnerId) return prev;
+
+                const partner = prev.find(p => p.id === p1.thiefPartnerId);
+                if (!partner) return prev;
+
+                // 1. Give Thief Card to Partner
+                // Find a card to replace (preferably a Black 10 or similar high card, or just random)
+                // Rule: "Replace one 10 with Thief Card."
+                const hand = [...partner.hand];
+                const replaceIdx = hand.findIndex(c => c.value === 10);
+                const targetIdx = replaceIdx !== -1 ? replaceIdx : hand.length - 1; // Fallback to last card
+
+                const thiefCard: Card = {
+                    id: `thief-card-${Date.now()}`,
+                    suit: Suit.BLACK,
+                    value: 10,
+                    type: CardType.NUMBER,
+                    name: 'Thief Card',
+                    ownerId: partner.id,
+                    imagePath: '/assets/5c-cards/phantomthief-card.png'
+                };
+
+                hand[targetIdx] = thiefCard;
+
+                // 2. Set Chip & Return
+                return prev.map(p => {
+                    if (p.id === 'p1') return { ...p, thiefChipValue: chip };
+                    if (p.id === partner.id) return { ...p, hand: hand };
+                    return p;
+                });
+            });
+
+            setAbilityMode('NONE');
+            addLog(`El Golpe ha comenzado. Chip establecido en: ${chip === 0 ? '0' : '±1'}.`);
+        }
         else if (actionName === 'PHANTOM_TOGGLE_CHIP') {
             setPlayers(prev => prev.map(p => {
                 if (p.id === 'p1') {
@@ -537,18 +693,23 @@ export const useGameActions = ({
                 }
                 return p;
             }));
+            addLog("Chip de Predicción actualizado.");
         }
         else if (actionName === 'PHANTOM_TOGGLE_BETRAYAL') {
             setPlayers(prev => prev.map(p => {
                 if (p.id === 'p1') {
-                    return { ...p, thiefBetrayalMode: !p.thiefBetrayalMode };
+                    const newVal = !p.thiefBetrayalMode;
+                    return { ...p, thiefBetrayalMode: newVal };
                 }
                 return p;
             }));
+            addLog("Modo Traición alternado.");
         }
         else if (actionName === 'PHANTOM_EXCHANGE_REQUEST') {
             const player = players.find(p => p.id === 'p1');
             if (!player) return;
+
+            // Check if already exchanged this round? (Not tracked yet, assuming unlimited for now or tracked later)
 
             if (selectedCards.length !== 1) {
                 alert("Selecciona 1 carta para ofrecer.");
@@ -560,6 +721,7 @@ export const useGameActions = ({
 
             if (cardToGive && partner) {
                 if (partner.hand.length > 0) {
+                    // Random card from partner
                     const partnerCardIndex = Math.floor(Math.random() * partner.hand.length);
                     const partnerCard = partner.hand[partnerCardIndex];
 
@@ -573,6 +735,7 @@ export const useGameActions = ({
                     }));
 
                     setSelectedCards([]);
+                    setAbilityMode('NONE'); // Close actions if any
                     addLog(`Phantom Thief intercambió carta con su socio ${partner.name}.`);
                 }
             }

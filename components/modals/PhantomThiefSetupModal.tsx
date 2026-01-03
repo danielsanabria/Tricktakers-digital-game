@@ -1,68 +1,60 @@
 
 import React, { useState } from 'react';
-import { Suit } from '../../game/core/types';
-import { SUIT_ICONS, SUIT_COLORS } from '../../game/core/constants';
 
 interface PhantomThiefSetupModalProps {
-    onConfirm: (suits: Suit[]) => void;
+    onConfirm: (chipValue: number) => void;
 }
 
 export const PhantomThiefSetupModal: React.FC<PhantomThiefSetupModalProps> = ({ onConfirm }) => {
-    const [selectedSuits, setSelectedSuits] = useState<Suit[]>([]);
-
-    // Suits excluding Black and Colorless for notices
-    const availableSuits = [Suit.RED, Suit.BLUE, Suit.GREEN];
-
-    const toggleSuit = (suit: Suit) => {
-        if (selectedSuits.includes(suit)) {
-            setSelectedSuits(prev => prev.filter(s => s !== suit));
-        } else if (selectedSuits.length < 2) {
-            setSelectedSuits(prev => [...prev, suit]);
-        }
-    };
+    // 3. Phantom Chip: Set to 0 or +/- 1
+    const [chip, setChip] = useState<number>(0);
 
     return (
-        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-            <div className="bg-slate-900 rounded-2xl border-2 border-indigo-500 p-8 max-w-lg w-full shadow-[0_0_60px_rgba(99,102,241,0.3)]">
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-indigo-500/10 border-2 border-indigo-500 mb-4">
-                        <span className="text-5xl">🎭</span>
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-900 border-2 border-slate-500 rounded-xl max-w-lg w-full p-8 shadow-2xl relative">
+                {/* Header Image */}
+                <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden shadow-xl bg-gray-800">
+                    <img src="/assets/chars/5C.png" alt="Phantom Thief" className="w-full h-full object-cover" />
+                </div>
+
+                <h2 className="text-3xl font-bold text-center mt-12 mb-2 text-transparent bg-clip-text bg-gradient-to-r from-slate-300 to-white">
+                    Preparación del Golpe
+                </h2>
+                <p className="text-gray-400 text-center text-sm mb-8">
+                    Has enviado los <strong>Avisos Previos</strong> a tus objetivos. <br />
+                    Tu <strong>Socio</strong> ya tiene la carta señalada.
+                </p>
+
+                {/* Chip Selection */}
+                <div className="mb-8">
+                    <h3 className="text-lg font-bold text-white mb-4 text-center">Configura tu Chip de Predicción</h3>
+                    <div className="flex justify-center gap-6">
+                        <button
+                            onClick={() => setChip(0)}
+                            className={`w-20 h-20 rounded-full border-4 flex items-center justify-center text-2xl font-bold transition-all ${chip === 0 ? 'border-blue-500 bg-blue-900/50 text-white scale-110 shadow-[0_0_20px_rgba(59,130,246,0.5)]' : 'border-gray-600 bg-gray-800 text-gray-500 hover:border-gray-500'}`}
+                        >
+                            0
+                        </button>
+                        <button
+                            onClick={() => setChip(1)}
+                            className={`w-20 h-20 rounded-full border-4 flex items-center justify-center text-2xl font-bold transition-all ${chip === 1 ? 'border-purple-500 bg-purple-900/50 text-white scale-110 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : 'border-gray-600 bg-gray-800 text-gray-500 hover:border-gray-500'}`}
+                        >
+                            ±1
+                        </button>
                     </div>
-                    <h2 className="text-3xl font-black text-indigo-400 uppercase italic tracking-tighter">Aviso del Ladrón</h2>
-                    <p className="text-slate-400 mt-2">Elige 2 colores. Ganarás una corona por cada baza que ganes con esos colores.</p>
+                    <p className="text-xs text-gray-500 text-center mt-3">
+                        {chip === 0
+                            ? "Robas si tienes IGUAL número de victorias que tu objetivo."
+                            : "Robas si tienes UNA victoria de DIFERENCIA con tu objetivo."}
+                    </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                    {availableSuits.map(suit => {
-                        const isSelected = selectedSuits.includes(suit);
-                        return (
-                            <button
-                                key={suit}
-                                onClick={() => toggleSuit(suit)}
-                                className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${isSelected
-                                    ? 'bg-indigo-500/20 border-indigo-500 scale-105 shadow-[0_0_20px_rgba(99,102,241,0.4)]'
-                                    : 'bg-slate-800 border-slate-700 hover:border-slate-500 opacity-60'}`}
-                            >
-                                <span className="text-3xl">{SUIT_ICONS[suit]}</span>
-                                <span className={`text-xs font-bold uppercase ${SUIT_COLORS[suit].split(' ')[1]}`}>{suit}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                <div className="flex flex-col gap-4">
-                    <div className="text-center text-xs font-bold text-indigo-300/50 uppercase tracking-widest">
-                        Seleccionados: {selectedSuits.length} / 2
-                    </div>
-
-                    <button
-                        onClick={() => onConfirm(selectedSuits)}
-                        disabled={selectedSuits.length !== 2}
-                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 disabled:grayscale text-white font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_4px_0_rgb(49,46,129)] active:translate-y-1 active:shadow-none"
-                    >
-                        Enviar Invitaciones
-                    </button>
-                </div>
+                <button
+                    onClick={() => onConfirm(chip)}
+                    className="w-full btn btn-slate py-3 text-lg shadow-lg font-bold tracking-widest hover:bg-slate-700"
+                >
+                    INICIAR EL GOLPE
+                </button>
             </div>
         </div>
     );

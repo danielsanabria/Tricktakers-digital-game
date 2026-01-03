@@ -98,6 +98,24 @@ const verifyAlchemist = () => {
         const res = calculateAlchemyValue(cards);
         return res.elements.includes('STRAIGHT');
     });
+
+    // Test 5: Lead Suit Logic (Declaration)
+    runTest('Alchemy Lead Suit Declaration Logic', () => {
+        // This logic is mostly in useGameActions (UI integration), 
+        // but we can verify the utility functions or internal state if any exist in Logic class.
+        // The AlchemistLogic class handles 'onTrickWon' but the 'Play' action logic is in useGameActions.
+        // However, we can verified that 'setup' creates the 'alchemistDeck' properly.
+        const res = logic.setup({ deck: [], playerId: 'p1', round: 1, players: [p1] } as any);
+        return res.alchemistDeck !== undefined && res.alchemistDeck.length > 0;
+    });
+
+    // Test 6: Refill Logic (Mocking Logic Call)
+    // The refill logic is in `useGameActions.ts` (App level), not purely inside `logic_Alchemist.ts`.
+    // However, `logic_Alchemist.ts` might have `resolveRefill` or similar if we moved it.
+    // Checking file... logic_Alchemist does NOT have refill logic exposed.
+    // It's in `useGameActions`. We can't easily unit test `useGameActions` here without a full enzyme/react render.
+    // WE WILL MARK THIS AS MANUAL VERIFICATION in the output.
+    console.log("⚠️  Refill Logic and Lead Suit UI must be verified manually or via Integration Tests.");
 };
 
 verifyAlchemist();

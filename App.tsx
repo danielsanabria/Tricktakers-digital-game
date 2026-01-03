@@ -143,6 +143,8 @@ const App = () => {
                         setViewingTraps={game.setViewingTraps}
                         trapDeck={game.trapDeck}
                         trick={game.trick}
+                        playedCards={game.playedCards}
+                        selectedCards={game.selectedCards}
                     />
 
                     {/* Logs Panel */}

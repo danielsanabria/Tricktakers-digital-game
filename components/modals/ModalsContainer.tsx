@@ -14,6 +14,8 @@ import { TimeTravelerSetupModal } from './TimeTravelerSetupModal';
 import { TimeTravelerDiscardModal } from './TimeTravelerDiscardModal';
 import { TimeTravelerWinModal } from './TimeTravelerWinModal';
 import { TimeTravelerDistributeModal } from './TimeTravelerDistributeModal';
+import { SamuraiWinModal } from './SamuraiWinModal';
+import { AlchemistSuitSelectorModal } from './AlchemistSuitSelectorModal';
 
 interface ModalsContainerProps {
     abilityMode: string;
@@ -32,6 +34,8 @@ interface ModalsContainerProps {
     setViewingTraps: (viewing: boolean) => void;
     trapDeck: any[];
     trick: number;
+    playedCards?: Card[];
+    selectedCards?: string[]; // Add this prop
 }
 
 export const ModalsContainer: React.FC<ModalsContainerProps> = ({
@@ -50,9 +54,19 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
     viewingTraps,
     setViewingTraps,
     trapDeck,
-    trick
+    trick,
+    playedCards = [],
+    selectedCards = []
 }) => {
     console.log('ModalsContainer rendering with abilityMode:', abilityMode);
+
+    // Helper to get card objects from IDs for Alchemist
+    const getAlchemistSelectedCards = () => {
+        const p1 = players.find(p => p.id === 'p1');
+        if (!p1) return [];
+        return p1.hand.filter(c => selectedCards.includes(c.id));
+    };
+
     return (
         <>
             {/* Strategist Review Modal */}
@@ -162,10 +176,9 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                 />
             )}
 
-            {/* Phantom Thief Setup Modal */}
             {abilityMode === 'PHANTOM_THIEF_SETUP' && (
                 <PhantomThiefSetupModal
-                    onConfirm={(suits) => performAction('PHANTOM_THIEF_SETUP', suits)}
+                    onConfirm={(chip) => performAction('PHANTOM_THIEF_SETUP', { chip })}
                 />
             )}
 
@@ -199,6 +212,27 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                     player={players.find(p => p.id === 'p1')!}
                     opponents={players.filter(p => p.id !== 'p1')}
                     onConfirm={(assignments) => performAction('TIME_TRAVEL_EXECUTE_DISTRIBUTION', assignments)}
+                />
+            )}
+
+            {/* Samurai Win Modal */}
+            {abilityMode === 'SAMURAI_WIN_CHOICE' && (
+                <SamuraiWinModal
+                    players={players}
+                    trickCards={playedCards || []}
+                    onTakeCard={(cardId) => performAction('SAMURAI_TAKE_CARD', { cardId })}
+                    onSkip={() => performAction('SAMURAI_PASS_WIN_BONUS')}
+                />
+            )}
+
+            {/* Alchemist Lead Suit Selector Modal */}
+            {abilityMode === 'ALCHEMIST_DECIDE_LEAD' && (
+                <AlchemistSuitSelectorModal
+                    selectedCards={getAlchemistSelectedCards()}
+                    onConfirm={(suit) => {
+                        performAction('ALCHEMIST_RESOLVE_LEAD', { suit });
+                        setAbilityMode('NONE');
+                    }}
                 />
             )}
         </>
