@@ -181,6 +181,13 @@ export const useGameLoop = () => {
             addLog("Apostador: ¡Haz tu predicción!");
         }
 
+        // Strategist Setup (Human)
+        const humanStrategist = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.STRATEGIST);
+        if (humanStrategist) {
+            setAbilityMode('STRATEGIST_SETUP');
+            addLog("Estratega: Define tu Plan Maestro de Trampas.");
+        }
+
         if (strategistInheritedCard) {
             setStrategistInheritedCard(null);
         }
@@ -194,7 +201,11 @@ export const useGameLoop = () => {
         setIsKakumei(false);
         isRoundResolvingRef.current = false;
         addLog(`--- COMIENZA LA RONDA ${round} ---`);
-        checkPlayerAbilityMode(newPlayers[trickStarterIdx]);
+
+        // Only check for other ability modes if Strategist setup is not active
+        if (!humanStrategist) {
+            checkPlayerAbilityMode(newPlayers[trickStarterIdx]);
+        }
     }, [round, players, trickStarterIdx, strategistInheritedCard]);
 
     const prepareRoundSelection = (
@@ -400,7 +411,24 @@ export const useGameLoop = () => {
             const winnerChar = playersToUse[winnerIdx].character ? CHARACTERS[playersToUse[winnerIdx].character!].name : 'Sin personaje';
             addLog(`¡${winnerName} (${winnerChar}) gana la baza!`);
 
-            let updatedPlayers = playersToUse.map(p => {
+            const strategistId = playersToUse.find(p => p.character === CharacterType.STRATEGIST)?.id;
+            let currentTrapPool = trapPool;
+
+            // Trap D Logic: Pre-calculate penalties
+            const updatedPlayersPreCalc = playersToUse.map(p => {
+                if (currentTrap && currentTrap.id === 'trap-4' && winnerId === strategistId && p.id !== winnerId) {
+                    if (p.score >= 10) {
+                        currentTrapPool += 10;
+                        addLog(`¡TRAMPA (D)! ${p.name} pierde 10 pts por victoria del Estratega.`);
+                        return { ...p, score: p.score - 10 };
+                    } else {
+                        addLog(`¡TRAMPA (D)! ${p.name} debería perder 10 pts pero está en bancarrota.`);
+                    }
+                }
+                return p;
+            });
+
+            let updatedPlayers = updatedPlayersPreCalc.map(p => {
                 const isCollector = p.character === CharacterType.COLLECTOR;
                 const hasReservedCard = p.reservedCardId !== null;
 
@@ -411,10 +439,13 @@ export const useGameLoop = () => {
                         adventurerUsedItem: false,
                         gamblerUsedAbility: false
                     };
-                    if (p.character === CharacterType.STRATEGIST && trapPool > 0) {
-                        bonus = trapPool;
+
+                    if (p.character === CharacterType.STRATEGIST && currentTrapPool > 0) {
+                        bonus = currentTrapPool;
                         addLog(`¡Estratega reclama el Pozo! (+${bonus} pts)`);
                         setTrapPool(0);
+                    } else if (p.character !== CharacterType.STRATEGIST) {
+                        setTrapPool(currentTrapPool);
                     }
 
                     if (p.character === CharacterType.RESISTANCE && (isKakumei || isRevolt)) {
@@ -535,7 +566,7 @@ export const useGameLoop = () => {
         drawPile, setDrawPile, players, setPlayers, selectedCards, setSelectedCards,
         setAbilityMode, playedCards, setPlayedCards, setLeadSuit, leadSuit, setCurrentPlayerIdx,
         trickStarterIdx, setIsKakumei, addLog, resolveTrick, currentPlayerIdx,
-        isResolvingRef, trick, setItemCardToShow
+        isResolvingRef, trick, setItemCardToShow, setTrapDeck
     });
 
     const playCard = (cardId: string) => {

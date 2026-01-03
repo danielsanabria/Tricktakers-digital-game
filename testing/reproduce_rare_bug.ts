@@ -79,7 +79,8 @@ const runTest = () => {
         whiteFlagInPlay: false,
         hermitInPlay: true,
         berserkerInPlay: true,
-        trickContainsRare: true
+        trickContainsRare: true,
+        tensInSuits: [Suit.GREEN]
     };
 
     const powerBerserker = logicBerserker.getCardPower({ ...contextBase, card: cardBerserker, player: p1 });

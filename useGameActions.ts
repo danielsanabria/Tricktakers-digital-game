@@ -24,6 +24,7 @@ interface GameActionsProps {
     isResolvingRef: React.MutableRefObject<boolean>;
     trick: number;
     setItemCardToShow: (url: string | null) => void;
+    setTrapDeck: React.Dispatch<React.SetStateAction<Trap[]>>;
 }
 
 export const useGameActions = ({
@@ -46,7 +47,8 @@ export const useGameActions = ({
     currentPlayerIdx,
     isResolvingRef,
     trick,
-    setItemCardToShow
+    setItemCardToShow,
+    setTrapDeck
 }: GameActionsProps) => {
 
     const performAction = useCallback((actionName: string, payload?: any) => {
@@ -451,10 +453,15 @@ export const useGameActions = ({
                 return p;
             }));
             setSelectedCards([]);
-            setAbilityMode('NONE');
-            addLog("¡Berserker usó una Corona Negra! Descartó sus cartas y robó del mazo exclusivo.");
+            addLog(`¡Berserker usó una Corona Negra! Descartó sus cartas y robó del mazo exclusivo.`);
         }
-    }, [drawPile, selectedCards, players, playedCards, currentPlayerIdx, trickStarterIdx, isResolvingRef, trick, setItemCardToShow, setAbilityMode, setDrawPile, setPlayers, setSelectedCards, setPlayedCards, setLeadSuit, setIsKakumei, addLog, resolveTrick, leadSuit]);
+        else if (actionName === 'STRATEGIST_SET_TRAPS') {
+            const { traps } = payload;
+            setTrapDeck(traps);
+            setAbilityMode('NONE');
+            addLog("El Estratega ha definido su Plan Maestro de Trampas.");
+        }
+    }, [drawPile, selectedCards, players, playedCards, currentPlayerIdx, trickStarterIdx, isResolvingRef, trick, setItemCardToShow, setAbilityMode, setDrawPile, setPlayers, setSelectedCards, setPlayedCards, setLeadSuit, setIsKakumei, addLog, resolveTrick, leadSuit, setTrapDeck]);
 
     return { performAction };
 };

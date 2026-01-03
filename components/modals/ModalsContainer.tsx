@@ -8,6 +8,7 @@ import { RulerSetupModal } from './RulerSetupModal';
 import { PhantomThiefSetupModal } from './PhantomThiefSetupModal';
 import { StrategistModal } from './StrategistModal';
 import { GamblerSetupModal } from './GamblerSetupModal';
+import { StrategistTrapModal } from './StrategistTrapModal';
 
 interface ModalsContainerProps {
     abilityMode: string;
@@ -38,9 +39,7 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
     phase,
     addLog
 }) => {
-    // Helper for GamePhase enum usage if needed, but passed as any to avoid import cycles if not strict
-    // Ideally import GamePhase but let's keep it simple for now as 'phase' matches value.
-
+    console.log('ModalsContainer rendering with abilityMode:', abilityMode);
     return (
         <>
             {/* Strategist Choice Modal */}
@@ -62,6 +61,13 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                     setPhase('ROUND_SUMMARY' as any);
                 }}
             />
+
+            {/* Strategist Trap Setup Modal */}
+            {abilityMode === 'STRATEGIST_SETUP' && (
+                <StrategistTrapModal
+                    onConfirm={(traps) => performAction('STRATEGIST_SET_TRAPS', { traps })}
+                />
+            )}
 
             {/* Adventurer Setup Modal */}
             {abilityMode === 'ADVENTURER_SETUP' && (
@@ -121,13 +127,12 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                 />
             )}
 
-
             {/* Gambler Setup Modal */}
             {(abilityMode === 'GAMBLER_SWAP' || abilityMode === 'GAMBLE_BID' || abilityMode === 'GAMBLER_BETTING') && (
                 <GamblerSetupModal
                     player={players.find(p => p.id === 'p1')!}
                     mode={abilityMode === 'GAMBLER_SWAP' ? 'SWAP' : abilityMode === 'GAMBLE_BID' ? 'BID' : 'BET'}
-                    round={1} // Ideally pass round from props, assuming 1 or passed via props if added. ModalsContainer usually needs round prop.
+                    round={1}
                     onSwap={(cardIds) => performAction('GAMBLER_EXECUTE_SWAP', { cardIds })}
                     onSkipSwap={() => performAction('GAMBLER_SKIP_SWAP')}
                     onBid={(bid) => performAction('GAMBLER_BID', bid)}

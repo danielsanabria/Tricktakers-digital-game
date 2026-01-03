@@ -96,6 +96,7 @@ export interface Trap {
   name: string;
   description: string;
   color: string;
+  imagePath: string;
   condition: (card: Card, leadSuit: Suit | null) => boolean;
 }
 

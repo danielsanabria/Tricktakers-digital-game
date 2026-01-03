@@ -13,7 +13,8 @@ export const CHARACTERS: Record<CharacterType, CharacterData> = {
     id: CharacterType.STRATEGIST, name: 'Strategist', catchphrase: 'To see the big picture', difficulty: 'DIFFICULT',
     description: 'Use Trap Cards to penalize others. Exclusive Black 7 card.',
     abilityName: 'Strategize', pointsByWins: { 0: 50, 1: 30, 2: -50, 3: 50, 4: 80, 5: 999 },
-    winConditionText: '5 Wins', imagePath: '1C.webp', thumbnailPath: '1C-thumb.jpg', summaryThumbnailPath: '/assets/chars-no-bg/1C-no-bg.png'
+    winConditionText: '5 Wins', imagePath: '1C.webp', thumbnailPath: '1C-thumb.jpg',
+    summaryThumbnailPath: '/assets/chars-no-bg/1C-no-bg.png'
   },
   [CharacterType.GAMBLER]: {
     id: CharacterType.GAMBLER, name: 'Gambler', catchphrase: "It's not luck, it's guidance", difficulty: 'MODERATE',
@@ -124,20 +125,29 @@ export const BEASTS: Beast[] = [
 
 export const TRAPS: Trap[] = [
   {
-    id: 'trap-1', name: 'Must Follow', description: 'If you do not follow suit, pay 10 pts.', color: 'text-rose-500',
-    condition: (card, leadSuit) => leadSuit !== null && card.suit !== leadSuit && card.suit !== Suit.COLORLESS
-  },
-  {
-    id: 'trap-2', name: 'High Numbers', description: 'If you play 7, 8, or 9, pay 10 pts.', color: 'text-blue-500',
-    condition: (card) => card.type !== 'RARE' && card.value >= 7
-  },
-  {
-    id: 'trap-3', name: 'Low Numbers', description: 'If you play 1-6, pay 10 pts.', color: 'text-emerald-500',
+    id: 'trap-1', name: 'Low Numbers (A)', description: 'If you play 1-6, lose points.', color: 'text-emerald-500',
+    imagePath: '/assets/1c-cards/trap-A.jpg',
     condition: (card) => card.type !== 'WHITE_FLAG' && card.value >= 1 && card.value <= 6
   },
   {
-    id: 'trap-4', name: 'Black Card', description: 'If you play a Black card, pay 10 pts.', color: 'text-slate-600',
+    id: 'trap-2', name: 'High Numbers (B)', description: 'If you play 7, 8, or 9, lose points.', color: 'text-blue-500',
+    imagePath: '/assets/1c-cards/trap-B.jpg',
+    condition: (card) => card.type !== 'RARE' && card.value >= 7 && card.value <= 9
+  },
+  {
+    id: 'trap-3', name: 'Black Card (C)', description: 'If you play a Black card, lose points.', color: 'text-slate-600',
+    imagePath: '/assets/1c-cards/trap-C.jpg',
     condition: (card) => card.suit === Suit.BLACK
+  },
+  {
+    id: 'trap-4', name: 'Strategist Victory (D)', description: 'If the Strategist wins the trick, everyone loses points.', color: 'text-amber-500',
+    imagePath: '/assets/1c-cards/trap-D.jpg',
+    condition: () => false // Special handled in useGameLoop
+  },
+  {
+    id: 'trap-5', name: 'Must Follow (E)', description: 'If you can\'t follow the lead suit, lose points.', color: 'text-rose-500',
+    imagePath: '/assets/1c-cards/trap-E.jpg',
+    condition: (card, leadSuit) => leadSuit !== null && card.suit !== leadSuit && card.suit !== Suit.COLORLESS
   }
 ];
 

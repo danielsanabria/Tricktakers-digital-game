@@ -17,13 +17,36 @@ export class StrategistScoring extends BaseScoring {
             } else if (player.wins === 1) {
                 pts = 30;
                 logs.push("Estratega (AI): 1 victoria -> +30 pts.");
+            } else if (player.wins === 2) {
+                pts = -50;
+                logs.push("Estratega (AI): 2 victorias -> -50 pts.");
+            } else if (player.wins === 3) {
+                pts = 50;
+                logs.push("Estratega (AI): 3 victorias -> +50 pts.");
+            } else if (player.wins === 4) {
+                pts = 80;
+                logs.push("Estratega (AI): 4 victorias -> +80 pts.");
+            } else if (player.wins >= 5) {
+                pts = 999;
+                logs.push("Estratega (AI): 5 victorias -> ¡VICTORIA INSTANTÁNEA!");
             }
         } else {
-            // For p1, if they have 0 or 1 wins, they get points but only after they choose.
-            // However, for the total calculation in App.tsx loop, we can just say 0 for now
-            // and let the Modal handle the add score.
+            // For p1 (User)
             if (player.wins === 0 || player.wins === 1) {
+                // Choice handled by Modal
                 logs.push(`Estratega: ${player.wins} victorias. Debes elegir tu recompensa.`);
+            } else if (player.wins === 2) {
+                pts = -50;
+                logs.push("Estratega: 2 victorias -> -50 pts.");
+            } else if (player.wins === 3) {
+                pts = 50;
+                logs.push("Estratega: 3 victorias -> +50 pts.");
+            } else if (player.wins === 4) {
+                pts = 80;
+                logs.push("Estratega: 4 victorias -> +80 pts.");
+            } else if (player.wins >= 5) {
+                pts = 999;
+                logs.push("Estratega: 5 victorias -> ¡VICTORIA INSTANTÁNEA!");
             }
         }
 
