@@ -215,4 +215,5 @@ export interface UIContext {
   isCurrentPlayer: boolean;
   round: number;
   playedCards: Card[];
+  trapDeck?: Trap[]; // For Strategist
 }
