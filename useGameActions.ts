@@ -110,6 +110,9 @@ export const useGameActions = ({
         else if (actionName === 'RULER_ASSIGN_TASKS') {
             const assignments = payload as Record<string, string>;
             setPlayers(prev => prev.map(p => {
+                if (p.id === 'p1') {
+                    return { ...p, tasksAssigned: assignments };
+                }
                 if (p.id !== 'p1') {
                     const taskId = assignments[p.id];
                     const task = TASKS.find(t => t.id === taskId);
@@ -121,13 +124,13 @@ export const useGameActions = ({
             addLog("Has promulgado tus decretos reales.");
         }
         else if (actionName === 'PHANTOM_THIEF_SETUP') {
-            const selectedSuits = payload as Suit[];
+            const chipValue = (payload as number) || 0;
             setPlayers(prev => prev.map(p => p.id === 'p1' ? {
                 ...p,
-                thiefTargetIds: selectedSuits.map(s => s.toString())
+                thiefChipValue: chipValue
             } : p));
             setAbilityMode('NONE');
-            addLog(`Has enviado avisos para los colores: ${selectedSuits.join(', ')}.`);
+            addLog(`Setup Phantom Thief: Chip de Predicción establecido en ${chipValue === 0 ? '0' : '±1'}.`);
         }
         else if (actionName === 'TRIGGER_KAKUMEI') {
             setIsKakumei(prev => !prev);
@@ -754,34 +757,34 @@ export const useGameActions = ({
             setAbilityMode('NONE');
             addLog(`El Golpe ha comenzado. Chip establecido en: ${chip === 0 ? '0' : '±1'}.`);
         }
+        else if (actionName === 'PHANTOM_INIT_EXCHANGE') {
+            setAbilityMode('PHANTOM_EXCHANGE');
+            // addLog("Selecciona una carta para intercambiar con tu socio."); // Optional log, maybe too spammy?
+        }
         else if (actionName === 'PHANTOM_TOGGLE_CHIP') {
-            setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1') {
-                    const current = p.thiefChipValue || 0;
-                    return { ...p, thiefChipValue: current === 0 ? 1 : 0 };
-                }
-                return p;
-            }));
-            addLog("Chip de Predicción actualizado.");
+            const p = players.find(player => player.id === 'p1');
+            if (p) {
+                const current = p.thiefChipValue || 0;
+                const nextVal = current === 0 ? 1 : 0;
+                setPlayers(prev => prev.map(pl => pl.id === 'p1' ? { ...pl, thiefChipValue: nextVal } : pl));
+                addLog(`Chip de Predicción actualizado: ${nextVal === 0 ? '0' : '±1'}`);
+            }
         }
         else if (actionName === 'PHANTOM_TOGGLE_BETRAYAL') {
-            setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1') {
-                    const newVal = !p.thiefBetrayalMode;
-                    return { ...p, thiefBetrayalMode: newVal };
-                }
-                return p;
-            }));
-            addLog("Modo Traición alternado.");
+            const p = players.find(player => player.id === 'p1');
+            if (p) {
+                const nextVal = !p.thiefBetrayalMode;
+                setPlayers(prev => prev.map(pl => pl.id === 'p1' ? { ...pl, thiefBetrayalMode: nextVal } : pl));
+                addLog(`Modo Traición: ${nextVal ? 'ACTIVADO' : 'Desactivado'}`);
+            }
         }
         else if (actionName === 'PHANTOM_EXCHANGE_REQUEST') {
             const player = players.find(p => p.id === 'p1');
             if (!player) return;
 
-            // Check if already exchanged this round? (Not tracked yet, assuming unlimited for now or tracked later)
-
             if (selectedCards.length !== 1) {
-                alert("Selecciona 1 carta para ofrecer.");
+                // UI should prevent this button from being clickable usually, but alert just in case
+                alert("Debes seleccionar 1 carta para confirmar el intercambio.");
                 return;
             }
             const cardToGiveId = selectedCards[0];
@@ -877,30 +880,62 @@ export const useGameActions = ({
 
             addLog(`Usaste: ${item.name}`);
 
+            // 1. Calculate Replacement Item (Deterministic Step)
+            // Filter out the used item immediately from the pool of possibilities
+            const currentItemsIds = p.items.map(i => i.id);
+            // The used item is 'item'. We want to find a NEW random item that is NOT in the current items list.
+            // Note: filteredItems (items - used) is what we will have. So the new item just needs to not be in that result?
+            // Actually, simply: It must not be equal to the USED item (obviously) and typically not equal to OTHER items if we want uniqueness.
+            // The logic was: `!filteredItems.map(x => x.id).includes(i.id)`
+            // So we assume uniqueness in slots.
+            const filteredItems = p.items.filter(i => i.id !== item.id);
+            const possibleItems = ITEMS.filter(i => i.id !== item.id && !filteredItems.some(existing => existing.id === i.id));
+
+            let replacement: Item | null = null;
+            if (possibleItems.length > 0) {
+                replacement = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+                addLog(`Encontraste: ${replacement.name}`);
+            }
+
+            // 2. Handle DRAW_X Effect (Side effects on Draw Pile)
+            let drawnCards: Card[] = [];
+            let newAbilityMode = 'NONE';
+
+            if (item.effect === 'DRAW_X') {
+                const currentDrawPile = [...drawPile];
+                // Check if we have enough cards?
+                if (currentDrawPile.length > 0) {
+                    drawnCards = currentDrawPile.splice(0, 2).map(c => ({ ...c, ownerId: 'p1' }));
+                    setDrawPile(currentDrawPile); // Update Pile State
+                    addLog("Robaste 2 cartas. Descarta 2.");
+                    newAbilityMode = 'KING_DISCARD';
+                }
+            } else {
+                // Nothing to do for other effects here, they are flags
+            }
+
+            if (newAbilityMode !== 'NONE') {
+                setAbilityMode(newAbilityMode);
+            }
+
+            // 3. Update Player State
             setPlayers(prev => prev.map(pl => {
                 if (pl.id !== 'p1') return pl;
 
-                const filteredItems = pl.items.filter(i => i.id !== item.id);
                 let newHand = pl.hand;
                 let pendingEffect = pl.pendingItemEffect;
 
+                // Apply Draw Effect
                 if (item.effect === 'DRAW_X') {
-                    const currentDrawPile = [...drawPile];
-                    const drawn = currentDrawPile.splice(0, 2).map(c => ({ ...c, ownerId: 'p1' }));
-                    setDrawPile(currentDrawPile);
-                    newHand = [...pl.hand, ...drawn];
-                    setAbilityMode('KING_DISCARD');
-                    addLog("Robaste 2 cartas. Descarta 2.");
+                    newHand = [...pl.hand, ...drawnCards];
                 } else {
                     pendingEffect = item.effect;
                 }
 
-                const possibleItems = ITEMS.filter(i => i.id !== item.id && !filteredItems.map(x => x.id).includes(i.id));
-                let updatedItems = filteredItems;
-                if (possibleItems.length > 0) {
-                    const replacement = possibleItems[Math.floor(Math.random() * possibleItems.length)];
-                    updatedItems = [...filteredItems, replacement];
-                    addLog(`Encontraste: ${replacement.name}`);
+                // Apply Replacement
+                let updatedItems = pl.items.filter(i => i.id !== item.id);
+                if (replacement) {
+                    updatedItems = [...updatedItems, replacement];
                 }
 
                 return {

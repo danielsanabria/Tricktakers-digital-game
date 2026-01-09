@@ -29,7 +29,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
                     <div className="hidden sm:flex gap-6 items-center bg-slate-50 px-4 py-1.5 rounded-full border border-slate-100">
                         <div className="text-center">
                             <span className="block text-[8px] font-black text-slate-400 uppercase">Ronda</span>
-                            <span className="font-black text-xs">{round}/3</span>
+                            <span className="font-black text-xs text-slate-900">{round}/3</span>
                         </div>
                         <div className="text-center">
                             <span className="block text-[8px] font-black text-slate-400 uppercase">Baza</span>

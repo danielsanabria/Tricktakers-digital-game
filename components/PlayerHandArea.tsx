@@ -68,6 +68,8 @@ export const PlayerHandArea: React.FC<PlayerHandAreaProps> = ({
 
                     selectedCards={selectedCards}
                     onReviewTraps={onReviewTraps}
+                    performAction={performAction}
+                    abilityMode={abilityMode}
                 />
             </div>
         </div>

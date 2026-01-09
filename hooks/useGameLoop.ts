@@ -7,13 +7,16 @@ import { getScoringLogic } from '../logic/scoring/scoring_Registry';
 import { PhantomThiefLogic } from '../logic/characters/logic_PhantomThief';
 import { useGameActions } from '../useGameActions';
 
+// Initial Players
 const getInitialPlayers = (): Player[] => [
-    { id: 'p1', name: 'Tú', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, hermitDiscarding: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} },
+    { id: 'p1', name: 'Tú', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, hermitDiscarding: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: null, thiefBetrayalMode: false, tasksAssigned: {} }, // ChipValue NULL defines not set
     { id: 'p2', name: 'Rival 1', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, hermitDiscarding: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} },
     { id: 'p3', name: 'Rival 2', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, hermitDiscarding: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} }
 ];
 
 export const useGameLoop = () => {
+    // ...
+    // Inside startRound:
     const [gameMode, setGameMode] = useState<GameMode>(GameMode.BASIC);
     const [players, setPlayers] = useState<Player[]>(getInitialPlayers());
     const [phase, setPhase] = useState<GamePhase>(GamePhase.MODE_SELECTION);
@@ -96,14 +99,14 @@ export const useGameLoop = () => {
         else if (p.character === CharacterType.KING && p.hand.length > 5) setAbilityMode('KING_SETUP');
         else if (p.character === CharacterType.ADVENTURER && p.items.length === 0) setAbilityMode('ADVENTURER_SETUP');
         else if (p.character === CharacterType.BERSERKER && p.berserkerDeck && p.berserkerDeck.length > 2) setAbilityMode('BERSERKER_SETUP');
-        else if (p.character === CharacterType.RULER && p.tasks.length === 0) setAbilityMode('RULER_SETUP');
+        else if (p.character === CharacterType.RULER && (!p.tasksAssigned || Object.keys(p.tasksAssigned).length === 0)) setAbilityMode('RULER_SETUP');
         else if (p.character === CharacterType.STRATEGIST && p.hand.length > 5 && round === 1) setAbilityMode('STRATEGIST_DISCARD'); // Only needed if initially > 5 (Start of game) or handled in setup
         // Actually, Strategist setup adds 1 card (Black7) to 5 dealt -> 6.
         // So always check if Strategist has > 5 cards and hasn't discarded yet.
         // But wait, Strategist keeps cards between rounds? No, hand resets.
         // So checking hand.length > 5 is enough.
         else if (p.character === CharacterType.STRATEGIST && p.hand.length > 5) setAbilityMode('STRATEGIST_DISCARD');
-        else if (p.character === CharacterType.PHANTOM_THIEF && !p.thiefTargetIds) setAbilityMode('PHANTOM_THIEF_SETUP');
+        else if (p.character === CharacterType.PHANTOM_THIEF && p.thiefChipValue === null) setAbilityMode('PHANTOM_THIEF_SETUP');
         else if (p.character === CharacterType.TIME_TRAVELER && (!p.timeTravelPredictions || p.timeTravelPredictions.length === 0)) setAbilityMode('TIME_TRAVELER_SETUP');
         else setAbilityMode('NONE');
     };
@@ -161,7 +164,12 @@ export const useGameLoop = () => {
         // Phantom Thief Setup (Human)
         const thiefPlayer = newPlayers.find(p => p.character === CharacterType.PHANTOM_THIEF);
         if (thiefPlayer && thiefPlayer.id === 'p1') {
+            // Force setup if not set yet (we use chipValue === null now to detect unset, or just force it)
+            // But wait, setup function returns chipValue: 0. 
+            // We should probably init it to -1 or null in setup() if we want to force distinct setup.
+            // OR just force mode here regardless.
             setAbilityMode('PHANTOM_THIEF_SETUP');
+            addLog("Phantom Thief: Configura tu Chip de Predicción.");
         }
 
         // Adventurer Setup (Human)

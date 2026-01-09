@@ -108,7 +108,7 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
                         ))}
                     </div>
 
-                    <div className="bg-slate-950/50 p-4 rounded-lg text-xs text-slate-500 text-left">
+                    <div className="bg-slate-950/50 p-4 rounded-lg text-xs text-slate-400 text-left">
                         <p className="font-bold text-amber-500/80 mb-1">RECORDATORIO:</p>
                         <ul className="list-disc pl-4 space-y-1">
                             <li>Si aciertas exactamente: +20 puntos.</li>

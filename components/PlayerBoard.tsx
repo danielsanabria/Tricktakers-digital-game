@@ -5,6 +5,7 @@ import { CHARACTERS } from '../game/core/constants';
 import GameCard from './GameCard';
 import { SummonerBoard } from './SummonerBoard';
 import { AlchemistBoard } from './AlchemistBoard';
+import { PhantomThiefBoard } from './PhantomThiefBoard';
 
 interface PlayerBoardProps {
   player: Player;
@@ -16,6 +17,10 @@ interface PlayerBoardProps {
 
   selectedCards?: string[];
   onReviewTraps?: () => void;
+
+  // New props for integrated actions
+  performAction?: (action: string, payload?: any) => void;
+  abilityMode?: string;
 }
 
 const PlayerBoard: React.FC<PlayerBoardProps> = ({
@@ -26,7 +31,9 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
   onCharacterClick,
   onItemClick,
   selectedCards = [],
-  onReviewTraps
+  onReviewTraps,
+  performAction,
+  abilityMode
 }) => {
   const char = player.character ? CHARACTERS[player.character] : null;
   const [imgSrc, setImgSrc] = useState<string>('');
@@ -211,6 +218,13 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
 
       {player.character === CharacterType.SUMMONER && <SummonerBoard player={player} />}
       {player.character === CharacterType.ALCHEMIST && <AlchemistBoard player={player} />}
+      {player.character === CharacterType.PHANTOM_THIEF && isHuman && performAction && (
+        <PhantomThiefBoard
+          player={player}
+          onAction={performAction}
+          abilityMode={abilityMode || ''}
+        />
+      )}
 
       {/* ÁREA DE MANO DIFERENCIADA */}
       {

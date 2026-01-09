@@ -57,7 +57,7 @@ const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) =
       >
         <button
           onClick={onClose}
-          className="fixed top-4 right-4 text-white hover:text-rose-400 text-4xl transition-colors drop-shadow-lg z-[110]"
+          className="fixed top-4 right-4 bg-black/50 hover:bg-black/70 text-white hover:text-rose-400 w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-all drop-shadow-lg z-[110] backdrop-blur-sm border border-white/10"
         >
           <i className="fa-solid fa-times"></i>
         </button>
@@ -91,23 +91,23 @@ const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) =
 
             <div className="grid grid-cols-2 gap-4 text-left text-xs bg-slate-800/50 p-4 rounded-xl border border-slate-700">
               <div>
-                <span className="block text-slate-500 font-bold uppercase tracking-wider text-[10px]">Habilidad</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">Habilidad</span>
                 <span className="text-white font-bold">{character.abilityName}</span>
               </div>
               <div>
-                <span className="block text-slate-500 font-bold uppercase tracking-wider text-[10px]">Dificultad</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">Dificultad</span>
                 <span className={`font-bold ${character.difficulty === 'EASY' ? 'text-green-400' : character.difficulty === 'HARD' ? 'text-rose-400' : 'text-amber-400'}`}>
                   {character.difficulty}
                 </span>
               </div>
               <div className="col-span-2 border-t border-slate-700 pt-2 mt-2">
-                <span className="block text-slate-500 font-bold uppercase tracking-wider text-[10px] mb-1">Descripción</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">Descripción</span>
                 <p className="text-slate-300 leading-relaxed">{character.description}</p>
               </div>
 
               {/* Points Table - Added to visualize scoring since images might be missing */}
               <div className="col-span-2 border-t border-slate-700 pt-2 mt-2">
-                <span className="block text-slate-500 font-bold uppercase tracking-wider text-[10px] mb-2">Tabla de Puntos</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-2">Tabla de Puntos</span>
                 <div className="grid grid-cols-6 gap-0.5 text-center">
                   {[0, 1, 2, 3, 4, 5].map(wins => (
                     <div key={wins} className="bg-slate-700 p-1 rounded">
@@ -123,7 +123,7 @@ const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) =
 
               {character.winConditionText && (
                 <div className="col-span-2 border-t border-slate-700 pt-2 mt-2">
-                  <span className="block text-slate-500 font-bold uppercase tracking-wider text-[10px] mb-1">Condición Victoria</span>
+                  <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">Condición Victoria</span>
                   <p className="text-amber-400 font-black">{character.winConditionText}</p>
                 </div>
               )}

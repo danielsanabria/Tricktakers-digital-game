@@ -10,8 +10,8 @@ export const RulebooksModal: React.FC<RulebooksModalProps> = ({ onClose }) => {
             <div className="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl space-y-6" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Manuales de Reglas</h3>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
-                        <i className="fa-solid fa-xmark"></i>
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-200 rounded-full hover:bg-slate-300 text-slate-900 hover:text-black transition-colors shadow-sm">
+                        <i className="fa-solid fa-xmark font-bold"></i>
                     </button>
                 </div>
                 <p className="text-slate-500 text-sm">Consulta las reglas oficiales para resolver tus dudas.</p>
@@ -23,11 +23,11 @@ export const RulebooksModal: React.FC<RulebooksModalProps> = ({ onClose }) => {
                         rel="noopener noreferrer"
                         className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 transition-all group"
                     >
-                        <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center text-teal-600 group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center text-teal-700 group-hover:scale-110 transition-transform">
                             <i className="fa-solid fa-book text-xl"></i>
                         </div>
                         <div>
-                            <div className="font-bold text-slate-800 group-hover:text-teal-700">Tricktakers Base</div>
+                            <div className="font-bold text-slate-800 group-hover:text-teal-800">Tricktakers Base</div>
                             <div className="text-xs text-slate-400">Reglas fundamentales y personajes básicos.</div>
                         </div>
                         <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-slate-300 group-hover:text-teal-500"></i>
@@ -39,11 +39,11 @@ export const RulebooksModal: React.FC<RulebooksModalProps> = ({ onClose }) => {
                         rel="noopener noreferrer"
                         className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 transition-all group"
                     >
-                        <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center text-amber-700 group-hover:scale-110 transition-transform">
                             <i className="fa-solid fa-scroll text-xl"></i>
                         </div>
                         <div>
-                            <div className="font-bold text-slate-800 group-hover:text-amber-700">Expansión (Inglés)</div>
+                            <div className="font-bold text-slate-800 group-hover:text-amber-800">Expansión (Inglés)</div>
                             <div className="text-xs text-slate-400">Nuevos personajes y mecánicas avanzadas.</div>
                         </div>
                         <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-slate-300 group-hover:text-amber-500"></i>

@@ -184,11 +184,11 @@ export const TASKS: Task[] = [
 ];
 
 export const SUIT_COLORS: Record<Suit, string> = {
-  [Suit.RED]: 'border-rose-400 text-rose-500',
-  [Suit.BLUE]: 'border-sky-400 text-sky-500',
-  [Suit.GREEN]: 'border-teal-500 text-teal-600',
+  [Suit.RED]: 'border-rose-400 text-rose-600',
+  [Suit.BLUE]: 'border-sky-400 text-sky-700',
+  [Suit.GREEN]: 'border-teal-500 text-teal-700',
   [Suit.BLACK]: 'border-slate-800 text-slate-900',
-  [Suit.COLORLESS]: 'border-amber-400 text-amber-500'
+  [Suit.COLORLESS]: 'border-amber-400 text-amber-700'
 };
 
 export const SUIT_BG_COLORS: Record<Suit, string> = {

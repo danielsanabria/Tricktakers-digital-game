@@ -53,8 +53,8 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                                     key={player.id}
                                     onClick={() => setActivePlayerId(player.id)}
                                     className={`relative p-4 rounded-xl border transition-all text-left group ${isActive
-                                            ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
-                                            : 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
+                                        ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
+                                        : 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between mb-2">
@@ -76,7 +76,7 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                                             {assignedTask.name}
                                         </div>
                                     ) : (
-                                        <div className="text-xs text-slate-500 italic">Esperando órdenes...</div>
+                                        <div className="text-xs text-slate-400 italic">Esperando órdenes...</div>
                                     )}
 
                                     {isActive && (
@@ -112,10 +112,10 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                                         onClick={() => handleAssign(task.id)}
                                         disabled={isAssignedToOther}
                                         className={`group relative aspect-[3/4] rounded-xl overflow-hidden transition-all duration-300 ${isAssignedToThis
-                                                ? 'ring-4 ring-amber-500 scale-[1.02] shadow-[0_0_30px_rgba(245,158,11,0.3)] z-10'
-                                                : isAssignedToOther
-                                                    ? 'opacity-40 grayscale cursor-not-allowed contrast-50'
-                                                    : 'hover:scale-[1.02] hover:shadow-xl ring-1 ring-white/10 hover:ring-white/30'
+                                            ? 'ring-4 ring-amber-500 scale-[1.02] shadow-[0_0_30px_rgba(245,158,11,0.3)] z-10'
+                                            : isAssignedToOther
+                                                ? 'opacity-40 grayscale cursor-not-allowed contrast-50'
+                                                : 'hover:scale-[1.02] hover:shadow-xl ring-1 ring-white/10 hover:ring-white/30'
                                             }`}
                                     >
                                         <img
@@ -165,8 +165,8 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                         onClick={() => onConfirm(assignments)}
                         disabled={!isComplete}
                         className={`px-12 py-4 font-black uppercase tracking-widest rounded-lg transition-all ${isComplete
-                                ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:shadow-[0_0_50px_rgba(245,158,11,0.6)] hover:-translate-y-1'
-                                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                            ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:shadow-[0_0_50px_rgba(245,158,11,0.6)] hover:-translate-y-1'
+                            : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                             }`}
                     >
                         Promulgar Decretos

@@ -14,8 +14,8 @@ export const StrategistReviewModal: React.FC<StrategistReviewModalProps> = ({ tr
             <div className="bg-slate-800 border-2 border-slate-600 p-6 rounded-xl max-w-4xl w-full shadow-2xl flex flex-col gap-6" onClick={e => e.stopPropagation()}>
                 <div className="text-center flex justify-between items-center">
                     <h2 className="text-2xl font-black text-amber-500 uppercase tracking-widest pl-8">Estrategia Actual</h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white">
-                        <i className="fa-solid fa-times text-2xl"></i>
+                    <button onClick={onClose} className="text-slate-300 hover:text-white transition-colors bg-white/5 w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10">
+                        <i className="fa-solid fa-times text-xl"></i>
                     </button>
                 </div>
 
