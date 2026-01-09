@@ -97,6 +97,12 @@ export const useGameLoop = () => {
         else if (p.character === CharacterType.ADVENTURER && p.items.length === 0) setAbilityMode('ADVENTURER_SETUP');
         else if (p.character === CharacterType.BERSERKER && p.berserkerDeck && p.berserkerDeck.length > 2) setAbilityMode('BERSERKER_SETUP');
         else if (p.character === CharacterType.RULER && p.tasks.length === 0) setAbilityMode('RULER_SETUP');
+        else if (p.character === CharacterType.STRATEGIST && p.hand.length > 5 && round === 1) setAbilityMode('STRATEGIST_DISCARD'); // Only needed if initially > 5 (Start of game) or handled in setup
+        // Actually, Strategist setup adds 1 card (Black7) to 5 dealt -> 6.
+        // So always check if Strategist has > 5 cards and hasn't discarded yet.
+        // But wait, Strategist keeps cards between rounds? No, hand resets.
+        // So checking hand.length > 5 is enough.
+        else if (p.character === CharacterType.STRATEGIST && p.hand.length > 5) setAbilityMode('STRATEGIST_DISCARD');
         else if (p.character === CharacterType.PHANTOM_THIEF && !p.thiefTargetIds) setAbilityMode('PHANTOM_THIEF_SETUP');
         else if (p.character === CharacterType.TIME_TRAVELER && (!p.timeTravelPredictions || p.timeTravelPredictions.length === 0)) setAbilityMode('TIME_TRAVELER_SETUP');
         else setAbilityMode('NONE');
@@ -192,6 +198,7 @@ export const useGameLoop = () => {
         if (humanStrategist) {
             setAbilityMode('STRATEGIST_SETUP');
             addLog("Estratega: Define tu Plan Maestro de Trampas.");
+            // If hand > 5, Discard phase will trigger after setup is done (via checkPlayerAbilityMode or logic update)
         }
 
         if (strategistInheritedCard) {
@@ -333,11 +340,19 @@ export const useGameLoop = () => {
         });
 
         const maxWins = Math.max(...playersToUse.map(p => p.wins));
+
+        // Count how many players have maxWins
+        const winnersCount = playersToUse.filter(p => p.wins === maxWins).length;
+
         let blackCrownsGiven = 0;
         const crownResults = playersToUse.map(p => {
             let gold = 0; let black = 0;
             if (p.character !== CharacterType.COLLECTOR) {
-                if (p.wins === maxWins && maxWins > 0) gold = 1;
+                // Golden Crown: Only if UNIQUE winner (winnersCount === 1) and maxWins > 0
+                if (p.wins === maxWins && maxWins > 0 && winnersCount === 1) {
+                    gold = 1;
+                }
+
                 const isResistanceBlackCrown = p.character === CharacterType.RESISTANCE && p.wins === 1 && p.wonRevolutionTrick;
                 if ((p.wins === 0 || isResistanceBlackCrown) && blackCrownsGiven < 2) {
                     blackCrownsGiven++;
@@ -630,9 +645,13 @@ export const useGameLoop = () => {
         // Robust check: Use hermitDiscarding flag
         const isHermitDiscardPhase = p.character === CharacterType.HERMIT && (p as any).hermitDiscarding;
 
-        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD', 'SUMMONER_SELECT_CARD', 'SAMURAI_DISCARD'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase || isHermitDiscardPhase)) {
+        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD', 'SUMMONER_SELECT_CARD', 'SAMURAI_DISCARD', 'STRATEGIST_DISCARD'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase || isHermitDiscardPhase)) {
             if (abilityMode === 'SAMURAI_DISCARD') {
                 performAction('SAMURAI_EXECUTE_DISCARD', { cardId });
+                return;
+            }
+            if (abilityMode === 'STRATEGIST_DISCARD') {
+                performAction('STRATEGIST_EXECUTE_DISCARD', { cardId });
                 return;
             }
 

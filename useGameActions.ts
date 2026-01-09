@@ -620,6 +620,15 @@ export const useGameActions = ({
             setAbilityMode('NONE');
             performAction('COMPLETE_TRICK_NORMAL');
         }
+        else if (actionName === 'STRATEGIST_EXECUTE_DISCARD') {
+            const { cardId } = payload;
+            setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+                ...p,
+                hand: p.hand.filter(c => c.id !== cardId)
+            } : p));
+            setAbilityMode('NONE');
+            addLog("Estratega: Has descartado 1 carta para ajustar tu mano a 5.");
+        }
         else if (actionName === 'COLLECTOR_RESERVE_CONFIRM') {
             if (selectedCards.length !== 1) return;
             const cardId = selectedCards[0];
