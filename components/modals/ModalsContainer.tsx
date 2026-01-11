@@ -16,6 +16,7 @@ import { TimeTravelerWinModal } from './TimeTravelerWinModal';
 import { TimeTravelerDistributeModal } from './TimeTravelerDistributeModal';
 import { SamuraiWinModal } from './SamuraiWinModal';
 import { AlchemistSuitSelectorModal } from './AlchemistSuitSelectorModal';
+import { AdventurerSwapModal } from './AdventurerSwapModal';
 
 interface ModalsContainerProps {
     abilityMode: string;
@@ -233,6 +234,14 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                         performAction('ALCHEMIST_RESOLVE_LEAD', { suit });
                         setAbilityMode('NONE');
                     }}
+                />
+            )}
+            {/* Adventurer Swap Modal */}
+            {abilityMode === 'ADVENTURER_SWAP' && players.find(p => p.id === 'p1') && (
+                <AdventurerSwapModal
+                    player={players.find(p => p.id === 'p1')!}
+                    maxSelectable={players.find(p => p.id === 'p1')?.pendingItemEffect === 'DISCARD_2' ? 2 : 1}
+                    onConfirm={(cardIds) => performAction('ADVENTURER_EXECUTE_SWAP', { cardIds })}
                 />
             )}
         </>

@@ -640,7 +640,8 @@ export const useGameLoop = () => {
         setItemCardToShow,
         setTrapDeck,
         setTrick,
-        setPhase
+        setPhase,
+        setTrickStarterIdx
     });
 
     const playCard = (cardId: string) => {

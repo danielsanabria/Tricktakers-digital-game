@@ -52,7 +52,12 @@ export class BaseCharacterLogic implements ICharacterLogic {
     if (card.type === CardType.RARE) {
       power = 2000;
     } else if (card.type === CardType.WHITE_FLAG) {
-      power = 0;
+      // White Flag Logic: Weakest (0) normally, but Strongest if Rare is in play.
+      if (context.trickContainsRare) {
+        power = 3000; // Beats Rare (2000) and everything else.
+      } else {
+        power = 0;
+      }
     } else {
       // Suit Bonuses for Number cards
       if (card.suit === Suit.BLACK) {

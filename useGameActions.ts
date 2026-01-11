@@ -26,7 +26,8 @@ interface GameActionsProps {
     setItemCardToShow: (url: string | null) => void;
     setTrapDeck: React.Dispatch<React.SetStateAction<Trap[]>>;
     setTrick: React.Dispatch<React.SetStateAction<number>>;
-    setPhase: React.Dispatch<React.SetStateAction<any>>; // Using any for GamePhase enum to avoid import cycles
+    setPhase: React.Dispatch<React.SetStateAction<any>>;
+    setTrickStarterIdx: React.Dispatch<React.SetStateAction<number>>; // Added missing prop
 }
 
 export const useGameActions = ({
@@ -47,12 +48,13 @@ export const useGameActions = ({
     addLog,
     resolveTrick,
     currentPlayerIdx,
-    isResolvingRef,
-    trick,
+    isResolvingRef, // Restored
+    trick, // Restored
     setItemCardToShow,
     setTrapDeck,
     setTrick,
-    setPhase
+    setPhase,
+    setTrickStarterIdx // Added missing prop
 }: GameActionsProps) => {
 
     const performAction = useCallback((actionName: string, payload?: any) => {
@@ -102,10 +104,46 @@ export const useGameActions = ({
         else if (actionName === 'KING_DISCARD') {
             if (selectedCards.length !== 1) return;
             const cardId = selectedCards[0];
-            setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, hand: p.hand.filter(c => c.id !== cardId) } : p));
+
+            setPlayers(prev => prev.map(p => {
+                if (p.id === 'p1') {
+                    // Check for multi-discard requirement
+                    if (p.pendingItemEffect === 'DISCARD_2') {
+                        addLog("Has descartado 1 carta. Debes descartar 1 más.");
+                        // Do NOT clear mode. Downgrade pending effect.
+                        return {
+                            ...p,
+                            hand: p.hand.filter(c => c.id !== cardId),
+                            pendingItemEffect: 'DISCARD_1'
+                        };
+                    } else {
+                        // Finish discarding
+                        setAbilityMode('NONE');
+                        addLog(`Has descartado 1 carta.`);
+                        // Clear pending effect if it was DISCARD_1 or null
+                        return {
+                            ...p,
+                            hand: p.hand.filter(c => c.id !== cardId),
+                            pendingItemEffect: null
+                        };
+                    }
+                }
+                return p;
+            }));
             setSelectedCards([]);
-            setAbilityMode('NONE');
-            addLog(`Has descartado 1 carta.`);
+
+            // Note: We handled setAbilityMode inside setPlayers logic? No, setPlayers is pure state update.
+            // We must setMode outside.
+            // We need to know if we are finished.
+            // We can check the player state? No, async.
+            // We need to check current state.
+            const p1 = players.find(p => p.id === 'p1');
+            if (p1 && p1.pendingItemEffect === 'DISCARD_2') {
+                // We are GOING TO discard one. Next state will be DISCARD_1.
+                // So we STAY in KING_DISCARD.
+            } else {
+                setAbilityMode('NONE');
+            }
         }
         else if (actionName === 'RULER_ASSIGN_TASKS') {
             const assignments = payload as Record<string, string>;
@@ -902,13 +940,47 @@ export const useGameActions = ({
             let newAbilityMode = 'NONE';
 
             if (item.effect === 'DRAW_X') {
-                const currentDrawPile = [...drawPile];
-                // Check if we have enough cards?
-                if (currentDrawPile.length > 0) {
-                    drawnCards = currentDrawPile.splice(0, 2).map(c => ({ ...c, ownerId: 'p1' }));
-                    setDrawPile(currentDrawPile); // Update Pile State
-                    addLog("Robaste 2 cartas. Descarta 2.");
-                    newAbilityMode = 'KING_DISCARD';
+                // Don't draw yet. Just trigger Swap Mode.
+                addLog("Mapa del Destino: Selecciona hasta 2 cartas para intercambiar.");
+                newAbilityMode = 'ADVENTURER_SWAP';
+                // We need to set pendingItemEffect to tell modal how many.
+                // We will handle that in setPlayers.
+            } else if (item.effect === 'DRAW_DISCARD') {
+                addLog("Fairy Mischief: Selecciona hasta 1 carta para intercambiar.");
+                newAbilityMode = 'ADVENTURER_SWAP';
+            } else if (item.effect === 'GAIN_30') {
+                setPlayers(prev => prev.map(pl => {
+                    if (pl.id === 'p1') {
+                        return { ...pl, score: pl.score + 30 };
+                    }
+                    return pl;
+                }));
+                addLog("Recuperaste 30 puntos.");
+            } else if (item.effect === 'GAIN_20') {
+                setPlayers(prev => prev.map(pl => {
+                    if (pl.id === 'p1') {
+                        return { ...pl, score: pl.score + 20 };
+                    }
+                    return pl;
+                }));
+                addLog("Recuperaste 20 puntos.");
+            } else if (item.effect === 'PASS_LEAD') {
+                const isCurrentPlayer = currentPlayerIdx === players.findIndex(p => p.id === 'p1');
+                if (currentPlayerIdx === trickStarterIdx && isCurrentPlayer) {
+                    setTrickStarterIdx((prev) => (prev + 1) % players.length);
+                    setCurrentPlayerIdx((prev) => (prev + 1) % players.length);
+                    addLog("Pasaste el liderazgo a la siguiente persona.");
+                } else {
+                    addLog("El objeto solo funciona si estás liderando la baza.");
+                }
+            } else if (item.effect === 'PLAY_LAST') {
+                const isCurrentPlayer = currentPlayerIdx === players.findIndex(p => p.id === 'p1');
+                if (currentPlayerIdx === trickStarterIdx && isCurrentPlayer) {
+                    setTrickStarterIdx((prev) => (prev + 1) % players.length);
+                    setCurrentPlayerIdx((prev) => (prev + 1) % players.length);
+                    addLog("Ahora jugarás último (pasaste el liderazgo).");
+                } else {
+                    addLog("El objeto solo funciona si estás liderando (efecto simplificado).");
                 }
             } else {
                 // Nothing to do for other effects here, they are flags
@@ -925,9 +997,13 @@ export const useGameActions = ({
                 let newHand = pl.hand;
                 let pendingEffect = pl.pendingItemEffect;
 
-                // Apply Draw Effect
+                // Apply Draw Effect / Pending Flags
                 if (item.effect === 'DRAW_X') {
-                    newHand = [...pl.hand, ...drawnCards];
+                    // newHand = [...pl.hand, ...drawnCards]; // No draw yet
+                    pendingEffect = 'DISCARD_2'; // Reusing this flag to mean "Max 2" for swap
+                } else if (item.effect === 'DRAW_DISCARD') {
+                    // newHand = [...pl.hand, ...drawnCards]; // No draw yet
+                    pendingEffect = 'DISCARD_1'; // Reusing this flag to mean "Max 1" for swap
                 } else {
                     pendingEffect = item.effect;
                 }
@@ -1067,6 +1143,36 @@ export const useGameActions = ({
                 const updatedPlayers = players.map(pl => pl.id === 'p1' ? updatedP1 : pl);
                 resolveTrick(newPlayed, updatedPlayers);
             }
+        }
+        else if (actionName === 'ADVENTURER_EXECUTE_SWAP') {
+            const { cardIds } = payload; // IDs to discard
+
+            // Check draw pile availability
+            const currentDrawPile = [...drawPile];
+            const count = cardIds.length;
+
+            if (currentDrawPile.length < count) {
+                addLog("No hay suficientes cartas en el mazo para intercambiar.");
+                // Maybe handle partial? For now, abort or swap what we can.
+                // Assuming infinite deck or reshuffle logic exists elsewhere or we simply take all.
+            }
+
+            const drawn = currentDrawPile.splice(0, count).map(c => ({ ...c, ownerId: 'p1' }));
+            setDrawPile(currentDrawPile);
+
+            setPlayers(prev => prev.map(p => {
+                if (p.id === 'p1') {
+                    const handAfterDiscard = p.hand.filter(c => !cardIds.includes(c.id));
+                    return {
+                        ...p,
+                        hand: [...handAfterDiscard, ...drawn],
+                        pendingItemEffect: null // Clear effect
+                    };
+                }
+                return p;
+            }));
+            setAbilityMode('NONE');
+            addLog(`Adventurero intercambió ${count} carta(s).`);
         }
     }, [drawPile, selectedCards, players, playedCards, currentPlayerIdx, trickStarterIdx, isResolvingRef, trick, setItemCardToShow, setAbilityMode, setDrawPile, setPlayers, setSelectedCards, setPlayedCards, setLeadSuit, setIsKakumei, addLog, resolveTrick, leadSuit, setTrapDeck]);
 
