@@ -138,6 +138,8 @@ export interface Player {
   itemSlots?: number;
   pendingItemEffect?: string | null;
   collectedCards: Card[];
+  usedItemIds?: string[]; // Track used items for Adventurer uniqueness
+
   timeTravelTokens: number;
   timeTravelPredictions: string[];
   // Group 4

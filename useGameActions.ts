@@ -299,6 +299,11 @@ export const useGameActions = ({
                 combinedCards: actualCards
             };
 
+            // Set custom asset for Value 10 (Alchemist)
+            if (sumValue === 10 && leadSuit && leadSuit !== Suit.COLORLESS) {
+                virtualCard.imagePath = `/assets/color-cards/10s-cards/${leadSuit.toLowerCase()}-10.jpg`;
+            }
+
             // Replenish Hand (Draw 3 from alchemistDeck) - ONLY if not 5th trick
             const alchemistDeck = [...(p.alchemistDeck || [])];
             let drawnCards: Card[] = [];
@@ -325,8 +330,25 @@ export const useGameActions = ({
             setSelectedCards([]);
 
             // Advance turn
-            if (playedCards.length + 1 < players.length) {
+            // Advance turn OR Resolve Trick
+            const newPlayed = [...playedCards, virtualCard];
+            // We need updated players state properly constructed to pass to resolveTrick?
+            // current `setPlayers` is async-ish updates.
+            // But resolveTrick needs `updatedPlayers`.
+            // We must reconstruct it locally.
+            const updatedP1 = {
+                ...p,
+                hand: newHand,
+                alchemistDeck: alchemistDeck,
+                magicElements: newElements
+            };
+            const updatedPlayers = players.map(pl => pl.id === 'p1' ? updatedP1 : pl);
+
+            if (newPlayed.length < players.length) {
                 setCurrentPlayerIdx(prev => (prev + 1) % players.length);
+            } else {
+                isResolvingRef.current = true;
+                resolveTrick(newPlayed, updatedPlayers);
             }
 
             addLog(`Alquimista juega combinación: ${sumValue} (Poder: ${alchemyResult.isStrong ? '10 (Fuerte)' : sumValue})`);
@@ -360,6 +382,11 @@ export const useGameActions = ({
                 combinedCards: actualCards
             };
 
+            // Set custom asset for Value 10 (Alchemist Lead)
+            if (sumValue === 10 && suit && suit !== Suit.COLORLESS) {
+                virtualCard.imagePath = `/assets/color-cards/10s-cards/${suit.toLowerCase()}-10.jpg`;
+            }
+
             setLeadSuit(suit);
             addLog(`Alquimista declara el palo: ${suit}`);
 
@@ -386,8 +413,21 @@ export const useGameActions = ({
             setSelectedCards([]);
 
             // Advance turn
-            if (playedCards.length + 1 < players.length) {
+            // Advance turn OR Resolve Trick
+            const newPlayedLead = [...playedCards, virtualCard];
+            const updatedP1Lead = {
+                ...p,
+                hand: newHand,
+                alchemistDeck: alchemistDeck,
+                magicElements: newElements
+            };
+            const updatedPlayersLead = players.map(pl => pl.id === 'p1' ? updatedP1Lead : pl);
+
+            if (newPlayedLead.length < players.length) {
                 setCurrentPlayerIdx(prev => (prev + 1) % players.length);
+            } else {
+                isResolvingRef.current = true;
+                resolveTrick(newPlayedLead, updatedPlayersLead);
             }
 
             addLog(`Alquimista juega combinación: ${sumValue} (Poder: ${alchemyResult.isStrong ? '10 (Fuerte)' : sumValue})`);
@@ -496,7 +536,7 @@ export const useGameActions = ({
                 return p;
             }));
 
-            addLog(`Samurai completa la baza.`);
+            // addLog(`Samurai completa la baza.`); // Removed: causing confusion when Samurai is not in play
 
             // Reset Table
             setPlayedCards([]);
@@ -919,15 +959,27 @@ export const useGameActions = ({
             addLog(`Usaste: ${item.name}`);
 
             // 1. Calculate Replacement Item (Deterministic Step)
-            // Filter out the used item immediately from the pool of possibilities
             const currentItemsIds = p.items.map(i => i.id);
-            // The used item is 'item'. We want to find a NEW random item that is NOT in the current items list.
-            // Note: filteredItems (items - used) is what we will have. So the new item just needs to not be in that result?
-            // Actually, simply: It must not be equal to the USED item (obviously) and typically not equal to OTHER items if we want uniqueness.
-            // The logic was: `!filteredItems.map(x => x.id).includes(i.id)`
-            // So we assume uniqueness in slots.
+            const usedIds = p.usedItemIds || [];
+
+            // Exclude current items AND the item just used AND any in history
             const filteredItems = p.items.filter(i => i.id !== item.id);
-            const possibleItems = ITEMS.filter(i => i.id !== item.id && !filteredItems.some(existing => existing.id === i.id));
+            const possibleItems = ITEMS.filter(i =>
+                i.id !== item.id &&
+                !filteredItems.some(existing => existing.id === i.id) &&
+                !usedIds.includes(i.id)
+            );
+
+            // Fallback: If no unique items left (all used or held), clear history (except current held)
+            let finalPossible = possibleItems;
+            let didReset = false;
+            if (finalPossible.length === 0) {
+                finalPossible = ITEMS.filter(i =>
+                    i.id !== item.id &&
+                    !filteredItems.some(existing => existing.id === i.id)
+                );
+                didReset = true;
+            }
 
             let replacement: Item | null = null;
             if (possibleItems.length > 0) {
@@ -1019,7 +1071,8 @@ export const useGameActions = ({
                     items: updatedItems,
                     hand: newHand,
                     pendingItemEffect: pendingEffect,
-                    adventurerUsedItem: true
+                    adventurerUsedItem: true,
+                    usedItemIds: didReset ? [] : [...(pl.usedItemIds || []), item.id]
                 };
             }));
         }

@@ -28,10 +28,18 @@ export class AdventurerLogic extends BaseCharacterLogic {
 
     const missingItems = newSlots - player.items.length;
     if (missingItems > 0) {
-      const possibleItems = ITEMS.filter(i => !player.items.find(pi => pi.id === i.id));
+      // Exclude held items AND used items
+      const usedIds = player.usedItemIds || [];
+      const possibleItems = ITEMS.filter(i =>
+        !player.items.find(pi => pi.id === i.id) &&
+        !usedIds.includes(i.id)
+      );
+
+      // OPTIONAL IMPROVEMENT: Filter out items just used? 
+      // Current Random Logic:
       if (possibleItems.length > 0) {
         const randomized = [...possibleItems].sort(() => Math.random() - 0.5);
-        const drawn = randomized.slice(0, 1); // Only draw 1 per win as per instruction 18
+        const drawn = randomized.slice(0, 1);
         return { itemSlots: newSlots, items: [...player.items, ...drawn] };
       }
     }

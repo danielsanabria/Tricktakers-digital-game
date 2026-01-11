@@ -654,7 +654,7 @@ export const useGameLoop = () => {
         // Robust check: Use hermitDiscarding flag
         const isHermitDiscardPhase = p.character === CharacterType.HERMIT && (p as any).hermitDiscarding;
 
-        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD', 'SUMMONER_SELECT_CARD', 'SAMURAI_DISCARD', 'STRATEGIST_DISCARD'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase || isHermitDiscardPhase)) {
+        if (isUser && (['ALCHEMIST_SELECT', 'GAMBLER_SWAP', 'KING_DISCARD', 'HERMIT_DISCARD', 'SUMMONER_SELECT_CARD', 'SAMURAI_DISCARD', 'STRATEGIST_DISCARD', 'COLLECTOR_RESERVE'].includes(abilityMode) || isKingDiscardPhase || isGamblerSwapPhase || isHermitDiscardPhase)) {
             if (abilityMode === 'SAMURAI_DISCARD') {
                 performAction('SAMURAI_EXECUTE_DISCARD', { cardId });
                 return;
@@ -704,6 +704,10 @@ export const useGameLoop = () => {
         if (playerInEffectState.pendingItemEffect) {
             if (playerInEffectState.pendingItemEffect === 'FIX_10' || playerInEffectState.pendingItemEffect === 'CHANGE_10') {
                 finalCard.value = 10;
+                // Update image for Value 10
+                if (finalCard.suit !== Suit.COLORLESS) {
+                    finalCard.imagePath = `/assets/color-cards/10s-cards/${finalCard.suit.toLowerCase()}-10.jpg`;
+                }
                 addLog(`¡Objeto activado! Valor cambiado a 10.`);
             } else if (playerInEffectState.pendingItemEffect === 'COLOR_SHIFT' && leadSuit) {
                 finalCard.suit = leadSuit;
