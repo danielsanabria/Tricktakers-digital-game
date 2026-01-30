@@ -15,10 +15,11 @@ export class StrategistLogic extends BaseCharacterLogic {
       ownerId: context.playerId
     };
 
-    // 2. Draw 5 random cards (total 6) -> Must discard 1 later
+    // 2. Use existing hand or draw 5 random cards (total 6) -> Must discard 1 later
     // Logic similar to King, App.tsx should handle "Discard Phase" if hand > 5
-    const hand: Card[] = context.deck.splice(0, 5).map(c => ({ ...c, ownerId: context.playerId }));
-    hand.push(black7);
+    const { deck, playerId, hand: providedHand } = context;
+    const initialHand = providedHand || deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
+    const hand = [...initialHand, black7];
 
     // 3. Initialize Traps (Random Order for MVP)
     // The App will handle the "Trap Deck" state, logic just ensures hand is ready.

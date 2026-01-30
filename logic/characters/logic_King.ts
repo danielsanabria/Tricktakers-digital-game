@@ -5,7 +5,7 @@ import { SetupContext, Player, CardType, Suit, UIContext, Card } from '../../gam
 
 export class KingLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {
-    const { deck, playerId } = context;
+    const { deck, playerId, hand: providedHand } = context;
 
     // Manual Rule: "Start with King Rare card... then discard to keep hand limit"
     // Implementation: Deal 5 standard cards + 1 Rare Card = 6 Cards.
@@ -20,8 +20,9 @@ export class KingLogic extends BaseCharacterLogic {
       ownerId: playerId
     };
 
-    // 2. Draw 5 random cards from the deck
-    const hand = deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
+    // 2. Use existing hand or draw 5 random cards from the deck
+    const initialHand = providedHand || deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
+    const hand = [...initialHand];
 
     // 3. Add Rare to hand (Total 6)
     hand.push(rareCard);

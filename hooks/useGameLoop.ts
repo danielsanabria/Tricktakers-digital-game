@@ -113,10 +113,13 @@ export const useGameLoop = () => {
 
     const startRound = useCallback((currentPlayers?: Player[]) => {
         const playersToUse = currentPlayers || players;
-        let deck = [...createDeck()];
+        // Use existing drawPile which has the remaining cards after dealing
+        let deck = [...drawPile];
+
         let newPlayers = playersToUse.map(p => {
             const logic = getCharacterLogic(p.character);
-            const setupData = logic.setup({ deck, playerId: p.id, round, players: playersToUse });
+            // Pass existing hand to setup
+            const setupData = logic.setup({ deck, playerId: p.id, round, players: playersToUse, hand: p.hand });
 
             // Check for Inherited Card (Strategist Bonus from prev round)
             let hand = setupData.hand || [];
@@ -281,6 +284,18 @@ export const useGameLoop = () => {
             const poolSize = currentPlayers.length + 1;
             newPool = newDeck.splice(0, poolSize);
         }
+
+        const newCardDeck = createDeck();
+        let currentDrawPile = [...newCardDeck];
+        const newPlayersWithHands = currentPlayers.map(p => {
+            const hand = currentDrawPile.splice(0, 5).map(c => ({ ...c, ownerId: p.id }));
+            return { ...p, hand };
+        });
+
+        // If round > 1, apply any carry-over logic if needed (e.g. scores) but hands are fresh.
+        // Also update the state immediately so players see their hands in selection.
+        setPlayers(newPlayersWithHands);
+        setDrawPile(currentDrawPile);
 
         setCharacterPool(newPool);
         setAdvancedModeDeck(newDeck);
@@ -518,18 +533,6 @@ export const useGameLoop = () => {
                         gamblerUsedAbility: false
                     };
 
-                    if (isCollector && hasReservedCard) {
-                        const reservedCard = cards.find(c => c.id === p.reservedCardId);
-                        if (reservedCard) {
-                            addLog(`Coleccionista: Recupera carta reservada (${reservedCard.suit} ${reservedCard.value}).`);
-                            return {
-                                ...p,
-                                ...resetFlags,
-                                collectedCards: [...p.collectedCards, reservedCard],
-                                reservedCardId: null
-                            };
-                        }
-                    }
                     return { ...p, ...resetFlags };
                 }
             });
@@ -545,6 +548,13 @@ export const useGameLoop = () => {
                             addLog(`El Aventurero ha subido de nivel y tiene un nuevo objeto.`);
                         }
                     }
+                }
+
+                // CHECK: Collector Loss Ability (Human P1)
+                const humanCollector = updatedPlayers.find(p => p.id === 'p1' && p.character === CharacterType.COLLECTOR);
+                if (humanCollector && humanCollector.id !== winnerId) {
+                    setAbilityMode('COLLECTOR_PICK_TRICK_CARD');
+                    return; // Pause resolution
                 }
 
                 // Check for Samurai Win Ability (Take Red Card)

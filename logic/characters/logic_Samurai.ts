@@ -4,10 +4,10 @@ import { PowerContext, Suit, SetupContext, Player, Card } from '../../game/core/
 export class SamuraiLogic extends BaseCharacterLogic {
 
   setup(context: SetupContext): Partial<Player> {
-    const { playerId, deck } = context;
+    const { playerId, deck, hand: providedHand } = context;
 
-    // Initial draw: 5 cards
-    let hand = deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
+    // Use dealt hand or draw if not provided
+    let hand = providedHand || deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
 
     // Rule: Samurai cannot have black cards.
     // Filter and redraw until no black cards.
@@ -15,6 +15,7 @@ export class SamuraiLogic extends BaseCharacterLogic {
     while (hasBlack) {
       const blackCount = hand.filter(c => c.suit === Suit.BLACK).length;
       hand = hand.filter(c => c.suit !== Suit.BLACK);
+      // Construct replacement cards from deck
       const redrawn = deck.splice(0, blackCount).map(c => ({ ...c, ownerId: playerId }));
       hand = [...hand, ...redrawn];
       hasBlack = hand.some(c => c.suit === Suit.BLACK);

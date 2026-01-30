@@ -65,7 +65,7 @@ const App = () => {
             )}
 
             {game.phase === GamePhase.CHARACTER_SELECTION && (
-                <div className="absolute inset-0 z-30 bg-slate-50 overflow-hidden pt-24">
+                <div className="absolute inset-x-0 top-0 bottom-64 z-30 bg-slate-50/95 backdrop-blur-md overflow-hidden pt-20 shadow-2xl border-b border-slate-200">
                     <CharacterSelection
                         players={game.players}
                         characterPool={game.characterPool}
@@ -76,8 +76,8 @@ const App = () => {
                 </div>
             )}
 
-            {/* Game Table Area */}
-            {game.phase !== GamePhase.MODE_SELECTION && game.phase !== GamePhase.CHARACTER_SELECTION && (
+            {/* Game Table Area - Visible in PLAYING, SELECTION, etc. */}
+            {game.phase !== GamePhase.MODE_SELECTION && (
                 <>
                     <GameTable
                         players={game.players}

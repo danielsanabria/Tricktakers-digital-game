@@ -189,6 +189,7 @@ export interface SetupContext {
   playerId: string;
   round: number;
   players: Player[];
+  hand?: Card[]; // Added hand property
 }
 
 export interface PowerContext {

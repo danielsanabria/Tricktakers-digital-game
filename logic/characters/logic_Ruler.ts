@@ -52,8 +52,8 @@ const RulerSetup: React.FC<UIContext> = (context) => {
 export class RulerLogic extends BaseCharacterLogic {
 
   setup(context: SetupContext): Partial<Player> {
-    const { deck, playerId } = context;
-    const hand = deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
+    const { deck, playerId, hand: providedHand } = context;
+    const hand = providedHand || deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
     return { hand, tasks: [], beasts: [], mp: 0 };
   }
 

@@ -17,6 +17,7 @@ import { TimeTravelerDistributeModal } from './TimeTravelerDistributeModal';
 import { SamuraiWinModal } from './SamuraiWinModal';
 import { AlchemistSuitSelectorModal } from './AlchemistSuitSelectorModal';
 import { AdventurerSwapModal } from './AdventurerSwapModal';
+import { CollectorLossModal } from './CollectorLossModal';
 
 interface ModalsContainerProps {
     abilityMode: string;
@@ -234,6 +235,16 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                         performAction('ALCHEMIST_RESOLVE_LEAD', { suit });
                         setAbilityMode('NONE');
                     }}
+                />
+            )}
+
+            {/* Collector Loss Pick Modal */}
+            {abilityMode === 'COLLECTOR_PICK_TRICK_CARD' && (
+                <CollectorLossModal
+                    players={players}
+                    trickCards={playedCards || []}
+                    onTakeCard={(cardId) => performAction('COLLECTOR_TAKE_TRICK_CARD', { cardId })}
+                    onSkip={() => performAction('COMPLETE_TRICK_NORMAL')} // Use normal completion if skipped
                 />
             )}
             {/* Adventurer Swap Modal */}

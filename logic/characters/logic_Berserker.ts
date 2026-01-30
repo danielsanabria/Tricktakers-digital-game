@@ -69,6 +69,7 @@ export class BerserkerLogic extends BaseCharacterLogic {
     // Human: Base Setup (Wait for UI Modal) + Store the deck for later
     return {
       ...baseSetup,
+      hand: [], // Explicitly discard the initial random hand
       berserkerDeck: fullBerserkerDeck,
       beasts: [],
       mp: 0

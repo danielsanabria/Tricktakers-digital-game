@@ -710,13 +710,27 @@ export const useGameActions = ({
             setAbilityMode('NONE');
             addLog("Estratega: Has descartado 1 carta para ajustar tu mano a 5.");
         }
-        else if (actionName === 'COLLECTOR_RESERVE_CONFIRM') {
-            if (selectedCards.length !== 1) return;
-            const cardId = selectedCards[0];
-            setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, reservedCardId: cardId } : p));
-            setSelectedCards([]);
-            setAbilityMode('NONE');
-            addLog(`Coleccionista ha reservado una carta de la mesa.`);
+        else if (actionName === 'COLLECTOR_TAKE_TRICK_CARD') {
+            const { cardId } = payload;
+            const takenCard = playedCards.find(c => c.id === cardId);
+
+            if (takenCard) {
+                setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+                    ...p,
+                    collectedCards: [...p.collectedCards, takenCard] // Add to collection
+                } : p));
+
+                // We remove it from playedCards so the winner doesn't get it?
+                // Logic: "Take 1 card...". The winner takes the rest?
+                // Or does winner take "all cards" usually?
+                // Winner Logic: "wonCards: [...p.wonCards, ...cards]"
+                // If we remove it from `playedCards`, then `COMPLETE_TRICK_NORMAL` will give the rest to winner.
+                setPlayedCards(prev => prev.filter(c => c.id !== cardId));
+
+                addLog(`Coleccionista ha reclamado ${takenCard.suit} ${takenCard.value} de la baza perdida.`);
+                setAbilityMode('NONE');
+                performAction('COMPLETE_TRICK_NORMAL'); // Resume normal trick resolution
+            }
         }
         else if (actionName === 'HERMIT_START_ABILITY') {
             const p = players.find(player => player.id === 'p1');

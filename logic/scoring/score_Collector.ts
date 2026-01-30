@@ -90,17 +90,17 @@ export class CollectorScoring extends BaseScoring {
             }
             if (found) continue;
 
-            // 4. 3 of a Kind (+30)
+            // 4. 3 of a Kind (+40)
             for (let v = 1; v <= 10; v++) {
                 const vc = remainingCards.filter(c => c.value === v && (c.type === CardType.NUMBER || v === 7));
                 if (vc.length >= 3) {
-                    totalScore += 30; logs.push(`Coleccionista: Combo Trío de ${v} (+30 pts)`);
+                    totalScore += 40; logs.push(`Coleccionista: Combo Trío de ${v} (+40 pts)`);
                     takeCards(vc.slice(0, 3)); found = true; break;
                 }
             }
             if (found) continue;
 
-            // 5. Straight 3 (+20)
+            // 5. Straight 3 (+30)
             const allVals = Array.from(new Set(remainingCards.filter(c => c.type === CardType.NUMBER).map(c => c.value))).sort((a, b) => a - b);
             for (let i = 0; i <= allVals.length - 3; i++) {
                 if (allVals[i + 2] === allVals[i] + 2) {
@@ -109,7 +109,7 @@ export class CollectorScoring extends BaseScoring {
                         remainingCards.find(c => c.value === allVals[i + 1])!,
                         remainingCards.find(c => c.value === allVals[i + 2])!
                     ];
-                    totalScore += 20; logs.push("Coleccionista: Combo Escalera 3 (+20 pts)");
+                    totalScore += 30; logs.push("Coleccionista: Combo Escalera 3 (+30 pts)");
                     takeCards(combo); found = true; break;
                 }
             }
