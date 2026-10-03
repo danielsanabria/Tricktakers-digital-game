@@ -6,25 +6,9 @@ import { SetupContext, Player, Card, CardType, Suit, PowerContext, UIContext } f
 export class HermitLogic extends BaseCharacterLogic {
 
     setup(context: SetupContext): Partial<Player> {
-        const base = super.setup(context);
-        let hand = [...(base.hand || [])];
-
-        // Replace one card (e.g., the last one) with White Flag
-        if (hand.length > 0) {
-            hand.pop();
-            const whiteFlag: Card = {
-                id: 'c_white_flag',
-                name: 'White Flag',
-                suit: Suit.COLORLESS,
-                value: 0,
-                type: CardType.WHITE_FLAG,
-                ownerId: context.playerId,
-                imagePath: '/assets/color-cards/whiteflag.jpg'
-            };
-            hand.push(whiteFlag);
-        }
-
-        return { ...base, hand };
+        // En las reglas oficiales el Ermitaño no tiene preparación especial,
+        // recibe su mano normal de 5 cartas y utiliza "Mano Diestra" para filtrar su mano.
+        return super.setup(context);
     }
 
     getCardPower(context: PowerContext): number {
@@ -32,7 +16,6 @@ export class HermitLogic extends BaseCharacterLogic {
         let power = super.getCardPower(context);
 
         // Habilidad del Ermitaño: La Bandera Blanca vence a la Rara (Hierarchy 4A)
-        // Usamos 5000 para sobrepasar incluso a las cartas Negras (1000+) y Raras estándar (2000).
         if (card.type === CardType.WHITE_FLAG && trickContainsRare && !(context.isKakumei || context.isRevolt)) {
             power = 5000;
         }
@@ -49,11 +32,6 @@ export class HermitLogic extends BaseCharacterLogic {
             // Bonificación inmediata por "pesca" de carta Rara
             const bonus = round === 3 ? 100 : 30;
             updates.score = (player.score || 0) + bonus;
-        }
-
-        // Hermit Instant Win: 5 Wins
-        if (player.wins >= 5) {
-            updates.score = 999;
         }
 
         return updates;

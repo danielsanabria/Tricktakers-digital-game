@@ -47,26 +47,8 @@ export class AdventurerLogic extends BaseCharacterLogic {
   }
 
   getCardPower(context: PowerContext): number {
-    let power = super.getCardPower(context);
-    const { player, card, isKakumei, isRevolt } = context;
-
-    // Bonuses apply based on Wins (Level)
-    const wins = player.wins || 0;
-
-    // Level 2 (2 Wins): +2 to Even Cards
-    if (wins === 2 && card.value % 2 === 0) {
-      power += 2;
-    }
-    // Level 3 (3 Wins): +3 to Odd Cards
-    else if (wins === 3 && card.value % 2 !== 0) {
-      power += 3;
-    }
-    // Level 4 (4 Wins): +4 to All Cards
-    else if (wins >= 4) {
-      power += 4;
-    }
-
-    return power;
+    // El Aventurero usa la fuerza estándar de las cartas; su nivel solo desbloquea nuevos slots de objetos al ganar bazas.
+    return super.getCardPower(context);
   }
 
   renderActions(context: UIContext): React.ReactNode {

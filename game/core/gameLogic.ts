@@ -24,25 +24,20 @@ export const getValidMoves = (hand: Card[], leadSuit: Suit | null): Card[] => {
   if (!leadSuit) return hand;
 
   // Rule: Must Follow
-  // Characters like Ruler (5B) might ignore this, but that logic is handled inside player interaction or penalty checks.
-  // The engine enforces valid moves for UI highlighting.
+  // En Tricktakers, si tienes cartas del palo líder debes jugarlo,
+  // A NO SER que juegues una carta Rara o Bandera Blanca (independientes del palo).
   const followSuitCards = hand.filter(c => c.suit === leadSuit);
-
-  // Colorless cards (Rare, White Flag, Berserker Rare) generally don't follow suit rules strictly 
-  // in terms of "matching color", but usually can be played. 
-  // In Tricktakers, Rare/WhiteFlag are Colorless. 
-  // If you have Lead Suit, you MUST play Lead Suit. 
-  // If you don't, you can play anything (including Colorless).
-  // EXCEPTION: Can you play Rare/WhiteFlag even if you have the suit?
-  // Manual implies: "If you have the suit, you must play it." 
-  // Rare cards usually transcend this or are played when you can't follow.
-  // Standard Trick-taking: Must follow if possible.
+  const specialAlwaysPlayable = hand.filter(c => c.type === CardType.RARE || c.type === CardType.WHITE_FLAG);
 
   if (followSuitCards.length > 0) {
-    // Logic refinement: Can I play a Rare if I have the suit?
-    // Usually no, unless the card explicitly says so. 
-    // We will enforce strict Must Follow for the base engine.
-    return followSuitCards;
+    // Es legal jugar del palo líder o cualquier carta especial (Rara / Bandera Blanca)
+    const validMoves = [...followSuitCards];
+    for (const special of specialAlwaysPlayable) {
+      if (!validMoves.some(m => m.id === special.id)) {
+        validMoves.push(special);
+      }
+    }
+    return validMoves;
   }
 
   return hand;
@@ -146,56 +141,66 @@ export interface TournamentResult {
   reason: string;
 }
 
+export const CHARACTER_HIERARCHY: CharacterType[] = [
+  CharacterType.KING,          // 1A
+  CharacterType.STRATEGIST,    // 1C
+  CharacterType.GAMBLER,       // 2A
+  CharacterType.SUMMONER,      // 2C
+  CharacterType.NINJA,         // 2D
+  CharacterType.RESISTANCE,    // 3A
+  CharacterType.ADVENTURER,    // 3B
+  CharacterType.ALCHEMIST,     // 3C
+  CharacterType.SAMURAI,       // 3D
+  CharacterType.HERMIT,        // 4A
+  CharacterType.COLLECTOR,     // 4B
+  CharacterType.TIME_TRAVELER, // 4C
+  CharacterType.BERSERKER,     // 5A
+  CharacterType.RULER,         // 5B
+  CharacterType.PHANTOM_THIEF  // 5C
+];
+
+export const compareByHierarchy = (a: Player, b: Player): number => {
+  const idxA = a.character ? CHARACTER_HIERARCHY.indexOf(a.character) : 999;
+  const idxB = b.character ? CHARACTER_HIERARCHY.indexOf(b.character) : 999;
+  return idxA - idxB;
+};
+
 export const determineTournamentWinner = (players: Player[]): TournamentResult => {
-  // Priority 1: Instant Win (Score >= 900) - e.g. King with 5 wins
-  const instant = players.find(p => p.score >= 900);
-  if (instant) return { winner: instant, reason: '¡Victoria Instantánea!' };
+  // Prioridad 1: Victoria Instantánea de Personaje (Score >= 900)
+  const instants = players.filter(p => p.score >= 900);
+  if (instants.length > 0) {
+    instants.sort(compareByHierarchy);
+    return { winner: instants[0], reason: `¡Victoria Instantánea por Personaje! (${instants[0].name})` };
+  }
 
-  // Priority 2: 2 Gold Crowns
-  const gold = players.find(p => p.goldCrowns >= 2);
-  if (gold) return { winner: gold, reason: 'Maestro de Coronas Doradas (2)' };
-
-  // Priority 3: 3 Black Crowns
-  const black = players.find(p => p.blackCrowns >= 3);
-  if (black) return { winner: black, reason: 'Rey de la Miseria (3 Coronas Negras)' };
-
-  // Priority 4: Max Score with Tie-Breaker (Hierarchy)
-  const hierarchy = [
-    CharacterType.KING,
-    CharacterType.GAMBLER,
-    CharacterType.RESISTANCE,
-    CharacterType.ADVENTURER,
-    CharacterType.HERMIT,
-    CharacterType.COLLECTOR,
-    CharacterType.BERSERKER,
-    CharacterType.RULER,
-    CharacterType.STRATEGIST,
-    CharacterType.SUMMONER,
-    CharacterType.PHANTOM_THIEF,
-    CharacterType.TIME_TRAVELER
-  ];
-
-  const sorted = [...players].sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    // Tie-breaker
-    const idxA = hierarchy.indexOf(a.character!);
-    const idxB = hierarchy.indexOf(b.character!);
-    if (idxA === -1) return 1;
-    if (idxB === -1) return -1;
-    return idxA - idxB;
-  });
-
-  // Priority 1.5: Ruler Special Win (2+ Wins, No Color Cards)
-  // Tyranny check (Ruler) - Placed here to override score if present?
-  // Original code checked it after score but "Priority 1.5" implies it's high.
-  // Let's check it before Score.
+  // Prioridad 1.5: Victoria Especial de Tiranía del Gobernante (2+ victorias sin cartas de color)
   const ruler = players.find(p => p.character === CharacterType.RULER);
   if (ruler && ruler.wins >= 2) {
-    const hasColor = ruler.wonCards.some(c => c.suit !== Suit.COLORLESS);
+    const hasColor = ruler.wonCards.some(c => c.suit === Suit.RED || c.suit === Suit.BLUE || c.suit === Suit.GREEN);
     if (!hasColor) {
       return { winner: ruler, reason: 'Tiranía Absoluta (2+ victorias sin cartas de color)' };
     }
   }
 
-  return { winner: sorted[0], reason: 'Victoria por Puntuación (y Jerarquía)' };
+  // Prioridad 2: Maestro de Coronas Doradas (2 Coronas Doradas)
+  const goldWinners = players.filter(p => p.goldCrowns >= 2);
+  if (goldWinners.length > 0) {
+    goldWinners.sort(compareByHierarchy);
+    return { winner: goldWinners[0], reason: 'Maestro de Coronas Doradas (2)' };
+  }
+
+  // Prioridad 3: Rey de la Miseria (3 Coronas Negras)
+  const blackWinners = players.filter(p => p.blackCrowns >= 3);
+  if (blackWinners.length > 0) {
+    blackWinners.sort(compareByHierarchy);
+    return { winner: blackWinners[0], reason: 'Rey de la Miseria (3 Coronas Negras)' };
+  }
+
+  // Prioridad 4: Mayor Puntuación con Desempate por Jerarquía Oficial
+  const sorted = [...players].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return compareByHierarchy(a, b);
+  });
+
+  return { winner: sorted[0], reason: 'Victoria por Puntuación (y Jerarquía Oficial)' };
 };

@@ -322,10 +322,18 @@ export const useGameLoop = () => {
 
     const selectCharacter = (charType: CharacterType) => {
         const currentPickerId = selectionOrder[selectionIndex];
+        const picker = players.find(p => p.id === currentPickerId);
+
+        // REGLA: El jugador que jugó como Rey en la ronda anterior no puede elegir al Rey
+        if (picker && picker.lastCharacter === CharacterType.KING && charType === CharacterType.KING) {
+            addLog(`${picker.name} fue el Rey en la ronda anterior y no puede repetir al Rey.`);
+            return;
+        }
+
         const isTaken = players.some(p => p.character === charType);
         if (isTaken) return;
 
-        const updatedPlayers = players.map(p => p.id === currentPickerId ? { ...p, character: charType, lastCharacter: charType } : p);
+        const updatedPlayers = players.map(p => p.id === currentPickerId ? { ...p, character: charType } : p);
         setPlayers(updatedPlayers);
 
         if (selectionIndex < selectionOrder.length - 1) {
@@ -367,6 +375,15 @@ export const useGameLoop = () => {
         // Count how many players have maxWins
         const winnersCount = playersToUse.filter(p => p.wins === maxWins).length;
 
+        // Criterio de elegibilidad oficial para Coronas Negras
+        const isEligibleForBlackCrown = (p: Player): boolean => {
+            if (p.character === CharacterType.COLLECTOR) return false;
+            if (p.character === CharacterType.NINJA) return p.wins === 2;
+            if (p.character === CharacterType.PHANTOM_THIEF) return p.wins === 1;
+            if (p.character === CharacterType.RESISTANCE) return p.wins === 0 || (p.wins === 1 && !!p.wonRevolutionTrick);
+            return p.wins === 0;
+        };
+
         let blackCrownsGiven = 0;
         const crownResults = playersToUse.map(p => {
             let gold = 0; let black = 0;
@@ -376,8 +393,7 @@ export const useGameLoop = () => {
                     gold = 1;
                 }
 
-                const isResistanceBlackCrown = p.character === CharacterType.RESISTANCE && p.wins === 1 && p.wonRevolutionTrick;
-                if ((p.wins === 0 || isResistanceBlackCrown) && blackCrownsGiven < 2) {
+                if (isEligibleForBlackCrown(p) && blackCrownsGiven < 2) {
                     blackCrownsGiven++;
                     black = 1;
                 }
@@ -398,6 +414,8 @@ export const useGameLoop = () => {
                 const cr = crownResults.find(c => c.playerId === p.id)!;
                 return {
                     ...p,
+                    lastCharacter: p.character, // Preservamos el personaje de esta ronda para la siguiente selección
+                    character: null,
                     score: sr.pts === 999 ? 999 : Math.max(0, p.score + sr.pts),
                     goldCrowns: p.goldCrowns + cr.gold,
                     blackCrowns: p.blackCrowns + cr.black,
@@ -500,15 +518,25 @@ export const useGameLoop = () => {
                         setTrapPool(currentTrapPool);
                     }
 
-                    if (p.character === CharacterType.RESISTANCE && (isKakumei || isRevolt)) {
-                        bonus += 30;
-                        addLog(`La Resistencia gana 30 pts extra por victoria en Revolución.`);
-                    }
-
                     const resCard = cards.find(c => c.ownerId === winnerId);
-                    if (isKakumei && p.character === CharacterType.RESISTANCE && resCard?.suit === Suit.BLACK) {
-                        addLog(`¡Baza de Revolución ganada con CARTA NEGRA! ¡LA RESISTENCIA GANA LA PARTIDA!`);
-                        return { ...p, wins: p.wins + 1, wonCards: [...p.wonCards, ...cards], score: p.score + 900, wonRevolutionTrick: true, collectedCards: isCollector ? [...p.collectedCards, ...cards] : p.collectedCards };
+                    const isRevoltTrick = isKakumei || isRevolt;
+
+                    if (isRevoltTrick && p.character === CharacterType.RESISTANCE) {
+                        if (resCard?.suit === Suit.BLACK) {
+                            addLog(`¡Baza de Revolución ganada con CARTA NEGRA! ¡LA RESISTENCIA GANA LA PARTIDA!`);
+                            return {
+                                ...p,
+                                ...resetFlags,
+                                wins: p.wins + 1,
+                                wonCards: [...p.wonCards, ...cards],
+                                score: 999,
+                                wonRevolutionTrick: true,
+                                revoltWinningCard: resCard,
+                                collectedCards: isCollector ? [...p.collectedCards, ...cards] : p.collectedCards
+                            };
+                        } else {
+                            addLog(`La Resistencia gana la baza de Revolución con ${resCard?.type === 'WHITE_FLAG' ? 'Bandera Blanca' : `${resCard?.suit} ${resCard?.value}`}.`);
+                        }
                     }
 
                     let nextCollected = p.collectedCards;
@@ -523,7 +551,8 @@ export const useGameLoop = () => {
                         wins: p.wins + 1,
                         wonCards: [...p.wonCards, ...cards],
                         score: p.score + bonus,
-                        wonRevolutionTrick: p.wonRevolutionTrick || isKakumei,
+                        wonRevolutionTrick: p.wonRevolutionTrick || isRevoltTrick,
+                        revoltWinningCard: isRevoltTrick && p.character === CharacterType.RESISTANCE ? resCard : p.revoltWinningCard,
                         collectedCards: nextCollected
                     };
                 } else {
@@ -621,14 +650,7 @@ export const useGameLoop = () => {
             setCurrentPlayerIdx(winnerIdx);
             isResolvingRef.current = false;
 
-            if (updatedPlayers.some(p => p.score >= 900)) {
-                addLog("¡Victoria Instantánea! Ronda finalizada.");
-                if (!isRoundResolvingRef.current) {
-                    isRoundResolvingRef.current = true;
-                    setPlayers(updatedPlayers);
-                    resolveRound(updatedPlayers);
-                }
-            } else if (trick < 5) {
+            if (trick < 5) {
                 setPlayers(updatedPlayers);
                 setTrick(t => t + 1);
             } else {

@@ -1,18 +1,19 @@
-import { Player } from '../../game/core/types';
+import { Player, CharacterType } from '../../game/core/types';
 import { BaseScoring } from './BaseScoring';
 import { ScoringResult } from './scoring_Interface';
-import { CharacterType } from '../../game/core/types';
 
 export class TimeTravelerScoring extends BaseScoring {
     getScore(player: Player, round: number, allPlayers: Player[]): ScoringResult {
-        const logs: string[] = [];
+        const baseResult = super.getScore(player, round, allPlayers);
+        let pts = baseResult.score;
+        const logs = [...baseResult.logs];
+
         let predictionBonus = 0;
         const predictions = player.timeTravelPredictions || [];
 
         const maxWins = Math.max(...allPlayers.map(p => p.wins));
         const roundGoldWinner = allPlayers.find(p => p.wins === maxWins && maxWins > 0);
 
-        // Resistance special logic for Black Crown check
         const isResistanceBlack = (p: Player) => p.character === CharacterType.RESISTANCE && p.wins === 1 && p.wonRevolutionTrick;
         const roundBlackWinners = allPlayers.filter(p => p.wins === 0 || isResistanceBlack(p));
 
@@ -29,12 +30,28 @@ export class TimeTravelerScoring extends BaseScoring {
             logs.push("Viajero del Tiempo: ¡Predicción de Corona Negra 2 ACERTADA! (+50 pts)");
         }
 
+        // Prophecy Fulfilled (Round 3): Perfect predictions (all 3 correct) = Instant Win
         if (round === 3 && predictionBonus === 150) {
-            return { score: 999, isInstantWin: true, logs: ["¡VIAJERO DEL TIEMPO: PREDICCIÓN PERFECTA! Victoria Instantánea."] };
+            return { score: 999, isInstantWin: true, logs: ["¡VIAJERO DEL TIEMPO: PREDICCIÓN PERFECTA EN RONDA 3! Victoria Instantánea."] };
+        }
+
+        pts += predictionBonus;
+
+        // Apply Ruler tasks check if assigned
+        if (player.tasks && player.tasks.length > 0) {
+            player.tasks.forEach(task => {
+                const diffPoints = task.difficulty === 'HARD' ? 20 : 10;
+                if (!task.condition(player)) {
+                    pts -= diffPoints;
+                    logs.push(`Fallo de Tarea Real (${task.name}): -${diffPoints} pts.`);
+                } else {
+                    logs.push(`Tarea Real Completada (${task.name}).`);
+                }
+            });
         }
 
         return {
-            score: predictionBonus,
+            score: pts,
             isInstantWin: false,
             logs
         };

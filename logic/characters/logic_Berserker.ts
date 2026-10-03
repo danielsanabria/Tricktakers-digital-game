@@ -106,14 +106,19 @@ export class BerserkerLogic extends BaseCharacterLogic {
   }
 
   getCardPower(context: PowerContext): number {
-    const { card, onesInSuits, isKakumei, isRevolt } = context;
+    const { card, isKakumei, isRevolt } = context;
 
     const isBerserkerMain = card.id.startsWith('berserker-main-');
     if (!isBerserkerMain) return super.getCardPower(context);
 
-    // If we are here, it's the Berserker Main Card
-    let power = 3000;
-    return power;
+    // Carta Principal de Berserker:
+    // En Revolución es la carta más débil (poder muy alto en menor-gana)
+    if (isKakumei || isRevolt) {
+      return 4000;
+    }
+
+    // Fuera de Revolución: Poder 3000 (vence a Rara que tiene 2000, pierde contra 1 que tiene 3001)
+    return 3000;
   }
 
   renderActions(context: UIContext): React.ReactNode {

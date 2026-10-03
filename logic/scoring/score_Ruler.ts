@@ -8,41 +8,55 @@ export class RulerScoring extends BaseScoring {
         let pts = baseResult.score;
         const logs = [...baseResult.logs];
 
+        // Win condition: Tyranny (2+ wins, no Red/Blue/Green in won cards)
+        if (player.wins >= 2) {
+            const hasColorCards = player.wonCards.some(c =>
+                c.suit === Suit.RED || c.suit === Suit.BLUE || c.suit === Suit.GREEN
+            );
+            if (!hasColorCards) {
+                return {
+                    score: 999,
+                    isInstantWin: true,
+                    logs: ["¡Gobernante: TIRANÍA! (2+ victorias sin cartas de color R/B/G). Victoria Instantánea."]
+                };
+            }
+        }
+
         // Ruler bonuses
         const hasBlack = player.wonCards.some(c => c.suit === Suit.BLACK);
         if (hasBlack) {
             pts += 10;
-            logs.push("Gobernante: Capturó carta negra (+10 pts).");
+            logs.push("Gobernante: Capturó al menos una carta negra (+10 pts).");
         }
         if (player.wins === 1) {
             pts += 20;
             logs.push("Gobernante: Exactamente 1 victoria (+20 pts).");
         }
 
-        // Task Bonus: Check opponents
+        // Task Bonus: Check tasks completed by opponents
         const opponents = allPlayers.filter(p => p.id !== player.id);
         const opponentsWithTasks = opponents.filter(p => p.tasks && p.tasks.length > 0);
 
         if (opponentsWithTasks.length > 0) {
-            const allTasksCompleted = opponentsWithTasks.every(p => p.tasks.every(t => t.condition(p)));
-            if (allTasksCompleted) {
-                // Bonus based on player count or difficulty? 
-                // Docs: Normal +10, Hard +20, 3-5 players +30.
-                // Let's assume +20 as a baseline or based on opponent count
-                const bonus = opponents.length >= 3 ? 30 : 20; // 3 opponents = 4 players total
-                pts += bonus;
-                logs.push(`Gobernante: ¡Súbditos obedientes! Todas las tareas completadas (+${bonus} pts).`);
-            }
-        }
+            let totalTasks = 0;
+            let completedTasks = 0;
 
-        // Win condition: Tyranny (2+ wins, no R/B/G)
-        // Check for instant win
-        if (player.wins >= 2) {
-            const hasColorCards = player.wonCards.some(c =>
-                c.suit === Suit.RED || c.suit === Suit.BLUE || c.suit === Suit.GREEN
-            );
-            if (!hasColorCards) {
-                return { score: 999, isInstantWin: true, logs: ["¡Gobernante: TIRANÍA! (2+ Victorias sin cartas de color). Victoria Instantánea."] };
+            for (const opp of opponentsWithTasks) {
+                for (const task of opp.tasks) {
+                    totalTasks++;
+                    const isCompleted = task.condition ? task.condition(opp) : false;
+                    if (isCompleted) {
+                        completedTasks++;
+                        const taskBonus = (task.difficulty === 'HARD' || task.difficulty === 'DIFFICULT') ? 20 : 10;
+                        pts += taskBonus;
+                        logs.push(`Gobernante: Súbdito (${opp.name || opp.id}) completó "${task.name}" (+${taskBonus} pts).`);
+                    }
+                }
+            }
+
+            if (totalTasks > 0 && completedTasks === totalTasks) {
+                pts += 10;
+                logs.push("Gobernante: ¡Súbditos obedientes! Todas las tareas completadas (+10 pts bonus).");
             }
         }
 

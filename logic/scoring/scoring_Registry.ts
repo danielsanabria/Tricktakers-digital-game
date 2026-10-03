@@ -14,11 +14,15 @@ import { GamblerScoring } from './score_Gambler';
 import { AdventurerScoring } from './score_Adventurer';
 import { PhantomThiefScoring } from './score_PhantomThief';
 import { StrategistScoring } from './score_Strategist';
+import { SummonerScoring } from './score_Summoner';
+import { NinjaScoring } from './score_Ninja';
 
-const scoringRegistry: Partial<Record<CharacterType, IScoringLogic>> = {
+const scoringRegistry: Record<CharacterType, IScoringLogic> = {
     [CharacterType.KING]: new KingScoring(),
     [CharacterType.STRATEGIST]: new StrategistScoring(),
     [CharacterType.GAMBLER]: new GamblerScoring(),
+    [CharacterType.SUMMONER]: new SummonerScoring(),
+    [CharacterType.NINJA]: new NinjaScoring(),
     [CharacterType.RESISTANCE]: new ResistanceScoring(),
     [CharacterType.ADVENTURER]: new AdventurerScoring(),
     [CharacterType.ALCHEMIST]: new AlchemistScoring(),

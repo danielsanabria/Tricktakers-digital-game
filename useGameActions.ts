@@ -1097,31 +1097,48 @@ export const useGameActions = ({
             setAbilityMode(prev => prev === 'RULER_IGNORE_RULES' ? 'NONE' : 'RULER_IGNORE_RULES');
             addLog("Ruler: Modo 'Ignorar Reglas' activado. Juega cualquier carta.");
         }
-        else if (actionName === 'BERSERKER_START_ROUND3') {
-            setAbilityMode('BERSERKER_ROUND3_DISCARD');
-            addLog("Berserker se prepara para la Batalla Final. Selecciona 1 o 2 cartas para descartar.");
+        else if (actionName === 'BERSERKER_START_ROUND3' || actionName === 'ROUND3_START_BLACK_CROWN') {
+            setAbilityMode('ROUND3_BLACK_CROWN_DISCARD');
+            addLog("Ronda 3: Devuelves 1 Corona Negra a la caja. Selecciona cartas de tu mano para descartar y robar nuevas.");
         }
-        else if (actionName === 'BERSERKER_EXECUTE_ROUND3') {
-            if (selectedCards.length < 1 || selectedCards.length > 2) return;
+        else if (actionName === 'BERSERKER_EXECUTE_ROUND3' || actionName === 'ROUND3_EXECUTE_BLACK_CROWN') {
+            if (selectedCards.length < 1) return;
             setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1' && p.berserkerDeck) {
-                    const cardsInHandIds = p.hand.map(c => c.id);
-                    const unselectedReserved = p.berserkerDeck.filter(c => !cardsInHandIds.includes(c.id));
-                    const count = selectedCards.length;
-                    const drawnCards = unselectedReserved.slice(0, count);
-                    const newHand = p.hand.filter(c => !selectedCards.includes(c.id)).concat(drawnCards);
+                if (p.id === 'p1') {
+                    if (p.character === CharacterType.BERSERKER && p.berserkerDeck) {
+                        const cardsInHandIds = p.hand.map(c => c.id);
+                        const unselectedReserved = p.berserkerDeck.filter(c => !cardsInHandIds.includes(c.id));
+                        const count = selectedCards.length;
+                        const drawnCards = unselectedReserved.slice(0, count);
+                        const newHand = p.hand.filter(c => !selectedCards.includes(c.id)).concat(drawnCards);
 
-                    return {
-                        ...p,
-                        hand: newHand,
-                        blackCrowns: p.blackCrowns - 1,
-                        berserkerUsedRound3: true
-                    };
+                        return {
+                            ...p,
+                            hand: newHand,
+                            blackCrowns: Math.max(0, p.blackCrowns - 1),
+                            berserkerUsedRound3: true,
+                            usedBlackCrownMulligan: true
+                        };
+                    } else {
+                        // General Rule for any character in Round 3
+                        const count = selectedCards.length;
+                        const drawn = drawPile.slice(0, count).map(c => ({ ...c, ownerId: p.id }));
+                        setDrawPile(prevPile => prevPile.slice(count));
+                        const newHand = p.hand.filter(c => !selectedCards.includes(c.id)).concat(drawn);
+
+                        return {
+                            ...p,
+                            hand: newHand,
+                            blackCrowns: Math.max(0, p.blackCrowns - 1),
+                            usedBlackCrownMulligan: true
+                        };
+                    }
                 }
                 return p;
             }));
             setSelectedCards([]);
-            addLog(`¡Berserker usó una Corona Negra! Descartó sus cartas y robó del mazo exclusivo.`);
+            setAbilityMode('NONE');
+            addLog(`¡Devolviste 1 Corona Negra! Descartaste ${selectedCards.length} carta(s) y robaste nuevas del mazo.`);
         }
         else if (actionName === 'STRATEGIST_SET_TRAPS') {
             const { traps } = payload;

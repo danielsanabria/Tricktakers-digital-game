@@ -2,36 +2,31 @@ import { Player } from '../../game/core/types';
 import { BaseScoring } from './BaseScoring';
 import { ScoringResult } from './scoring_Interface';
 
-export class StrategistScoring extends BaseScoring {
+export class SummonerScoring extends BaseScoring {
     getScore(player: Player, round: number, allPlayers: Player[]): ScoringResult {
         const logs: string[] = [];
         let pts = 0;
 
-        if (player.wins === 0) {
-            // Default points if points reward chosen
-            pts = 50;
-            logs.push("Estratega: 0 victorias -> +50 pts.");
-        } else if (player.wins === 1) {
-            pts = 30;
-            logs.push("Estratega: 1 victoria -> +30 pts.");
-        } else if (player.wins === 2) {
-            pts = -50;
-            logs.push("Estratega: 2 victorias -> -50 pts.");
-        } else if (player.wins === 3) {
-            pts = 50;
-            logs.push("Estratega: 3 victorias -> +50 pts.");
-        } else if (player.wins === 4) {
-            pts = 80;
-            logs.push("Estratega: 4 victorias -> +80 pts.");
-        } else if (player.wins >= 5) {
+        const pointsTable: Record<number, number> = {
+            0: -20,
+            1: 20,
+            2: 40,
+            3: 70,
+            4: 100
+        };
+
+        if (player.wins >= 5) {
             return {
                 score: 999,
                 isInstantWin: true,
-                logs: ["Estratega: 5 victorias -> ¡VICTORIA INSTANTÁNEA!"]
+                logs: ["Convocador: 5 victorias -> ¡VICTORIA INSTANTÁNEA!"]
             };
         }
 
-        // Apply Ruler tasks check if assigned
+        pts = pointsTable[player.wins] ?? 0;
+        logs.push(`Convocador: ${player.wins} victorias -> ${pts} pts.`);
+
+        // Check Ruler tasks
         if (player.tasks && player.tasks.length > 0) {
             player.tasks.forEach(task => {
                 const diffPoints = task.difficulty === 'HARD' ? 20 : 10;

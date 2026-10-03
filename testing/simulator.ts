@@ -3,8 +3,10 @@ import {
     Player, CharacterType, Card, Suit, CardType, GamePhase, SetupContext, PowerContext
 } from '../game/core/types';
 import { CHARACTERS, ITEMS, BEASTS, TRAPS } from '../game/core/constants';
-import { createDeck, determineWinner, getValidMoves, calculateAlchemyValue, calculateCollectorScore } from '../game/core/gameLogic';
-import { getCharacterLogic } from '../logic/characters/logic_Registry';
+import { createDeck, determineWinner, getValidMoves } from '../game/core/gameLogic';
+import { calculateAlchemyValue } from '../game/core/alchemyUtils';
+import { CollectorScoring } from '../logic/scoring/score_Collector';
+import { getCharacterLogic } from '../logic/logic_Registry';
 
 function createInitialPlayers(characters: CharacterType[]): Player[] {
     return characters.map((char, i) => ({
@@ -602,16 +604,17 @@ async function testCollector() {
         { id: '3', suit: Suit.RED, value: 3, type: CardType.NUMBER }
     ];
     // In our simplified logic: count >= 3 of same suit = +20
-    const result = calculateCollectorScore(coll.collectedCards);
-    console.log(`Collector score for Flush 3: ${result.score} (Expected: 20)`);
-    if (result.score === 20) console.log("SUCCESS: Collector scoring working.");
+    const colScoring = new CollectorScoring();
+    const result = colScoring.getScore(coll, 1, []);
+    console.log(`Collector score for Straight Flush 3: ${result.score} (Expected: 50)`);
+    if (result.score === 50) console.log("SUCCESS: Collector scoring working.");
 
     // 2. Garbage Penalty
     coll.collectedCards = [
         { id: '1', suit: Suit.RED, value: 1, type: CardType.NUMBER },
         { id: '2', suit: Suit.BLUE, value: 2, type: CardType.NUMBER }
     ];
-    const result2 = calculateCollectorScore(coll.collectedCards);
+    const result2 = colScoring.getScore(coll, 1, []);
     console.log(`Collector score for 2 garbage: ${result2.score} (Expected: -10)`);
     if (result2.score === -10) console.log("SUCCESS: Collector penalty working.");
 }

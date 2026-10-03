@@ -5,12 +5,7 @@ import { SetupContext, Player, UIContext, Card } from '../../game/core/types';
 
 export class GamblerLogic extends BaseCharacterLogic {
     onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
-        // Gambler Win Conditions:
-        // 1. Bid 4 and Won 4
-        // 2. Won 5 (Automatic)
-        if (player.wins >= 5 || (player.bid === 4 && player.wins === 4)) {
-            return { score: 999 }; // Trigger Instant Win
-        }
+        // La condición de 4 bazas con puja 4 o 5 bazas se evalúa al final de la ronda en GamblerScoring
         return {};
     }
 
@@ -34,29 +29,26 @@ export class GamblerLogic extends BaseCharacterLogic {
         const { isCurrentPlayer, performAction, abilityMode, selectedCards, player } = context;
         if (!isCurrentPlayer || !player) return null;
 
-        // 1. Swap Phase
+        // 1. Swap Phase: Hasta 2 oportunidades de cambiar cualquier cantidad de cartas
         if (abilityMode === 'GAMBLER_SWAP') {
             const swapCount = selectedCards.length;
-            // Limit 2 swaps? Or based on `gambleSwaps`?
-            // Helper logic: context.player.gambleSwaps tells remaining swaps.
-            // Assuming we allow multi-select up to remaining limit.
             const remaining = player.gambleSwaps || 0;
 
             return React.createElement("div", { className: "fixed top-20 left-1/2 -translate-x-1/2 bg-emerald-900/90 p-4 rounded-xl border border-emerald-500 shadow-xl text-white z-50 animate-fade-in" },
-                React.createElement("h3", { className: "font-bold text-center text-emerald-300" }, "Fase de Descarte"),
-                React.createElement("p", { className: "text-xs text-center mb-2" }, `Selecciona cartas para cambiar (Restantes: ${remaining}).`),
+                React.createElement("h3", { className: "font-bold text-center text-emerald-300" }, "Descarte del Tahúr (Mulligan)"),
+                React.createElement("p", { className: "text-xs text-center mb-2" }, `Selecciona cartas a cambiar. Intentos restantes: ${remaining}.`),
 
                 React.createElement("div", { className: "flex gap-2 justify-center" },
                     React.createElement("button", {
-                        className: `btn ${swapCount > 0 && swapCount <= remaining ? 'btn-emerald' : 'bg-slate-700 text-gray-500'}`,
-                        disabled: swapCount === 0 || swapCount > remaining,
+                        className: `btn ${swapCount > 0 ? 'btn-emerald' : 'bg-slate-700 text-gray-500'}`,
+                        disabled: swapCount === 0,
                         onClick: () => performAction('GAMBLER_EXECUTE_SWAP')
-                    }, "CAMBIAR CARTAS"),
+                    }, `CAMBIAR ${swapCount} CARTA${swapCount > 1 ? 'S' : ''}`),
 
                     React.createElement("button", {
                         className: "btn bg-slate-600 hover:bg-slate-500 text-white",
                         onClick: () => performAction('GAMBLER_SKIP_SWAP')
-                    }, "OMITIR")
+                    }, "CONSERVAR MANO")
                 )
             );
         }

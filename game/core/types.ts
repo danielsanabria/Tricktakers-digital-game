@@ -132,8 +132,10 @@ export interface Player {
   hermitDiscarding?: boolean;
   gamblerUsedAbility?: boolean;
   berserkerUsedRound3?: boolean;
+  usedBlackCrownMulligan?: boolean;
   strategistUsedIgnore?: boolean;
   wonRevolutionTrick?: boolean;
+  revoltWinningCard?: Card | null;
   revoltsLeft?: number;
   itemSlots?: number;
   pendingItemEffect?: string | null;

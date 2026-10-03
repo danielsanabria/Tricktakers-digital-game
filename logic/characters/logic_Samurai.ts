@@ -47,7 +47,7 @@ export class SamuraiLogic extends BaseCharacterLogic {
     else if (leadSuit && effectiveSuit === leadSuit) power += 500;
 
     // Weakness Logic (simplified inheritance)
-    if (context.onesInSuits.length > 0 && !isKakumei && card.value === 10) power = 1;
+    if (context.onesInSuits && context.onesInSuits.length > 0 && !isKakumei && card.value === 10) power = 1;
 
     return power;
   }

@@ -63,10 +63,7 @@ export class KingLogic extends BaseCharacterLogic {
     return null;
   }
   onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
-    // King Instant Win Condition: 5 Wins
-    if (player.wins >= 5) {
-      return { score: 999 }; // Trigger Instant Win (Priority 1)
-    }
+    // La victoria instantánea por 5 bazas se evalúa al final de la ronda en KingScoring
     return {};
   }
 }

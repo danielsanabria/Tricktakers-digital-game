@@ -43,7 +43,7 @@ export class SummonerLogic extends BaseCharacterLogic {
                 // 2. MIRIA (Dragon) - Front: Berserker
                 if (beast.id === 'b-miria') {
                     // Berserker: Beats standard (3000), but loses to 1?
-                    if (context.onesInSuits.length > 0 && !context.isRevolt && !context.isKakumei) {
+                    if (context.onesInSuits && context.onesInSuits.length > 0 && !context.isRevolt && !context.isKakumei) {
                         return -1;
                     }
                     return 3000;
