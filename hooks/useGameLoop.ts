@@ -5,6 +5,7 @@ import { createDeck, getValidMoves, determineWinner, getAiMove, determineTournam
 import { getCharacterLogic } from '../logic/logic_Registry';
 import { getScoringLogic } from '../logic/scoring/scoring_Registry';
 import { PhantomThiefLogic } from '../logic/characters/logic_PhantomThief';
+import { calculateAlchemyValue } from '../game/core/alchemyUtils';
 import { useGameActions } from '../useGameActions';
 
 // Initial Players
@@ -209,7 +210,13 @@ export const useGameLoop = () => {
         if (humanStrategist) {
             setAbilityMode('STRATEGIST_SETUP');
             addLog("Estratega: Define tu Plan Maestro de Trampas.");
-            // If hand > 5, Discard phase will trigger after setup is done (via checkPlayerAbilityMode or logic update)
+        }
+
+        // Time Traveler Setup (Human)
+        const humanTimeTraveler = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.TIME_TRAVELER);
+        if (humanTimeTraveler && (!humanTimeTraveler.timeTravelPredictions || humanTimeTraveler.timeTravelPredictions.length === 0)) {
+            setAbilityMode('TIME_TRAVELER_SETUP');
+            addLog("Viajero del Tiempo: Configura tus visiones del futuro (predicciones).");
         }
 
         if (strategistInheritedCard) {
@@ -454,7 +461,9 @@ export const useGameLoop = () => {
             const strategist = playersToUse.find(p => p.character === CharacterType.STRATEGIST && p.id === 'p1');
             const needsChoice = strategist && (strategist.wins === 0 || strategist.wins === 1);
             if (needsChoice) {
-                setStrategistPendingChoice({ type: 'RARE', pointsObj: 0 });
+                const choiceType: 'RARE' | 'BLACK7' = strategist.wins === 0 ? 'RARE' : 'BLACK7';
+                const choicePts = strategist.wins === 0 ? 50 : 30;
+                setStrategistPendingChoice({ type: choiceType, pointsObj: choicePts });
             } else {
                 console.log("Transitioning to ROUND_SUMMARY");
                 setPhase(GamePhase.ROUND_SUMMARY);
@@ -589,9 +598,26 @@ export const useGameLoop = () => {
                 // Check for Samurai Win Ability (Take Red Card)
                 const availableRedCards = cards.filter(c => c.suit === Suit.RED && c.ownerId !== winnerId);
                 if (winnerP.character === CharacterType.SAMURAI && availableRedCards.length > 0) {
-                    setAbilityMode('SAMURAI_WIN_CHOICE');
-                    // Pause resolution to wait for user input
-                    return;
+                    if (winnerP.id === 'p1') {
+                        setAbilityMode('SAMURAI_WIN_CHOICE');
+                        // Pause resolution to wait for user input
+                        return;
+                    } else {
+                        // AI Samurai: automatically takes the highest Red card and discards the lowest non-Black card
+                        const bestRedCard = [...availableRedCards].sort((a, b) => b.value - a.value)[0];
+                        const discardCandidate = [...winnerP.hand].sort((a, b) => a.value - b.value)[0];
+                        if (discardCandidate && bestRedCard.value > discardCandidate.value) {
+                            updatedPlayers = updatedPlayers.map(p => {
+                                if (p.id === winnerId) {
+                                    const newHand = p.hand.filter(c => c.id !== discardCandidate.id);
+                                    newHand.push({ ...bestRedCard, ownerId: winnerId });
+                                    return { ...p, hand: newHand };
+                                }
+                                return p;
+                            });
+                            addLog(`${winnerP.name} (Samurái) intercambió una carta de su mano por ${bestRedCard.suit} ${bestRedCard.value}.`);
+                        }
+                    }
                 }
             }
 
@@ -605,7 +631,8 @@ export const useGameLoop = () => {
             updatedPlayers = updatedPlayers.map(p => ({
                 ...p,
                 adventurerUsedItem: false,
-                pendingItemEffect: null
+                pendingItemEffect: null,
+                frontBeastId: null
             }));
 
             if (trick < 4) {
@@ -620,28 +647,15 @@ export const useGameLoop = () => {
                 setCurrentTrap(null);
             }
 
-            // 5. Check Time Traveler "Change the Past" Opportunity
-            // "Change the past (not applicable in the 5th trick)"
-            // Trick index is 1-based usually, or 0-based? Let's check `trick` state.
-            // `trick` from useGameLoop is 1-based (starts at 1).
-            // So if trick < 5.
+            // 5. Check Time Traveler "Change the Past" Opportunity (Human P1 ONLY)
             const winner = updatedPlayers[winnerIdx];
             if (winner.character === CharacterType.TIME_TRAVELER && trick < 5 && winner.timeTravelTokens > 0) {
-                // Trigger Interception
-                setAbilityMode('TIME_TRAVEL_WIN_CHOICE');
-                // We must NOT clear playedCards yet. They are needed if user chooses to Change Past.
-                // We should defer the cleanup.
-                // But wait, `resolveTrick` is usually called at end of animation.
-                // If we return here, we stop the loop.
-                // We need to store the "pending resolution" state if they choose NO.
-                // Or we can just handle the "No" by calling a "Continue Resolution" action.
-
-                // We'll set a ref or state to know who won, so we can resume if they cancel.
-                // Actually, simpler: The Modal will have "Confirm Change" and "Skip".
-                // "Skip" calls `COMPLETE_TRICK` action which finishes the job.
-                // "Confirm" calls `TIME_TRAVEL_CHANGE_PAST`.
-
-                return; // STOP execution here.
+                if (winner.id === 'p1') {
+                    // Trigger Interception for human player
+                    setAbilityMode('TIME_TRAVEL_WIN_CHOICE');
+                    return; // STOP execution here to wait for user input
+                }
+                // AI Time Traveler: does not block the engine or pop up modal for p1
             }
 
             setPlayedCards([]);
@@ -680,6 +694,74 @@ export const useGameLoop = () => {
         if (isResolvingRef.current) return;
         const p = players[currentPlayerIdx];
         const isUser = p.id === 'p1';
+
+        // AI Alchemist Turn: Automatically transmute 3 cards
+        if (p.character === CharacterType.ALCHEMIST && !isUser) {
+            let selection: Card[] = [];
+            const leadCards = leadSuit ? p.hand.filter(c => c.suit === leadSuit) : [];
+            if (leadSuit && leadCards.length > 0) {
+                selection.push(leadCards[0]);
+            }
+            const remainingInHand = p.hand.filter(c => !selection.some(s => s.id === c.id));
+            while (selection.length < 3 && remainingInHand.length > 0) {
+                selection.push(remainingInHand.shift()!);
+            }
+
+            if (selection.length === 3) {
+                const alchemyResult = calculateAlchemyValue(selection);
+                const sumValue = alchemyResult.value;
+                const newElements = [...(p.magicElements || []), ...alchemyResult.elements];
+
+                let declaredSuit = leadSuit;
+                if (!declaredSuit) {
+                    declaredSuit = selection[0].suit || Suit.RED;
+                    setLeadSuit(declaredSuit);
+                }
+
+                const virtualCard: Card = {
+                    id: `alchemy-ai-${Date.now()}-${p.id}`,
+                    suit: declaredSuit,
+                    value: sumValue,
+                    type: CardType.NUMBER,
+                    ownerId: p.id,
+                    name: `Alchemy Result (${sumValue})`,
+                    combinedCards: selection
+                };
+
+                if (sumValue === 10 && declaredSuit !== Suit.COLORLESS) {
+                    virtualCard.imagePath = `/assets/color-cards/10s-cards/${declaredSuit.toLowerCase()}-10.jpg`;
+                }
+
+                const alchemistDeck = [...(p.alchemistDeck || [])];
+                let drawnCards: Card[] = [];
+                if (alchemistDeck.length > 0 && trick < 5) {
+                    drawnCards = alchemistDeck.splice(0, 3).map(c => ({ ...c, ownerId: p.id }));
+                }
+
+                const newHand = [...p.hand.filter(c => !selection.some(s => s.id === c.id)), ...drawnCards];
+                const updatedAi = {
+                    ...p,
+                    hand: newHand,
+                    alchemistDeck,
+                    magicElements: newElements
+                };
+
+                const newPlayed = [...playedCards, virtualCard];
+                setPlayedCards(newPlayed);
+                addLog(`${p.name} (Alquimista) transmutó 3 cartas -> Valor ${sumValue} (${declaredSuit}).`);
+
+                const updatedPlayers = players.map(pl => pl.id === p.id ? updatedAi : pl);
+                setPlayers(updatedPlayers);
+
+                if (newPlayed.length < players.length) {
+                    setCurrentPlayerIdx((currentPlayerIdx + 1) % players.length);
+                } else {
+                    isResolvingRef.current = true;
+                    resolveTrick(newPlayed, updatedPlayers);
+                }
+                return;
+            }
+        }
         // Check character specific phases
         const isKingDiscardPhase = p.character === CharacterType.KING && p.hand.length > 5;
         const isGamblerSwapPhase = p.character === CharacterType.GAMBLER && (p.gambleSwaps || 0) > 0 && p.bid === undefined;

@@ -69,10 +69,24 @@ const TimeTravelerSetup: React.FC<UIContext> = (context) => {
 
 export class TimeTravelerLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {
+    const { playerId, players } = context;
+    let timeTravelPredictions: string[] = [];
+
+    // Automatically generate strategic predictions for AI bots
+    if (playerId !== 'p1' && players && players.length >= 3) {
+      const pIds = players.map(p => p.id);
+      // Predict gold crown (most likely player or self)
+      const gold = pIds[Math.floor(Math.random() * pIds.length)];
+      const blackCandidates = pIds.filter(id => id !== gold);
+      const black1 = blackCandidates[0] || pIds[0];
+      const black2 = blackCandidates[1] || pIds[1] || pIds[0];
+      timeTravelPredictions = [gold, black1, black2];
+    }
+
     return {
       ...super.setup(context),
       timeTravelTokens: 2,
-      timeTravelPredictions: []
+      timeTravelPredictions
     };
   }
   renderActions(context: UIContext): React.ReactNode {
