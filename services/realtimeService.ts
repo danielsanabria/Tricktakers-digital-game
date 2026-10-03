@@ -1,6 +1,6 @@
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabaseClient } from './supabaseClient';
-import { Player, Card, CharacterType } from '../game/core/types';
+import Peer, { DataConnection } from 'peerjs';
 
 export interface RoomParticipant {
     id: string;
@@ -42,6 +42,13 @@ export interface RealtimeCallbacks {
     onBotTakeover: (playerId: string) => void;
 }
 
+function getPeerConstructor(): any {
+    if (typeof window !== 'undefined' && (window as any).Peer) {
+        return (window as any).Peer;
+    }
+    return Peer;
+}
+
 class RealtimeService {
     private channel: RealtimeChannel | null = null;
     private broadcastChannel: BroadcastChannel | null = null;
@@ -49,9 +56,17 @@ class RealtimeService {
     private processedMsgIds: Set<string> = new Set();
     private currentRoomCode: string | null = null;
     private localPlayerId: string | null = null;
+    private isHost: boolean = false;
     private participants: Map<string, RoomParticipant> = new Map();
     private callbacks: RealtimeCallbacks | null = null;
     private disconnectTimers: Map<string, any> = new Map();
+
+    // WebRTC PeerJS State for Cross-Browser & Cross-Device P2P
+    private peer: any = null;
+    private hostConnection: any = null;
+    private peerConnections: Map<string, any> = new Map();
+    private guestRetryTimeout: any = null;
+    private guestRetryAttempts: number = 0;
 
     private GRACE_PERIOD_SECONDS = 20;
 
@@ -81,9 +96,13 @@ class RealtimeService {
         isHost: boolean,
         callbacks: RealtimeCallbacks
     ): Promise<boolean> {
+        this.leaveRoom(); // Clean up any existing connection first
+
         this.currentRoomCode = roomCode.toUpperCase();
         this.localPlayerId = playerId;
+        this.isHost = isHost;
         this.callbacks = callbacks;
+        this.guestRetryAttempts = 0;
 
         const participant: RoomParticipant = {
             id: playerId,
@@ -96,10 +115,12 @@ class RealtimeService {
         };
         this.participants.set(playerId, participant);
 
-        const supabase = getSupabaseClient();
+        // 1. Initialize WebRTC P2P (PeerJS) for Cross-Device / Cross-Browser Connectivity
+        this.setupWebRTCPeer(participant);
 
+        // 2. Initialize Supabase Realtime Channel if configured
+        const supabase = getSupabaseClient();
         if (supabase) {
-            // Live Supabase Realtime Channel
             const channelName = `tricktakers-room-${this.currentRoomCode}`;
             this.channel = supabase.channel(channelName, {
                 config: {
@@ -108,7 +129,6 @@ class RealtimeService {
                 }
             });
 
-            // Presence tracking
             this.channel
                 .on('presence', { event: 'sync' }, () => {
                     const state = this.channel?.presenceState() || {};
@@ -127,18 +147,20 @@ class RealtimeService {
                 });
         }
 
-        // Local Tab Broadcast fallback (for local multi-tab play & immediate testing)
+        // 3. Local Tab Broadcast fallback (for same-browser tab play)
         if (typeof BroadcastChannel !== 'undefined') {
-            this.broadcastChannel = new BroadcastChannel(`tricktakers-${this.currentRoomCode}`);
-            this.broadcastChannel.onmessage = (event) => {
-                const msg = event.data as RealtimeMessage;
-                if (msg && msg.roomCode === this.currentRoomCode && msg.senderId !== this.localPlayerId) {
-                    this.handleIncomingMessage(msg);
-                }
-            };
+            try {
+                this.broadcastChannel = new BroadcastChannel(`tricktakers-${this.currentRoomCode}`);
+                this.broadcastChannel.onmessage = (event) => {
+                    const msg = event.data as RealtimeMessage;
+                    if (msg && msg.roomCode === this.currentRoomCode && msg.senderId !== this.localPlayerId) {
+                        this.handleIncomingMessage(msg);
+                    }
+                };
+            } catch (err) {}
         }
 
-        // Secondary fallback: window storage event across browser windows/tabs
+        // 4. Secondary fallback: window storage event across browser windows
         if (typeof window !== 'undefined') {
             this.storageListener = (e: StorageEvent) => {
                 if (e.key === `tricktakers_bus_${this.currentRoomCode}` && e.newValue) {
@@ -153,47 +175,194 @@ class RealtimeService {
             window.addEventListener('storage', this.storageListener);
         }
 
-        // Broadcast join to local peers
+        // Broadcast join message across buses
         this.broadcast('ROOM_UPDATE', { participant });
-
         this.notifyParticipants();
         return true;
     }
 
     /**
-     * Broadcast an action to all players in the room
+     * WebRTC P2P setup via PeerJS
      */
-    broadcast(type: RealtimeActionType, payload: any) {
-        if (!this.currentRoomCode || !this.localPlayerId) return;
+    private setupWebRTCPeer(participant: RoomParticipant) {
+        if (!this.currentRoomCode) return;
+        const hostPeerId = `tricktakers-room-${this.currentRoomCode}`;
+        const PeerClass = getPeerConstructor();
 
-        const msgId = `${this.localPlayerId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-        const message: RealtimeMessage = {
+        if (this.isHost) {
+            // HOST: Registers the canonical room ID
+            try {
+                this.peer = new PeerClass(hostPeerId, {
+                    debug: 0,
+                    config: {
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' },
+                            { urls: 'stun:stun2.l.google.com:19302' }
+                        ]
+                    }
+                });
+
+                this.peer.on('connection', (conn: any) => {
+                    this.peerConnections.set(conn.peer, conn);
+
+                    conn.on('open', () => {
+                        // Immediately sync current participants with the connected guest
+                        const msg = this.createMessage('SYNC_PARTICIPANTS', {
+                            participants: this.getCurrentParticipants()
+                        });
+                        try { conn.send(msg); } catch (e) {}
+                    });
+
+                    conn.on('data', (data: any) => {
+                        this.handleIncomingMessage(data as RealtimeMessage);
+                        // Host relays messages from one guest to other guests if needed
+                        if (data && data.senderId !== this.localPlayerId) {
+                            this.peerConnections.forEach((otherConn, otherPeerId) => {
+                                if (otherPeerId !== conn.peer && otherConn && otherConn.open) {
+                                    try { otherConn.send(data); } catch (e) {}
+                                }
+                            });
+                        }
+                    });
+
+                    conn.on('close', () => {
+                        this.peerConnections.delete(conn.peer);
+                    });
+
+                    conn.on('error', (err: any) => {
+                        console.warn('[PeerJS Host Connection Error]:', err);
+                    });
+                });
+
+                this.peer.on('error', (err: any) => {
+                    console.warn('[PeerJS Host Error]:', err);
+                });
+            } catch (err) {
+                console.warn('[PeerJS Host Init Error]:', err);
+            }
+        } else {
+            // GUEST: Creates an ephemeral peer and connects to the Host's peer ID
+            try {
+                this.peer = new PeerClass({
+                    debug: 0,
+                    config: {
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' },
+                            { urls: 'stun:stun2.l.google.com:19302' }
+                        ]
+                    }
+                });
+
+                this.peer.on('open', () => {
+                    this.connectGuestToHost(hostPeerId, participant);
+                });
+
+                this.peer.on('error', (err: any) => {
+                    console.warn('[PeerJS Guest Error]:', err);
+                    if (err.type === 'peer-unavailable' && this.guestRetryAttempts < 6) {
+                        this.scheduleGuestReconnect(hostPeerId, participant);
+                    }
+                });
+            } catch (err) {
+                console.warn('[PeerJS Guest Init Error]:', err);
+            }
+        }
+    }
+
+    private connectGuestToHost(hostPeerId: string, participant: RoomParticipant) {
+        if (!this.peer || this.peer.destroyed) return;
+        try {
+            const conn = this.peer.connect(hostPeerId, { reliable: true });
+            this.hostConnection = conn;
+
+            conn.on('open', () => {
+                this.guestRetryAttempts = 0;
+                // Send ROOM_UPDATE to Host
+                const msg = this.createMessage('ROOM_UPDATE', { participant });
+                try { conn.send(msg); } catch (e) {}
+            });
+
+            conn.on('data', (data: any) => {
+                this.handleIncomingMessage(data as RealtimeMessage);
+            });
+
+            conn.on('close', () => {
+                this.hostConnection = null;
+            });
+
+            conn.on('error', (err: any) => {
+                console.warn('[PeerJS Guest Conn Error]:', err);
+            });
+        } catch (e) {
+            console.warn('[PeerJS Connect to Host Error]:', e);
+        }
+    }
+
+    private scheduleGuestReconnect(hostPeerId: string, participant: RoomParticipant) {
+        if (this.guestRetryTimeout) clearTimeout(this.guestRetryTimeout);
+        this.guestRetryAttempts++;
+        this.guestRetryTimeout = setTimeout(() => {
+            this.connectGuestToHost(hostPeerId, participant);
+        }, 1200);
+    }
+
+    private createMessage(type: RealtimeActionType, payload: any): RealtimeMessage {
+        const msgId = `${this.localPlayerId || 'anon'}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        return {
             type,
-            senderId: this.localPlayerId,
-            roomCode: this.currentRoomCode,
+            senderId: this.localPlayerId || '',
+            roomCode: this.currentRoomCode || '',
             payload,
             timestamp: Date.now(),
             msgId
         };
+    }
 
-        // Mark as sent locally
-        this.processedMsgIds.add(msgId);
+    /**
+     * Broadcast an action to all players in the room across all communication channels
+     */
+    broadcast(type: RealtimeActionType, payload: any) {
+        if (!this.currentRoomCode || !this.localPlayerId) return;
 
-        // Send via Supabase WebSocket
-        if (this.channel) {
-            this.channel.send({
-                type: 'broadcast',
-                event: 'game-event',
-                payload: message
+        const message = this.createMessage(type, payload);
+        if (message.msgId) {
+            this.processedMsgIds.add(message.msgId);
+        }
+
+        // 1. WebRTC P2P direct transmission
+        if (this.isHost) {
+            this.peerConnections.forEach((conn) => {
+                if (conn && conn.open) {
+                    try { conn.send(message); } catch (e) {}
+                }
             });
+        } else {
+            if (this.hostConnection && this.hostConnection.open) {
+                try { this.hostConnection.send(message); } catch (e) {}
+            }
         }
 
-        // Send via HTML5 BroadcastChannel for same-device tabs
+        // 2. Supabase WebSocket channel (if configured)
+        if (this.channel) {
+            try {
+                this.channel.send({
+                    type: 'broadcast',
+                    event: 'game-event',
+                    payload: message
+                });
+            } catch (err) {}
+        }
+
+        // 3. HTML5 BroadcastChannel for same-device tabs
         if (this.broadcastChannel) {
-            this.broadcastChannel.postMessage(message);
+            try {
+                this.broadcastChannel.postMessage(message);
+            } catch (err) {}
         }
 
-        // Also post to localStorage bus for cross-window / tab redundancy
+        // 4. LocalStorage bus for cross-window redundancy
         if (typeof window !== 'undefined' && window.localStorage) {
             try {
                 window.localStorage.setItem(`tricktakers_bus_${this.currentRoomCode}`, JSON.stringify(message));
@@ -263,13 +432,10 @@ class RealtimeService {
     }
 
     private handlePresenceSync(presenceState: Record<string, any[]>) {
-        const activeIds = new Set<string>();
-
         Object.keys(presenceState).forEach(key => {
             const presences = presenceState[key];
             if (presences && presences.length > 0) {
                 const remoteParticipant = presences[0] as RoomParticipant;
-                activeIds.add(remoteParticipant.id);
 
                 if (!this.participants.has(remoteParticipant.id)) {
                     this.participants.set(remoteParticipant.id, {
@@ -295,9 +461,9 @@ class RealtimeService {
         if (message.msgId) {
             if (this.processedMsgIds.has(message.msgId)) return;
             this.processedMsgIds.add(message.msgId);
-            if (this.processedMsgIds.size > 200) {
+            if (this.processedMsgIds.size > 300) {
                 const arr = Array.from(this.processedMsgIds);
-                this.processedMsgIds = new Set(arr.slice(-100));
+                this.processedMsgIds = new Set(arr.slice(-150));
             }
         }
 
@@ -336,16 +502,36 @@ class RealtimeService {
     }
 
     /**
-     * Leave current room and cleanup channels
+     * Leave current room and cleanup all WebRTC, WebSocket, and broadcast channels
      */
     leaveRoom() {
+        if (this.guestRetryTimeout) {
+            clearTimeout(this.guestRetryTimeout);
+            this.guestRetryTimeout = null;
+        }
+
+        if (this.hostConnection) {
+            try { this.hostConnection.close(); } catch (e) {}
+            this.hostConnection = null;
+        }
+
+        this.peerConnections.forEach(conn => {
+            try { conn.close(); } catch (e) {}
+        });
+        this.peerConnections.clear();
+
+        if (this.peer) {
+            try { this.peer.destroy(); } catch (e) {}
+            this.peer = null;
+        }
+
         if (this.channel) {
-            this.channel.unsubscribe();
+            try { this.channel.unsubscribe(); } catch (e) {}
             this.channel = null;
         }
 
         if (this.broadcastChannel) {
-            this.broadcastChannel.close();
+            try { this.broadcastChannel.close(); } catch (e) {}
             this.broadcastChannel = null;
         }
 
@@ -361,6 +547,7 @@ class RealtimeService {
         this.participants.clear();
         this.currentRoomCode = null;
         this.localPlayerId = null;
+        this.isHost = false;
         this.callbacks = null;
     }
 

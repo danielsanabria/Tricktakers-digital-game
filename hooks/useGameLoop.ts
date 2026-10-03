@@ -127,6 +127,8 @@ export const useGameLoop = () => {
         setStrategistPendingChoice(null);
         setIsRevolt(false);
         setIsKakumei(false);
+        setRoundResults(null);
+        setGameResult(null);
         isResolvingRef.current = false;
         isRoundResolvingRef.current = false;
     };

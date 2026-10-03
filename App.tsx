@@ -335,7 +335,10 @@ const App = () => {
         realtimeService.leaveRoom();
         setMultiplayerRoomCode('');
         setParticipants([]);
-        game.setPhase(GamePhase.MODE_SELECTION);
+        setMyInGameId('p1');
+        setIsHost(true);
+        isHostRef.current = true;
+        game.resetGame();
     };
 
     const handlePlayCard = (cardId: string) => {
@@ -520,10 +523,14 @@ const App = () => {
             )}
 
             {/* Game Over Screen */}
-            {game.phase === GamePhase.GAME_OVER && (
+            {(game.phase === GamePhase.GAME_OVER || game.gameResult !== null) && (
                 <GameOverScreen
                     players={game.players}
                     result={game.gameResult}
+                    onReset={() => {
+                        if (multiplayerRoomCode) handleLeaveLobby();
+                        else game.resetGame();
+                    }}
                     onRestart={() => {
                         if (multiplayerRoomCode) handleLeaveLobby();
                         else game.resetGame();

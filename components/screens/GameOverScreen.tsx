@@ -5,13 +5,16 @@ import { CHARACTERS } from '../../game/core/constants';
 import { TournamentResult } from '../../game/core/gameLogic';
 
 interface GameOverScreenProps {
-    result: TournamentResult;
+    result: TournamentResult | null;
     players: Player[];
-    onReset: () => void;
+    onReset?: () => void;
+    onRestart?: () => void;
 }
 
-export const GameOverScreen: React.FC<GameOverScreenProps> = ({ result, players, onReset }) => {
-    const { winner, reason } = result;
+export const GameOverScreen: React.FC<GameOverScreenProps> = ({ result, players, onReset, onRestart }) => {
+    const handleReset = onReset || onRestart;
+    const winner = result?.winner || { name: 'Desconocido' };
+    const reason = result?.reason || '';
 
     return (
         <div className="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4 sm:p-8 overflow-y-auto">
@@ -25,21 +28,26 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({ result, players,
                     <p className="text-white/60 mb-6 text-sm md:text-base">{reason}</p>
 
                     <div className="space-y-2">
-                        {players.sort((a, b) => b.score - a.score).map((p, i) => (
+                        {players.slice().sort((a, b) => b.score - a.score).map((p, i) => (
                             <div key={p.id} className="flex justify-between items-center text-white/60 font-bold">
                                 <span>{i + 1}. {p.name} ({p.character ? CHARACTERS[p.character].name : 'S/C'})</span>
                                 <div className="text-right">
                                     <div className="text-white">{p.score} pts</div>
                                     <div className="text-[9px] flex gap-1 justify-end">
-                                        {Array(p.goldCrowns).fill(0).map((_, i) => <i key={i} className="fa-solid fa-crown text-amber-400"></i>)}
-                                        {Array(p.blackCrowns).fill(0).map((_, i) => <i key={i} className="fa-solid fa-crown text-slate-900"></i>)}
+                                        {Array(p.goldCrowns || 0).fill(0).map((_, i) => <i key={i} className="fa-solid fa-crown text-amber-400"></i>)}
+                                        {Array(p.blackCrowns || 0).fill(0).map((_, i) => <i key={i} className="fa-solid fa-crown text-slate-900"></i>)}
                                     </div>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
-                <button onClick={onReset} className="px-12 py-4 bg-teal-500 text-white rounded-full font-black text-xl hover:bg-teal-400 transition-all shadow-2xl shadow-teal-500/20">VOLVER A JUGAR</button>
+                <button
+                    onClick={handleReset}
+                    className="px-12 py-4 bg-teal-500 text-white rounded-full font-black text-xl hover:bg-teal-400 transition-all shadow-2xl shadow-teal-500/20 active:scale-95 cursor-pointer"
+                >
+                    VOLVER A JUGAR
+                </button>
             </div>
         </div>
     );
