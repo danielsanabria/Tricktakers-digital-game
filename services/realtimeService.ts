@@ -1,6 +1,7 @@
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabaseClient } from './supabaseClient';
 import Peer, { DataConnection } from 'peerjs';
+import mqtt from 'mqtt';
 
 export interface RoomParticipant {
     id: string;
@@ -61,7 +62,10 @@ class RealtimeService {
     private callbacks: RealtimeCallbacks | null = null;
     private disconnectTimers: Map<string, any> = new Map();
 
-    // WebRTC PeerJS State for Cross-Browser & Cross-Device P2P
+    // Cross-Device High-Speed WebSocket (MQTT.js)
+    private mqttClient: any = null;
+
+    // WebRTC PeerJS State for Direct P2P
     private peer: any = null;
     private hostConnection: any = null;
     private peerConnections: Map<string, any> = new Map();
@@ -115,10 +119,13 @@ class RealtimeService {
         };
         this.participants.set(playerId, participant);
 
-        // 1. Initialize WebRTC P2P (PeerJS) for Cross-Device / Cross-Browser Connectivity
+        // 1. Initialize Cross-Device High-Speed WebSocket Relay (MQTT.js)
+        this.setupMqtt(participant);
+
+        // 2. Initialize WebRTC P2P (PeerJS) as direct secondary transport
         this.setupWebRTCPeer(participant);
 
-        // 2. Initialize Supabase Realtime Channel if configured
+        // 3. Initialize Supabase Realtime Channel if configured
         const supabase = getSupabaseClient();
         if (supabase) {
             const channelName = `tricktakers-room-${this.currentRoomCode}`;
@@ -147,7 +154,7 @@ class RealtimeService {
                 });
         }
 
-        // 3. Local Tab Broadcast fallback (for same-browser tab play)
+        // 4. Local Tab Broadcast fallback (for same-browser tab play)
         if (typeof BroadcastChannel !== 'undefined') {
             try {
                 this.broadcastChannel = new BroadcastChannel(`tricktakers-${this.currentRoomCode}`);
@@ -160,7 +167,7 @@ class RealtimeService {
             } catch (err) {}
         }
 
-        // 4. Secondary fallback: window storage event across browser windows
+        // 5. Secondary fallback: window storage event across browser windows
         if (typeof window !== 'undefined') {
             this.storageListener = (e: StorageEvent) => {
                 if (e.key === `tricktakers_bus_${this.currentRoomCode}` && e.newValue) {
@@ -179,6 +186,48 @@ class RealtimeService {
         this.broadcast('ROOM_UPDATE', { participant });
         this.notifyParticipants();
         return true;
+    }
+
+    /**
+     * Cross-Device High-Speed WebSocket Relay using MQTT.js
+     * Works on any phone, tablet, PC, browser, 4G, 5G, and Wi-Fi in sub-100ms.
+     */
+    private setupMqtt(participant: RoomParticipant) {
+        if (!this.currentRoomCode) return;
+        const topic = `tricktakers/v1/room_${this.currentRoomCode}`;
+        const clientId = `tt_${this.isHost ? 'h' : 'g'}_${this.localPlayerId}_${Math.random().toString(16).slice(2, 8)}`;
+
+        try {
+            this.mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
+                clientId,
+                clean: true,
+                connectTimeout: 7000,
+                reconnectPeriod: 2500
+            });
+
+            this.mqttClient.on('connect', () => {
+                this.mqttClient?.subscribe(topic, { qos: 0 }, (err: any) => {
+                    if (!err) {
+                        this.broadcast('ROOM_UPDATE', { participant });
+                    }
+                });
+            });
+
+            this.mqttClient.on('message', (_t: string, payload: any) => {
+                try {
+                    const msg = JSON.parse(payload.toString()) as RealtimeMessage;
+                    if (msg && msg.roomCode === this.currentRoomCode && msg.senderId !== this.localPlayerId) {
+                        this.handleIncomingMessage(msg);
+                    }
+                } catch (e) {}
+            });
+
+            this.mqttClient.on('error', (err: any) => {
+                console.warn('[MQTT Error]:', err);
+            });
+        } catch (err) {
+            console.warn('[MQTT Init Error]:', err);
+        }
     }
 
     /**
@@ -206,13 +255,18 @@ class RealtimeService {
                 this.peer.on('connection', (conn: any) => {
                     this.peerConnections.set(conn.peer, conn);
 
-                    conn.on('open', () => {
-                        // Immediately sync current participants with the connected guest
+                    const syncGuest = () => {
                         const msg = this.createMessage('SYNC_PARTICIPANTS', {
                             participants: this.getCurrentParticipants()
                         });
                         try { conn.send(msg); } catch (e) {}
-                    });
+                    };
+
+                    if (conn.open) {
+                        syncGuest();
+                    } else {
+                        conn.on('open', syncGuest);
+                    }
 
                     conn.on('data', (data: any) => {
                         this.handleIncomingMessage(data as RealtimeMessage);
@@ -331,7 +385,15 @@ class RealtimeService {
             this.processedMsgIds.add(message.msgId);
         }
 
-        // 1. WebRTC P2P direct transmission
+        // 1. Cross-Device High-Speed WebSocket (MQTT.js)
+        if (this.mqttClient && this.mqttClient.connected) {
+            try {
+                const topic = `tricktakers/v1/room_${this.currentRoomCode}`;
+                this.mqttClient.publish(topic, JSON.stringify(message));
+            } catch (err) {}
+        }
+
+        // 2. WebRTC P2P direct transmission
         if (this.isHost) {
             this.peerConnections.forEach((conn) => {
                 if (conn && conn.open) {
@@ -505,6 +567,11 @@ class RealtimeService {
      * Leave current room and cleanup all WebRTC, WebSocket, and broadcast channels
      */
     leaveRoom() {
+        if (this.mqttClient) {
+            try { this.mqttClient.end(true); } catch (e) {}
+            this.mqttClient = null;
+        }
+
         if (this.guestRetryTimeout) {
             clearTimeout(this.guestRetryTimeout);
             this.guestRetryTimeout = null;

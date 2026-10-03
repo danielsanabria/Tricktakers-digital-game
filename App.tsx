@@ -405,6 +405,7 @@ const App = () => {
                         selectionOrder={game.selectionOrder}
                         selectionIndex={game.selectionIndex}
                         localPlayerId={myInGameId}
+                        playerHand={myPlayer?.hand || []}
                         selectCharacter={(char) => {
                             if (!multiplayerRoomCode || isHostRef.current) {
                                 game.selectCharacter(char);

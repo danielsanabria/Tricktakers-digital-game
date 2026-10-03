@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Player, CharacterType, GamePhase } from '../game/core/types';
+import { Player, CharacterType, GamePhase, Card } from '../game/core/types';
 import { CHARACTERS } from '../game/core/constants';
+import GameCard from './GameCard';
 
 interface CharacterSelectionProps {
     players: Player[];
@@ -10,6 +11,7 @@ interface CharacterSelectionProps {
     characterPool: CharacterType[];
     selectCharacter: (charType: CharacterType) => void;
     localPlayerId?: string;
+    playerHand?: Card[];
 }
 
 export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
@@ -18,7 +20,8 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
     selectionIndex,
     characterPool,
     selectCharacter,
-    localPlayerId = 'p1'
+    localPlayerId = 'p1',
+    playerHand = []
 }) => {
     const currentPicker = players.find(p => p.id === selectionOrder[selectionIndex]);
     const isUserTurn = currentPicker?.id === localPlayerId;
@@ -26,7 +29,7 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col h-full animate-in fade-in duration-500">
             {/* Header de Selección */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
                 <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 uppercase tracking-tighter mb-2">Selección de Personaje</h2>
                 <div className="inline-flex items-center gap-4 bg-white px-8 py-3 rounded-full shadow-sm border border-slate-200">
                     <span className="text-slate-400 font-bold uppercase text-xs tracking-widest">Turno actual</span>
@@ -36,6 +39,31 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
                     </span>
                 </div>
             </div>
+
+            {/* Mano de Cartas del Jugador para elegir Personaje */}
+            {playerHand && playerHand.length > 0 && (
+                <div className="mb-8 bg-white/95 backdrop-blur-md p-4 sm:p-5 rounded-3xl border-2 border-teal-300 shadow-xl flex flex-col items-center z-20">
+                    <div className="flex items-center gap-2 mb-3">
+                        <i className="fa-solid fa-layer-group text-teal-600 text-base"></i>
+                        <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800">
+                            Tus 5 Cartas de esta Ronda
+                        </span>
+                        <span className="text-[11px] text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full font-bold hidden sm:inline">
+                            Revisa tu mano para decidir qué personaje te conviene
+                        </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2.5 sm:gap-3.5 justify-center">
+                        {playerHand.map((card) => (
+                            <GameCard
+                                key={card.id}
+                                card={card}
+                                small={false}
+                                disabled={false}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Grid de Personajes - Estilo Clásico/Premium */}
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 pb-48">

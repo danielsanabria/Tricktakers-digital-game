@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
+    "mqtt": "^5.16.0",
     "peerjs": "^1.5.5",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
