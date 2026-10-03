@@ -7,7 +7,7 @@ export class SamuraiLogic extends BaseCharacterLogic {
     const { playerId, deck, hand: providedHand } = context;
 
     // Use dealt hand or draw if not provided
-    let hand = providedHand || deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
+    let hand = (providedHand && providedHand.length > 0) ? providedHand : deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
 
     // Rule: Samurai cannot have black cards.
     // Filter and redraw until no black cards.

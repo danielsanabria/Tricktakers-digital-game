@@ -21,7 +21,7 @@ export class KingLogic extends BaseCharacterLogic {
     };
 
     // 2. Use existing hand or draw 5 random cards from the deck
-    const initialHand = providedHand || deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
+    const initialHand = (providedHand && providedHand.length > 0) ? providedHand : deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
     const hand = [...initialHand];
 
     // 3. Add Rare to hand (Total 6)

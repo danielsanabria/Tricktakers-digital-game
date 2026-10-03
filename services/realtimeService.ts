@@ -262,7 +262,10 @@ class RealtimeService {
             this.participants.set(p.id, p);
             this.notifyParticipants();
         } else if (message.type === 'RECONNECT') {
-            this.handlePlayerReconnected(message.payload?.playerId);
+            const reconnectedId = message.payload?.playerId || message.payload?.participantId;
+            if (reconnectedId) {
+                this.handlePlayerReconnected(reconnectedId);
+            }
         } else if (message.type === 'BOT_TAKEOVER') {
             this.callbacks?.onBotTakeover(message.payload?.playerId);
         }

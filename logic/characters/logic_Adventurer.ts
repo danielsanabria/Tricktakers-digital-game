@@ -9,8 +9,9 @@ export class AdventurerLogic extends BaseCharacterLogic {
     const baseSetup = super.setup(context);
 
     // Adventurer starts with 2 item slots.
-    // Human picks manually, AI picks randomly.
-    if (playerId !== 'p1') {
+    const playerObj = context.players?.find(p => p.id === playerId);
+    const isHuman = playerObj ? (playerObj.isHuman && !playerObj.isBotControlled) : (playerId === 'p1');
+    if (!isHuman) {
       const red = ITEMS.filter(i => i.type === 'RED' && ['it-4', 'it-5', 'it-6'].includes(i.id)).sort(() => Math.random() - 0.5)[0];
       const blue = ITEMS.filter(i => i.type === 'BLUE' && ['it-1', 'it-2', 'it-3'].includes(i.id)).sort(() => Math.random() - 0.5)[0];
       return { ...baseSetup, items: [red, blue], itemSlots: 2 };

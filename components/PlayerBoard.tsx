@@ -21,6 +21,7 @@ interface PlayerBoardProps {
   // New props for integrated actions
   performAction?: (action: string, payload?: any) => void;
   abilityMode?: string;
+  isLocalPlayer?: boolean;
 }
 
 const PlayerBoard: React.FC<PlayerBoardProps> = ({
@@ -33,13 +34,14 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
   selectedCards = [],
   onReviewTraps,
   performAction,
-  abilityMode
+  abilityMode,
+  isLocalPlayer
 }) => {
   const char = player.character ? CHARACTERS[player.character] : null;
   const [imgSrc, setImgSrc] = useState<string>('');
   const [attemptIndex, setAttemptIndex] = useState(0);
 
-  const isHuman = player.id === 'p1';
+  const isHuman = isLocalPlayer !== undefined ? isLocalPlayer : (player.id === 'p1');
 
   // Generate fallback list
   const getCandidatePaths = (filename: string) => {

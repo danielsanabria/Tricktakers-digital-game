@@ -164,7 +164,14 @@ export const useGameLoop = () => {
             const setupData = logic.setup({ deck, playerId: p.id, round, players: playersToUse, hand: p.hand });
 
             // Check for Inherited Card (Strategist Bonus from prev round)
-            let hand = setupData.hand || [];
+            let hand = setupData.hand || p.hand || [];
+            if ((!hand || hand.length === 0) && p.character !== CharacterType.BERSERKER) {
+                if (deck.length < 5) {
+                    deck = createDeck();
+                }
+                hand = deck.splice(0, 5).map(c => ({ ...c, ownerId: p.id }));
+            }
+
             if (p.id === localSeatId && strategistInheritedCard) {
                 hand = [...hand, strategistInheritedCard];
                 addLog(`Has heredado una carta especial: ${strategistInheritedCard.type === 'RARE' ? 'Rara' : '7 Negro'}`);
@@ -654,8 +661,8 @@ export const useGameLoop = () => {
                     }
                 }
 
-                // CHECK: Collector Loss Ability (Human P1)
-                const humanCollector = updatedPlayers.find(p => p.id === 'p1' && p.character === CharacterType.COLLECTOR);
+                // CHECK: Collector Loss Ability (Local Human)
+                const humanCollector = updatedPlayers.find(p => p.id === localSeatId && p.character === CharacterType.COLLECTOR && p.isHuman && !p.isBotControlled);
                 if (humanCollector && humanCollector.id !== winnerId) {
                     setAbilityMode('COLLECTOR_PICK_TRICK_CARD');
                     return; // Pause resolution
@@ -664,7 +671,7 @@ export const useGameLoop = () => {
                 // Check for Samurai Win Ability (Take Red Card)
                 const availableRedCards = cards.filter(c => c.suit === Suit.RED && c.ownerId !== winnerId);
                 if (winnerP.character === CharacterType.SAMURAI && availableRedCards.length > 0) {
-                    if (winnerP.id === 'p1') {
+                    if (winnerP.id === localSeatId && winnerP.isHuman && !winnerP.isBotControlled) {
                         setAbilityMode('SAMURAI_WIN_CHOICE');
                         // Pause resolution to wait for user input
                         return;
@@ -951,6 +958,38 @@ export const useGameLoop = () => {
         }
     };
 
+    const restoreFullState = (state: {
+        phase?: GamePhase;
+        round?: number;
+        trick?: number;
+        players?: Player[];
+        currentPlayerIdx?: number;
+        leadSuit?: Suit | null;
+        playedCards?: Card[];
+        isKakumei?: boolean;
+        isRevolt?: boolean;
+        characterPool?: CharacterType[];
+        selectionOrder?: string[];
+        selectionIndex?: number;
+        gameMode?: GameMode;
+    }) => {
+        if (state.phase !== undefined) setPhase(state.phase);
+        if (state.round !== undefined) setRound(state.round);
+        if (state.trick !== undefined) setTrick(state.trick);
+        if (state.players) setPlayers(state.players);
+        if (state.currentPlayerIdx !== undefined) setCurrentPlayerIdx(state.currentPlayerIdx);
+        if (state.leadSuit !== undefined) setLeadSuit(state.leadSuit);
+        if (state.playedCards) setPlayedCards(state.playedCards);
+        if (state.isKakumei !== undefined) setIsKakumei(state.isKakumei);
+        if (state.isRevolt !== undefined) setIsRevolt(state.isRevolt);
+        if (state.characterPool) setCharacterPool(state.characterPool);
+        if (state.selectionOrder) setSelectionOrder(state.selectionOrder);
+        if (state.selectionIndex !== undefined) setSelectionIndex(state.selectionIndex);
+        if (state.gameMode !== undefined) setGameMode(state.gameMode);
+        isResolvingRef.current = false;
+        isRoundResolvingRef.current = false;
+    };
+
     return {
         gameMode, players, phase, currentPlayerIdx, trickStarterIdx, round, trick,
         selectionOrder, selectionIndex, characterPool, playedCards, drawPile,
@@ -961,7 +1000,7 @@ export const useGameLoop = () => {
         setPlayers, setPhase, setShowLogs, setViewingRules, setViewingCharacter, setItemCardToShow,
         setSelectedCards, setAbilityMode, setStrategistInheritedCard, setStrategistPendingChoice, setViewingTraps,
         setAiDifficulty, setLocalSeatId,
-        handlePlayerDisconnect, handlePlayerReconnect, handleBotTakeover,
+        handlePlayerDisconnect, handlePlayerReconnect, handleBotTakeover, restoreFullState,
         initGame, resetGame, addLog, selectCharacter, playCard, proceedFromSummary, performAction
     };
 };

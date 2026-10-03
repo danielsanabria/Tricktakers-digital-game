@@ -60,6 +60,7 @@ export const PlayerHandArea: React.FC<PlayerHandAreaProps> = ({
             <div className="max-w-7xl mx-auto p-2 sm:p-4">
                 <PlayerBoard
                     player={player}
+                    isLocalPlayer={true}
                     isCurrentPlayer={isCurrentPlayer}
                     onCardPlay={playCard}
                     canPlay={isCurrentPlayer}

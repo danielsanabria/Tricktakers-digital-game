@@ -73,7 +73,9 @@ export class TimeTravelerLogic extends BaseCharacterLogic {
     let timeTravelPredictions: string[] = [];
 
     // Automatically generate strategic predictions for AI bots
-    if (playerId !== 'p1' && players && players.length >= 3) {
+    const playerObj = players?.find(p => p.id === playerId);
+    const isHuman = playerObj ? (playerObj.isHuman && !playerObj.isBotControlled) : (playerId === 'p1');
+    if (!isHuman && players && players.length >= 3) {
       const pIds = players.map(p => p.id);
       // Predict gold crown (most likely player or self)
       const gold = pIds[Math.floor(Math.random() * pIds.length)];

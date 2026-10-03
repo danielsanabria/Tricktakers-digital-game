@@ -64,6 +64,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                     <PlayerBoard
                         key={p.id}
                         player={p}
+                        isLocalPlayer={false}
                         isCurrentPlayer={players[currentPlayerIdx]?.id === p.id}
                         onCardPlay={() => { }}
                         canPlay={false}

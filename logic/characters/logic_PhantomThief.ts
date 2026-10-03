@@ -35,7 +35,7 @@ export class PhantomThiefLogic extends BaseCharacterLogic {
     const targets = opponents.filter(p => p.id !== partner.id);
 
     return {
-      hand: context.deck.slice(0, 5),
+      hand: (context.hand && context.hand.length > 0) ? context.hand : context.deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId })),
       thiefPartnerId: partner.id,
       thiefTargetIds: targets.map(p => p.id),
       thiefChipValue: null,
@@ -44,7 +44,8 @@ export class PhantomThiefLogic extends BaseCharacterLogic {
   }
 
   onTrickWon(player: Player, cards: Card[], round: number): Partial<Player> {
-    if (player.id !== 'p1') {
+    const isHuman = player.isHuman && !player.isBotControlled;
+    if (!isHuman) {
       const newChip = Math.random() > 0.5 ? 1 : 0;
       const betrayal = Math.random() > 0.8;
       return { thiefChipValue: newChip, thiefBetrayalMode: betrayal };

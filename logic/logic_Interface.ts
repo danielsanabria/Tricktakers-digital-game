@@ -28,7 +28,7 @@ export interface ICharacterLogic {
 export class BaseCharacterLogic implements ICharacterLogic {
   setup(context: SetupContext): Partial<Player> {
     const { deck, playerId, hand: providedHand } = context;
-    const hand = providedHand || deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
+    const hand = (providedHand && providedHand.length > 0) ? providedHand : deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
     return { hand, beasts: [], mp: 0, items: [], tasks: [] };
   }
 

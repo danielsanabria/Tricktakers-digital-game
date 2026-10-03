@@ -5,7 +5,7 @@ import { SetupContext, Player, UIContext } from '../../game/core/types';
 export class StrategistLogic extends BaseCharacterLogic {
   setup(context: SetupContext): Partial<Player> {
     const { deck, playerId, hand: providedHand } = context;
-    const hand = providedHand || deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
+    const hand = (providedHand && providedHand.length > 0) ? providedHand : deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
 
     return {
       hand,

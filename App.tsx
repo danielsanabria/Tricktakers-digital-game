@@ -36,6 +36,16 @@ const App = () => {
     const [participants, setParticipants] = useState<RoomParticipant[]>([]);
     const [fillEmptyWithBots, setFillEmptyWithBots] = useState(true);
     const [playerCount, setPlayerCount] = useState(3);
+    const seatMapRef = useRef<Record<string, string>>({});
+
+    const getPersistentParticipantId = (): string => {
+        let pId = localStorage.getItem('tricktakers_participant_id');
+        if (!pId) {
+            pId = 'p_' + Math.floor(1000 + Math.random() * 9000);
+            localStorage.setItem('tricktakers_participant_id', pId);
+        }
+        return pId;
+    };
 
     // AI Logic for solo or filled bot seats (Only Host runs AI decisions in multiplayer)
     useAI({
@@ -85,18 +95,24 @@ const App = () => {
             setParticipants(pList);
         },
         onDisconnectGracePeriod: (pId, secondsLeft) => {
-            game.handlePlayerDisconnect(pId, secondsLeft);
+            const mappedSeat = seatMapRef.current[pId] || pId;
+            game.handlePlayerDisconnect(mappedSeat, secondsLeft);
         },
         onPlayerReconnected: (pId) => {
-            game.handlePlayerReconnect(pId);
+            const mappedSeat = seatMapRef.current[pId] || pId;
+            game.handlePlayerReconnect(mappedSeat);
         },
         onBotTakeover: (pId) => {
-            game.handleBotTakeover(pId);
+            const mappedSeat = seatMapRef.current[pId] || pId;
+            game.handleBotTakeover(mappedSeat);
         },
         onMessage: (msg) => {
             if (msg.type === 'START_GAME') {
                 const count = msg.payload.playerCount || 4;
                 const startingPlayers = msg.payload.players || getInitialPlayers(count);
+                if (msg.payload.seatMap) {
+                    seatMapRef.current = msg.payload.seatMap;
+                }
                 const assignedSeat = msg.payload.seatMap?.[localPlayerId] || 'p2';
                 setMyInGameId(assignedSeat);
                 game.setLocalSeatId(assignedSeat);
@@ -107,6 +123,41 @@ const App = () => {
                 game.selectCharacter(msg.payload.character);
             } else if (msg.type === 'PROCEED_ROUND') {
                 game.proceedFromSummary();
+            } else if (msg.type === 'RECONNECT') {
+                const pId = msg.payload?.participantId || msg.payload?.playerId;
+                if (isHost && pId) {
+                    const mappedSeat = seatMapRef.current[pId];
+                    if (mappedSeat) {
+                        game.handlePlayerReconnect(mappedSeat);
+                    }
+                    if (game.phase !== GamePhase.LOBBY && game.phase !== GamePhase.MODE_SELECTION) {
+                        realtimeService.broadcast('SYNC_FULL_STATE', {
+                            phase: game.phase,
+                            round: game.round,
+                            trick: game.trick,
+                            players: game.players,
+                            currentPlayerIdx: game.currentPlayerIdx,
+                            leadSuit: game.leadSuit,
+                            playedCards: game.playedCards,
+                            isKakumei: game.isKakumei,
+                            isRevolt: game.isRevolt,
+                            seatMap: seatMapRef.current,
+                            characterPool: game.characterPool,
+                            selectionOrder: game.selectionOrder,
+                            selectionIndex: game.selectionIndex,
+                            gameMode: game.gameMode
+                        });
+                    }
+                }
+            } else if (msg.type === 'SYNC_FULL_STATE') {
+                const payload = msg.payload;
+                if (payload.seatMap) {
+                    seatMapRef.current = payload.seatMap;
+                    const mySeat = payload.seatMap[localPlayerId] || 'p2';
+                    setMyInGameId(mySeat);
+                    game.setLocalSeatId(mySeat);
+                }
+                game.restoreFullState(payload);
             }
         }
     });
@@ -114,6 +165,8 @@ const App = () => {
     // Multiplayer Room Handlers
     const handleCreateRoom = async (playerName: string) => {
         const code = realtimeService.generateRoomCode();
+        localStorage.setItem('tricktakers_last_room', code);
+        localStorage.setItem('tricktakers_player_name', playerName);
         setMultiplayerRoomCode(code);
         setLocalPlayerId('p1');
         setIsHost(true);
@@ -124,14 +177,19 @@ const App = () => {
     };
 
     const handleJoinRoom = async (code: string, playerName: string) => {
-        const pId = 'p_' + Math.floor(1000 + Math.random() * 9000);
+        const pId = getPersistentParticipantId();
+        localStorage.setItem('tricktakers_last_room', code);
+        localStorage.setItem('tricktakers_player_name', playerName);
         setMultiplayerRoomCode(code);
         setLocalPlayerId(pId);
         setIsHost(false);
         setIsJoinModalOpen(false);
 
         await realtimeService.joinRoom(code, pId, playerName, false, setupRealtimeCallbacks());
-        game.setPhase(GamePhase.LOBBY);
+        realtimeService.broadcast('RECONNECT', { participantId: pId, name: playerName });
+        if (game.phase === GamePhase.MODE_SELECTION) {
+            game.setPhase(GamePhase.LOBBY);
+        }
     };
 
     const handleStartGameFromLobby = () => {
@@ -224,6 +282,7 @@ const App = () => {
 
         setMyInGameId('p1');
         game.setLocalSeatId('p1');
+        seatMapRef.current = seatMap;
 
         // Broadcast to clients
         realtimeService.broadcast('START_GAME', {

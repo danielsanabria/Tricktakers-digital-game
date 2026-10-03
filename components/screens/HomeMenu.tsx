@@ -23,7 +23,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
     onSelectPlayerCount
 }) => {
     return (
-        <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-transparent overflow-y-auto custom-scrollbar relative">
+        <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-white overflow-y-auto custom-scrollbar relative">
 
             <div className="relative z-10 w-full max-w-6xl flex flex-col items-center pt-8 md:pt-0 pb-12 md:pb-0">
                 {/* Logo Replacement */}

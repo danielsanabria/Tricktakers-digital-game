@@ -54,8 +54,11 @@ export class BerserkerLogic extends BaseCharacterLogic {
 
     const fullBerserkerDeck = [berserkerMain, ...supplementary];
 
+    const playerObj = context.players?.find(p => p.id === playerId);
+    const isHuman = playerObj ? (playerObj.isHuman && !playerObj.isBotControlled) : (playerId === 'p1');
+
     // Auto-Setup for AI only
-    if (playerId !== 'p1') {
+    if (!isHuman) {
       const { hand, remaining } = this.drawBerserkerHand(fullBerserkerDeck);
       return {
         ...baseSetup,

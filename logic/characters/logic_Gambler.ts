@@ -14,7 +14,7 @@ export class GamblerLogic extends BaseCharacterLogic {
         const currentPlayer = players.find(p => p.id === playerId);
 
         // El Tahúr recibe +20 puntos inmediatamente al ser elegido
-        const hand = providedHand || deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
+        const hand = (providedHand && providedHand.length > 0) ? providedHand : deck.splice(0, 5).map(c => ({ ...c, ownerId: playerId }));
 
         return {
             hand,

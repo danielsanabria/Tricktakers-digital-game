@@ -10,6 +10,7 @@ const suites = [
     { name: "Phase 3: Tier B Advanced Characters", script: "testing/test_tier_b_characters.ts" },
     { name: "Phase 4: Tier C & D Special Characters", script: "testing/test_tier_cd_characters.ts" },
     { name: "Phase 5: Multi-Level AI Engine", script: "testing/test_ai_levels.ts" },
+    { name: "Phase 6: Multiplayer & Round Transitions", script: "testing/verify_fixes_session.ts" },
 ];
 
 let totalPassed = 0;

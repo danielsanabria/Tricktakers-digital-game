@@ -93,7 +93,7 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                         suit: type === 'BLACK7' ? Suit.BLACK : Suit.COLORLESS,
                         value: type === 'BLACK7' ? 7 : 11,
                         type: type === 'BLACK7' ? CardType.NUMBER : CardType.RARE,
-                        ownerId: 'p1'
+                        ownerId: localPlayerId
                     };
                     setStrategistInheritedCard(cardToInherit);
                     addLog(`Estratega eligió llevarse la carta ${type === 'BLACK7' ? '7 Negro' : 'Rara'} a la siguiente ronda.`);
@@ -124,12 +124,13 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                 <BerserkerSetupModal
                     onConfirm={() => {
                         setPlayers(prev => {
-                            const p1 = prev.find(p => p.id === 'p1')!;
+                            const me = prev.find(p => p.id === localPlayerId);
+                            if (!me) return prev;
                             const logic = getCharacterLogic(CharacterType.BERSERKER) as any;
 
-                            if (logic.drawBerserkerHand && p1.berserkerDeck) {
-                                const { hand, remaining } = logic.drawBerserkerHand(p1.berserkerDeck);
-                                return prev.map(p => p.id === 'p1' ? {
+                            if (logic.drawBerserkerHand && me.berserkerDeck) {
+                                const { hand, remaining } = logic.drawBerserkerHand(me.berserkerDeck);
+                                return prev.map(p => p.id === localPlayerId ? {
                                     ...p,
                                     hand,
                                     berserkerDeck: remaining
@@ -145,14 +146,15 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
             )}
 
             {/* King Setup Modal */}
-            {abilityMode === 'KING_SETUP' && players.find(p => p.id === 'p1') && (
+            {abilityMode === 'KING_SETUP' && players.find(p => p.id === localPlayerId) && (
                 <KingSetupModal
-                    player={players.find(p => p.id === 'p1')!}
+                    player={players.find(p => p.id === localPlayerId)!}
                     onDiscard={(card) => {
                         setPlayers(prev => {
-                            const p1 = prev.find(p => p.id === 'p1')!;
-                            const newHand = p1.hand.filter(c => c.id !== card.id);
-                            return prev.map(p => p.id === 'p1' ? { ...p, hand: newHand } : p);
+                            const me = prev.find(p => p.id === localPlayerId);
+                            if (!me) return prev;
+                            const newHand = me.hand.filter(c => c.id !== card.id);
+                            return prev.map(p => p.id === localPlayerId ? { ...p, hand: newHand } : p);
                         });
                         setAbilityMode('NONE');
                         addLog(`Rey ha descartado ${card.suit} ${card.value}.`);
@@ -163,15 +165,15 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
             {/* Ruler Setup Modal */}
             {abilityMode === 'RULER_SETUP' && (
                 <RulerSetupModal
-                    otherPlayers={players.filter(p => p.id !== 'p1')}
+                    otherPlayers={players.filter(p => p.id !== localPlayerId)}
                     onConfirm={(assignments) => performAction('RULER_ASSIGN_TASKS', assignments)}
                 />
             )}
 
             {/* Gambler Setup Modal */}
-            {(abilityMode === 'GAMBLER_SWAP' || abilityMode === 'GAMBLE_BID' || abilityMode === 'GAMBLER_BETTING') && (
+            {(abilityMode === 'GAMBLER_SWAP' || abilityMode === 'GAMBLE_BID' || abilityMode === 'GAMBLER_BETTING') && players.find(p => p.id === localPlayerId) && (
                 <GamblerSetupModal
-                    player={players.find(p => p.id === 'p1')!}
+                    player={players.find(p => p.id === localPlayerId)!}
                     mode={abilityMode === 'GAMBLER_SWAP' ? 'SWAP' : abilityMode === 'GAMBLE_BID' ? 'BID' : 'BET'}
                     round={1}
                     onSwap={(cardIds) => performAction('GAMBLER_EXECUTE_SWAP', { cardIds })}
@@ -227,6 +229,7 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                     trickCards={playedCards || []}
                     onTakeCard={(cardId) => performAction('SAMURAI_TAKE_CARD', { cardId })}
                     onSkip={() => performAction('SAMURAI_PASS_WIN_BONUS')}
+                    localPlayerId={localPlayerId}
                 />
             )}
 

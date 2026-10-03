@@ -5,21 +5,22 @@ import GameCard from '../GameCard';
 
 interface SamuraiWinModalProps {
     players: Player[];
-    playedCards: Card[]; // Cards from the trick that just ended (passed down or stored)
-    // Actually, `playedCards` in game loop is cleared? No, we intercept before clear.
+    playedCards?: Card[]; // Cards from the trick that just ended (passed down or stored)
     trickCards: Card[];
     onTakeCard: (cardId: string) => void;
     onSkip: () => void;
+    localPlayerId?: string;
 }
 
 export const SamuraiWinModal: React.FC<SamuraiWinModalProps> = ({
     players,
     trickCards,
     onTakeCard,
-    onSkip
+    onSkip,
+    localPlayerId = 'p1'
 }) => {
-    // Filter: Red cards, NOT owned by Samurai (p1)
-    const availableCards = trickCards.filter(c => c.suit === Suit.RED && c.ownerId !== 'p1');
+    // Filter: Red cards, NOT owned by local Samurai player
+    const availableCards = trickCards.filter(c => c.suit === Suit.RED && c.ownerId !== localPlayerId);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
