@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { GamePhase, GameMode, Player } from './game/core/types';
 import { CHARACTERS } from './game/core/constants';
 import CharacterModal from './components/CharacterModal';
@@ -38,12 +38,15 @@ const App = () => {
     const [playerCount, setPlayerCount] = useState(3);
     const seatMapRef = useRef<Record<string, string>>({});
     const localPlayerIdRef = useRef<string>('p1');
+    const isHostRef = useRef<boolean>(false);
 
     const getPersistentParticipantId = (): string => {
-        let pId = localStorage.getItem('tricktakers_participant_id');
+        let pId = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('tricktakers_participant_id') : null;
         if (!pId) {
             pId = 'p_' + Math.floor(1000 + Math.random() * 9000);
-            localStorage.setItem('tricktakers_participant_id', pId);
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem('tricktakers_participant_id', pId);
+            }
         }
         return pId;
     };
@@ -63,15 +66,9 @@ const App = () => {
         characterPool: game.characterPool,
         selectCharacter: (char) => {
             game.selectCharacter(char);
-            if (multiplayerRoomCode) {
-                realtimeService.broadcast('SELECT_CHARACTER', { character: char });
-            }
         },
         playCard: (cardId) => {
             game.playCard(cardId);
-            if (multiplayerRoomCode) {
-                realtimeService.broadcast('PLAY_CARD', { cardId });
-            }
         },
         trick: game.trick,
         round: game.round,
@@ -84,9 +81,10 @@ const App = () => {
     const isCurrentPlayer = game.players[game.currentPlayerIdx]?.id === myInGameId && game.phase === GamePhase.TRICK_PLAYING && !game.isResolvingRef.current;
 
     const handleProceedSummary = () => {
-        game.proceedFromSummary();
-        if (multiplayerRoomCode) {
-            realtimeService.broadcast('PROCEED_ROUND', {});
+        if (!multiplayerRoomCode || isHostRef.current) {
+            game.proceedFromSummary();
+        } else {
+            realtimeService.broadcast('PROCEED_ROUND', { playerId: myInGameId });
         }
     };
 
@@ -108,25 +106,21 @@ const App = () => {
             game.handleBotTakeover(mappedSeat);
         },
         onMessage: (msg) => {
-            if (msg.type === 'START_GAME') {
-                const count = msg.payload.playerCount || 4;
-                const startingPlayers = msg.payload.players || getInitialPlayers(count);
-                if (msg.payload.seatMap) {
-                    seatMapRef.current = msg.payload.seatMap;
+            if (msg.type === 'PLAY_CARD') {
+                if (isHostRef.current) {
+                    game.playCard(msg.payload.cardId);
                 }
-                const assignedSeat = msg.payload.seatMap?.[localPlayerIdRef.current] || 'p2';
-                setMyInGameId(assignedSeat);
-                game.setLocalSeatId(assignedSeat);
-                game.initGame(GameMode.ALL_STAR, count, startingPlayers);
-            } else if (msg.type === 'PLAY_CARD') {
-                game.playCard(msg.payload.cardId);
             } else if (msg.type === 'SELECT_CHARACTER') {
-                game.selectCharacter(msg.payload.character);
+                if (isHostRef.current) {
+                    game.selectCharacter(msg.payload.character);
+                }
             } else if (msg.type === 'PROCEED_ROUND') {
-                game.proceedFromSummary();
+                if (isHostRef.current) {
+                    game.proceedFromSummary();
+                }
             } else if (msg.type === 'RECONNECT') {
                 const pId = msg.payload?.participantId || msg.payload?.playerId;
-                if (isHost && pId) {
+                if (isHostRef.current && pId) {
                     const mappedSeat = seatMapRef.current[pId];
                     if (mappedSeat) {
                         game.handlePlayerReconnect(mappedSeat);
@@ -146,7 +140,9 @@ const App = () => {
                             characterPool: game.characterPool,
                             selectionOrder: game.selectionOrder,
                             selectionIndex: game.selectionIndex,
-                            gameMode: game.gameMode
+                            gameMode: game.gameMode,
+                            roundResults: game.roundResults,
+                            gameResult: game.gameResult
                         });
                     }
                 }
@@ -163,6 +159,48 @@ const App = () => {
         }
     });
 
+    // Keep realtime callbacks fresh on every render
+    useEffect(() => {
+        realtimeService.updateCallbacks(setupRealtimeCallbacks());
+    });
+
+    // Authoritative Host Game State Sync: Host broadcasts full state on every change
+    useEffect(() => {
+        if (!multiplayerRoomCode || !isHostRef.current) return;
+        if (game.phase === GamePhase.MODE_SELECTION || game.phase === GamePhase.LOBBY) return;
+
+        realtimeService.broadcast('SYNC_FULL_STATE', {
+            phase: game.phase,
+            round: game.round,
+            trick: game.trick,
+            players: game.players,
+            currentPlayerIdx: game.currentPlayerIdx,
+            leadSuit: game.leadSuit,
+            playedCards: game.playedCards,
+            isKakumei: game.isKakumei,
+            isRevolt: game.isRevolt,
+            seatMap: seatMapRef.current,
+            characterPool: game.characterPool,
+            selectionOrder: game.selectionOrder,
+            selectionIndex: game.selectionIndex,
+            gameMode: game.gameMode,
+            roundResults: game.roundResults,
+            gameResult: game.gameResult
+        });
+    }, [
+        game.phase,
+        game.round,
+        game.trick,
+        game.players,
+        game.currentPlayerIdx,
+        game.playedCards,
+        game.selectionIndex,
+        game.characterPool,
+        game.roundResults,
+        game.gameResult,
+        multiplayerRoomCode
+    ]);
+
     // Multiplayer Room Handlers
     const handleCreateRoom = async (playerName: string) => {
         const code = realtimeService.generateRoomCode();
@@ -172,6 +210,7 @@ const App = () => {
         setLocalPlayerId('p1');
         localPlayerIdRef.current = 'p1';
         setIsHost(true);
+        isHostRef.current = true;
         setIsJoinModalOpen(false);
 
         await realtimeService.joinRoom(code, 'p1', playerName, true, setupRealtimeCallbacks());
@@ -186,6 +225,7 @@ const App = () => {
         setLocalPlayerId(pId);
         localPlayerIdRef.current = pId;
         setIsHost(false);
+        isHostRef.current = false;
         setIsJoinModalOpen(false);
 
         await realtimeService.joinRoom(code, pId, playerName, false, setupRealtimeCallbacks());
@@ -287,13 +327,7 @@ const App = () => {
         game.setLocalSeatId('p1');
         seatMapRef.current = seatMap;
 
-        // Broadcast to clients
-        realtimeService.broadcast('START_GAME', {
-            playerCount: playerList.length,
-            players: playerList,
-            seatMap
-        });
-
+        // Host initializes authoritative game loop
         game.initGame(GameMode.ALL_STAR, playerList.length, playerList);
     };
 
@@ -305,9 +339,10 @@ const App = () => {
     };
 
     const handlePlayCard = (cardId: string) => {
-        game.playCard(cardId);
-        if (multiplayerRoomCode) {
-            realtimeService.broadcast('PLAY_CARD', { cardId });
+        if (!multiplayerRoomCode || isHostRef.current) {
+            game.playCard(cardId);
+        } else {
+            realtimeService.broadcast('PLAY_CARD', { cardId, playerId: myInGameId });
         }
     };
 
@@ -368,9 +403,10 @@ const App = () => {
                         selectionIndex={game.selectionIndex}
                         localPlayerId={myInGameId}
                         selectCharacter={(char) => {
-                            game.selectCharacter(char);
-                            if (multiplayerRoomCode) {
-                                realtimeService.broadcast('SELECT_CHARACTER', { character: char });
+                            if (!multiplayerRoomCode || isHostRef.current) {
+                                game.selectCharacter(char);
+                            } else {
+                                realtimeService.broadcast('SELECT_CHARACTER', { character: char, playerId: myInGameId });
                             }
                         }}
                     />

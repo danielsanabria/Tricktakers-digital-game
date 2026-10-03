@@ -31,6 +31,7 @@ export interface RealtimeMessage {
     roomCode: string;
     payload: any;
     timestamp: number;
+    msgId?: string;
 }
 
 export interface RealtimeCallbacks {
@@ -44,6 +45,8 @@ export interface RealtimeCallbacks {
 class RealtimeService {
     private channel: RealtimeChannel | null = null;
     private broadcastChannel: BroadcastChannel | null = null;
+    private storageListener: ((e: StorageEvent) => void) | null = null;
+    private processedMsgIds: Set<string> = new Set();
     private currentRoomCode: string | null = null;
     private localPlayerId: string | null = null;
     private participants: Map<string, RoomParticipant> = new Map();
@@ -51,6 +54,10 @@ class RealtimeService {
     private disconnectTimers: Map<string, any> = new Map();
 
     private GRACE_PERIOD_SECONDS = 20;
+
+    updateCallbacks(callbacks: RealtimeCallbacks) {
+        this.callbacks = callbacks;
+    }
 
     /**
      * Generates a clean 4-character room code (e.g. "KING", "TRCK")
@@ -129,10 +136,25 @@ class RealtimeService {
                     this.handleIncomingMessage(msg);
                 }
             };
-
-            // Broadcast join to local tabs
-            this.broadcast('ROOM_UPDATE', { participant });
         }
+
+        // Secondary fallback: window storage event across browser windows/tabs
+        if (typeof window !== 'undefined') {
+            this.storageListener = (e: StorageEvent) => {
+                if (e.key === `tricktakers_bus_${this.currentRoomCode}` && e.newValue) {
+                    try {
+                        const msg = JSON.parse(e.newValue) as RealtimeMessage;
+                        if (msg && msg.roomCode === this.currentRoomCode && msg.senderId !== this.localPlayerId) {
+                            this.handleIncomingMessage(msg);
+                        }
+                    } catch (err) {}
+                }
+            };
+            window.addEventListener('storage', this.storageListener);
+        }
+
+        // Broadcast join to local peers
+        this.broadcast('ROOM_UPDATE', { participant });
 
         this.notifyParticipants();
         return true;
@@ -144,13 +166,18 @@ class RealtimeService {
     broadcast(type: RealtimeActionType, payload: any) {
         if (!this.currentRoomCode || !this.localPlayerId) return;
 
+        const msgId = `${this.localPlayerId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
         const message: RealtimeMessage = {
             type,
             senderId: this.localPlayerId,
             roomCode: this.currentRoomCode,
             payload,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            msgId
         };
+
+        // Mark as sent locally
+        this.processedMsgIds.add(msgId);
 
         // Send via Supabase WebSocket
         if (this.channel) {
@@ -164,6 +191,13 @@ class RealtimeService {
         // Send via HTML5 BroadcastChannel for same-device tabs
         if (this.broadcastChannel) {
             this.broadcastChannel.postMessage(message);
+        }
+
+        // Also post to localStorage bus for cross-window / tab redundancy
+        if (typeof window !== 'undefined' && window.localStorage) {
+            try {
+                window.localStorage.setItem(`tricktakers_bus_${this.currentRoomCode}`, JSON.stringify(message));
+            } catch (err) {}
         }
     }
 
@@ -258,6 +292,15 @@ class RealtimeService {
     }
 
     private handleIncomingMessage(message: RealtimeMessage) {
+        if (message.msgId) {
+            if (this.processedMsgIds.has(message.msgId)) return;
+            this.processedMsgIds.add(message.msgId);
+            if (this.processedMsgIds.size > 200) {
+                const arr = Array.from(this.processedMsgIds);
+                this.processedMsgIds = new Set(arr.slice(-100));
+            }
+        }
+
         if (message.type === 'ROOM_UPDATE' && message.payload?.participant) {
             const p = message.payload.participant as RoomParticipant;
             this.participants.set(p.id, p);
@@ -304,6 +347,11 @@ class RealtimeService {
         if (this.broadcastChannel) {
             this.broadcastChannel.close();
             this.broadcastChannel = null;
+        }
+
+        if (this.storageListener && typeof window !== 'undefined') {
+            window.removeEventListener('storage', this.storageListener);
+            this.storageListener = null;
         }
 
         for (const timer of this.disconnectTimers.values()) {

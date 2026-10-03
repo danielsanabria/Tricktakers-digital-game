@@ -88,12 +88,15 @@ async function runRealBrowserTests() {
         // ==========================================
         console.log("\n--- TEST 1: Home Screen UI & Background Contrast ---");
         const page1 = (await browser.pages())[0];
+        page1.on('pageerror', err => console.error('>>> [BROWSER ERROR]:', err));
+        page1.on('console', msg => console.log('>>> [BROWSER CONSOLE]:', msg.text()));
         await page1.setViewport({ width: 1280, height: 800 });
         await page1.goto(BASE_URL, { waitUntil: 'networkidle2' });
 
         // Clear localStorage for clean test state
         await page1.evaluate(() => localStorage.clear());
         await page1.reload({ waitUntil: 'networkidle2' });
+        await page1.waitForSelector('.bg-white', { timeout: 10000 });
 
         // Check background color of HomeMenu root
         const homeBgColor = await page1.evaluate(() => {

@@ -972,6 +972,8 @@ export const useGameLoop = () => {
         selectionOrder?: string[];
         selectionIndex?: number;
         gameMode?: GameMode;
+        roundResults?: RoundResult | null;
+        gameResult?: TournamentResult | null;
     }) => {
         if (state.phase !== undefined) setPhase(state.phase);
         if (state.round !== undefined) setRound(state.round);
@@ -986,6 +988,8 @@ export const useGameLoop = () => {
         if (state.selectionOrder) setSelectionOrder(state.selectionOrder);
         if (state.selectionIndex !== undefined) setSelectionIndex(state.selectionIndex);
         if (state.gameMode !== undefined) setGameMode(state.gameMode);
+        if (state.roundResults !== undefined) setRoundResults(state.roundResults);
+        if (state.gameResult !== undefined) setGameResult(state.gameResult);
         isResolvingRef.current = false;
         isRoundResolvingRef.current = false;
     };
