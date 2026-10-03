@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Player, Card, Suit, CharacterType, GamePhase, GameMode, CardType, Item, Trap, RoundResult } from '../game/core/types';
+import { Player, Card, Suit, CharacterType, GamePhase, GameMode, CardType, Item, Trap, RoundResult, AIDifficulty } from '../game/core/types';
 import { CHARACTERS, ITEMS, TRAPS, TASKS } from '../game/core/constants';
 import { createDeck, getValidMoves, determineWinner, getAiMove, determineTournamentWinner, TournamentResult } from '../game/core/gameLogic';
 import { getCharacterLogic } from '../logic/logic_Registry';
@@ -21,6 +21,7 @@ export const useGameLoop = () => {
     const [gameMode, setGameMode] = useState<GameMode>(GameMode.BASIC);
     const [players, setPlayers] = useState<Player[]>(getInitialPlayers());
     const [phase, setPhase] = useState<GamePhase>(GamePhase.MODE_SELECTION);
+    const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>(AIDifficulty.INTERMEDIATE);
 
 
     const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
@@ -889,9 +890,10 @@ export const useGameLoop = () => {
         selectionOrder, selectionIndex, characterPool, playedCards, drawPile,
         leadSuit, isRevolt, isKakumei, roundResults, logs, showLogs, strategistPendingChoice,
         strategistInheritedCard, abilityMode, selectedCards, viewingCharacter, itemCardToShow,
-        viewingRules, isResolvingRef, gameResult, viewingTraps, trapDeck,
+        viewingRules, isResolvingRef, gameResult, viewingTraps, trapDeck, aiDifficulty,
         setPlayers, setPhase, setShowLogs, setViewingRules, setViewingCharacter, setItemCardToShow,
         setSelectedCards, setAbilityMode, setStrategistInheritedCard, setStrategistPendingChoice, setViewingTraps,
+        setAiDifficulty,
         initGame, resetGame, addLog, selectCharacter, playCard, proceedFromSummary, performAction
     };
 };

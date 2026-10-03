@@ -1,5 +1,6 @@
-import { Suit, CardType, Card, Player, CharacterType, PowerContext } from './types';
+import { Suit, CardType, Card, Player, CharacterType, PowerContext, AIDifficulty } from './types';
 import { getCharacterLogic } from '../../logic/logic_Registry';
+import { getOptimalAiMove, AIContext } from '../../logic/ai/aiEngine';
 
 export const createDeck = (): Card[] => {
   const deck: Card[] = [];
@@ -127,13 +128,28 @@ export const determineWinner = (
 export const getAiMove = (
   player: Player,
   leadSuit: Suit | null,
-  playedCards: Card[]
+  playedCards: Card[],
+  additionalContext?: {
+    trick?: number;
+    round?: number;
+    allPlayers?: Player[];
+    difficulty?: AIDifficulty;
+    isRevolt?: boolean;
+    isKakumei?: boolean;
+  }
 ): string => {
-  const validMoves = getValidMoves(player.hand, leadSuit);
-  if (validMoves.length === 0) return '';
-
-  // Random for now to keep it unpredictable as requested
-  return validMoves[Math.floor(Math.random() * validMoves.length)].id;
+  const context: AIContext = {
+    player,
+    leadSuit,
+    playedCards,
+    trick: additionalContext?.trick ?? 1,
+    round: additionalContext?.round ?? 1,
+    allPlayers: additionalContext?.allPlayers ?? [player],
+    difficulty: additionalContext?.difficulty ?? player.aiDifficulty ?? AIDifficulty.INTERMEDIATE,
+    isRevolt: additionalContext?.isRevolt,
+    isKakumei: additionalContext?.isKakumei,
+  };
+  return getOptimalAiMove(context);
 };
 
 export interface TournamentResult {

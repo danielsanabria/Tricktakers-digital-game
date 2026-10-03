@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Player, Card, GamePhase, Suit } from '../game/core/types';
+import { Player, Card, GamePhase, Suit, AIDifficulty } from '../game/core/types';
 import { getValidMoves, getAiMove } from '../game/core/gameLogic';
 
 interface UseAIProps {
@@ -15,6 +15,11 @@ interface UseAIProps {
     characterPool: any[];
     selectCharacter: (char: any) => void;
     playCard: (cardId: string) => void;
+    trick?: number;
+    round?: number;
+    difficulty?: AIDifficulty;
+    isRevolt?: boolean;
+    isKakumei?: boolean;
 }
 
 export const useAI = ({
@@ -29,7 +34,12 @@ export const useAI = ({
     selectionOrder,
     characterPool,
     selectCharacter,
-    playCard
+    playCard,
+    trick,
+    round,
+    difficulty,
+    isRevolt,
+    isKakumei
 }: UseAIProps) => {
 
     // AI Character Selection
@@ -55,7 +65,14 @@ export const useAI = ({
             const timer = setTimeout(() => {
                 try {
                     const p = players[currentPlayerIdx];
-                    const moveId = getAiMove(p, leadSuit, playedCards);
+                    const moveId = getAiMove(p, leadSuit, playedCards, {
+                        trick,
+                        round,
+                        allPlayers: players,
+                        difficulty: p.aiDifficulty || difficulty,
+                        isRevolt,
+                        isKakumei
+                    });
                     if (moveId) playCard(moveId);
                     else {
                         console.warn("AI returned no move. Using fallback.");
@@ -71,5 +88,5 @@ export const useAI = ({
             }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [currentPlayerIdx, phase, abilityMode, players, leadSuit, playedCards, isResolving, playCard]);
+    }, [currentPlayerIdx, phase, abilityMode, players, leadSuit, playedCards, isResolving, playCard, trick, round, difficulty, isRevolt, isKakumei]);
 };

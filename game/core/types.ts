@@ -112,6 +112,7 @@ export interface Player {
   goldCrowns: number;
   blackCrowns: number;
   wins: number;
+  aiDifficulty?: AIDifficulty;
 
   // Character Specific
   bid?: number;
@@ -221,4 +222,10 @@ export interface UIContext {
   round: number;
   playedCards: Card[];
   trapDeck?: Trap[]; // For Strategist
+}
+
+export enum AIDifficulty {
+  BEGINNER = 'BEGINNER',
+  INTERMEDIATE = 'INTERMEDIATE',
+  EXPERT = 'EXPERT'
 }

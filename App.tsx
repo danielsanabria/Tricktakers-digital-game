@@ -37,7 +37,12 @@ const App = () => {
         selectionOrder: game.selectionOrder,
         characterPool: game.characterPool,
         selectCharacter: game.selectCharacter,
-        playCard: game.playCard
+        playCard: game.playCard,
+        trick: game.trick,
+        round: game.round,
+        difficulty: game.aiDifficulty,
+        isRevolt: game.isRevolt,
+        isKakumei: game.isKakumei
     });
 
     const isCurrentPlayer = game.currentPlayerIdx === 0 && game.phase === GamePhase.TRICK_PLAYING && !game.isResolvingRef.current;
@@ -55,12 +60,16 @@ const App = () => {
                 resetGame={game.resetGame}
                 toggleLogs={() => game.setShowLogs(!game.showLogs)}
                 showLogs={game.showLogs}
+                aiDifficulty={game.aiDifficulty}
+                setAiDifficulty={game.setAiDifficulty}
             />
 
             {game.phase === GamePhase.MODE_SELECTION && (
                 <HomeMenu
                     onSelectMode={(mode) => game.initGame(mode)}
                     onOpenRules={() => game.setViewingRules(true)}
+                    aiDifficulty={game.aiDifficulty}
+                    onSelectDifficulty={game.setAiDifficulty}
                 />
             )}
 

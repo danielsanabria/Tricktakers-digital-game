@@ -1,26 +1,79 @@
 
 import React from 'react';
-import { GameMode } from '../../game/core/types';
+import { GameMode, AIDifficulty } from '../../game/core/types';
 
 interface HomeMenuProps {
     onSelectMode: (mode: GameMode) => void;
     onOpenRules: () => void;
+    aiDifficulty?: AIDifficulty;
+    onSelectDifficulty?: (difficulty: AIDifficulty) => void;
 }
 
-export const HomeMenu: React.FC<HomeMenuProps> = ({ onSelectMode, onOpenRules }) => {
+export const HomeMenu: React.FC<HomeMenuProps> = ({
+    onSelectMode,
+    onOpenRules,
+    aiDifficulty = AIDifficulty.INTERMEDIATE,
+    onSelectDifficulty
+}) => {
     return (
         <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-white overflow-y-auto custom-scrollbar relative">
 
             <div className="relative z-10 w-full max-w-6xl flex flex-col items-center pt-8 md:pt-0 pb-12 md:pb-0">
                 {/* Logo Replacement */}
-                <div className="mb-14 md:mb-16">
+                <div className="mb-6 md:mb-8">
                     <img
                         src="/assets/logo/logo.svg"
                         alt="Tricktakers Logo"
-                        className="h-24 md:h-40 w-auto drop-shadow-2xl"
+                        className="h-20 md:h-36 w-auto drop-shadow-2xl"
                     />
                 </div>
 
+                {/* AI Difficulty Selector */}
+                {onSelectDifficulty && (
+                    <div className="mb-8 flex flex-col items-center">
+                        <span className="text-[10px] md:text-xs uppercase font-extrabold tracking-wider text-slate-400 mb-2">
+                            Dificultad de los Rivales (IA)
+                        </span>
+                        <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 shadow-inner">
+                            <button
+                                type="button"
+                                onClick={() => onSelectDifficulty(AIDifficulty.BEGINNER)}
+                                className={`px-3 md:px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                    aiDifficulty === AIDifficulty.BEGINNER
+                                        ? 'bg-emerald-500 text-white shadow-md'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                <i className="fa-solid fa-seedling"></i>
+                                Principiante
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onSelectDifficulty(AIDifficulty.INTERMEDIATE)}
+                                className={`px-3 md:px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                    aiDifficulty === AIDifficulty.INTERMEDIATE
+                                        ? 'bg-amber-500 text-white shadow-md'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                <i className="fa-solid fa-chess"></i>
+                                Intermedio
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onSelectDifficulty(AIDifficulty.EXPERT)}
+                                className={`px-3 md:px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                    aiDifficulty === AIDifficulty.EXPERT
+                                        ? 'bg-purple-600 text-white shadow-md'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                            >
+                                <i className="fa-solid fa-brain"></i>
+                                Experto
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
 
