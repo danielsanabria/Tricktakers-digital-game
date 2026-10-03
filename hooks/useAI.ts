@@ -3,6 +3,7 @@ import { Player, Card, GamePhase, Suit, AIDifficulty } from '../game/core/types'
 import { getValidMoves, getAiMove } from '../game/core/gameLogic';
 
 interface UseAIProps {
+    enabled?: boolean;
     phase: GamePhase;
     currentPlayerIdx: number;
     players: Player[];
@@ -23,6 +24,7 @@ interface UseAIProps {
 }
 
 export const useAI = ({
+    enabled = true,
     phase,
     currentPlayerIdx,
     players,
@@ -44,9 +46,13 @@ export const useAI = ({
 
     // AI Character Selection
     useEffect(() => {
+        if (!enabled) return;
         if (phase === GamePhase.CHARACTER_SELECTION) {
             const currentPickerId = selectionOrder[selectionIndex];
-            if (currentPickerId && currentPickerId !== 'p1') {
+            const pickerPlayer = players.find(p => p.id === currentPickerId);
+            const isBotPicker = pickerPlayer ? (!pickerPlayer.isHuman || pickerPlayer.isBotControlled) : false;
+
+            if (currentPickerId && isBotPicker) {
                 const timer = setTimeout(() => {
                     const available = characterPool.filter(ct => !players.some(p => p.character === ct));
                     if (available.length > 0) {
@@ -57,11 +63,15 @@ export const useAI = ({
                 return () => clearTimeout(timer);
             }
         }
-    }, [phase, selectionIndex, selectionOrder, players, characterPool, selectCharacter]);
+    }, [enabled, phase, selectionIndex, selectionOrder, players, characterPool, selectCharacter]);
 
     // AI Turn Play
     useEffect(() => {
-        if (phase === GamePhase.TRICK_PLAYING && currentPlayerIdx !== 0 && !isResolving && abilityMode === 'NONE') {
+        if (!enabled) return;
+        const currentP = players[currentPlayerIdx];
+        const isBotTurn = currentP ? (!currentP.isHuman || currentP.isBotControlled) : false;
+
+        if (phase === GamePhase.TRICK_PLAYING && isBotTurn && !isResolving && abilityMode === 'NONE') {
             const timer = setTimeout(() => {
                 try {
                     const p = players[currentPlayerIdx];

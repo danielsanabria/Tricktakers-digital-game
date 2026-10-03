@@ -63,7 +63,7 @@ export const useGameLoop = () => {
     const [players, setPlayers] = useState<Player[]>(getInitialPlayers());
     const [phase, setPhase] = useState<GamePhase>(GamePhase.MODE_SELECTION);
     const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>(AIDifficulty.INTERMEDIATE);
-
+    const [localSeatId, setLocalSeatId] = useState<string>('p1');
 
     const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
     const [trickStarterIdx, setTrickStarterIdx] = useState(0);
@@ -132,7 +132,10 @@ export const useGameLoop = () => {
     };
 
     const checkPlayerAbilityMode = (p: Player) => {
-        if (!p || p.id !== 'p1') return;
+        if (!p || p.id !== localSeatId || !p.isHuman || p.isBotControlled) {
+            setAbilityMode('NONE');
+            return;
+        }
 
         if (p.character === CharacterType.ALCHEMIST) setAbilityMode('ALCHEMIST_SELECT');
         else if (p.character === CharacterType.GAMBLER && p.bid === undefined) {
@@ -143,11 +146,7 @@ export const useGameLoop = () => {
         else if (p.character === CharacterType.ADVENTURER && p.items.length === 0) setAbilityMode('ADVENTURER_SETUP');
         else if (p.character === CharacterType.BERSERKER && p.berserkerDeck && p.berserkerDeck.length > 2) setAbilityMode('BERSERKER_SETUP');
         else if (p.character === CharacterType.RULER && (!p.tasksAssigned || Object.keys(p.tasksAssigned).length === 0)) setAbilityMode('RULER_SETUP');
-        else if (p.character === CharacterType.STRATEGIST && p.hand.length > 5 && round === 1) setAbilityMode('STRATEGIST_DISCARD'); // Only needed if initially > 5 (Start of game) or handled in setup
-        // Actually, Strategist setup adds 1 card (Black7) to 5 dealt -> 6.
-        // So always check if Strategist has > 5 cards and hasn't discarded yet.
-        // But wait, Strategist keeps cards between rounds? No, hand resets.
-        // So checking hand.length > 5 is enough.
+        else if (p.character === CharacterType.STRATEGIST && p.hand.length > 5 && round === 1) setAbilityMode('STRATEGIST_DISCARD');
         else if (p.character === CharacterType.STRATEGIST && p.hand.length > 5) setAbilityMode('STRATEGIST_DISCARD');
         else if (p.character === CharacterType.PHANTOM_THIEF && p.thiefChipValue === null) setAbilityMode('PHANTOM_THIEF_SETUP');
         else if (p.character === CharacterType.TIME_TRAVELER && (!p.timeTravelPredictions || p.timeTravelPredictions.length === 0)) setAbilityMode('TIME_TRAVELER_SETUP');
@@ -166,7 +165,7 @@ export const useGameLoop = () => {
 
             // Check for Inherited Card (Strategist Bonus from prev round)
             let hand = setupData.hand || [];
-            if (p.id === 'p1' && strategistInheritedCard) {
+            if (p.id === localSeatId && strategistInheritedCard) {
                 hand = [...hand, strategistInheritedCard];
                 addLog(`Has heredado una carta especial: ${strategistInheritedCard.type === 'RARE' ? 'Rara' : '7 Negro'}`);
             }
@@ -198,64 +197,59 @@ export const useGameLoop = () => {
             setTrapDeck([]);
             setCurrentTrap(null);
             setTrapPool(0);
-            setTrapPool(0);
         }
 
-        // Ruler Setup (Human)
+        // Ruler Setup (Local Human)
         const rulerPlayer = newPlayers.find(p => p.character === CharacterType.RULER);
-        if (rulerPlayer && rulerPlayer.id === 'p1') {
+        if (rulerPlayer && rulerPlayer.id === localSeatId && rulerPlayer.isHuman && !rulerPlayer.isBotControlled) {
             setAbilityMode('RULER_SETUP');
         }
 
-        // Phantom Thief Setup (Human)
+        // Phantom Thief Setup (Local Human)
         const thiefPlayer = newPlayers.find(p => p.character === CharacterType.PHANTOM_THIEF);
-        if (thiefPlayer && thiefPlayer.id === 'p1') {
-            // Force setup if not set yet (we use chipValue === null now to detect unset, or just force it)
-            // But wait, setup function returns chipValue: 0. 
-            // We should probably init it to -1 or null in setup() if we want to force distinct setup.
-            // OR just force mode here regardless.
+        if (thiefPlayer && thiefPlayer.id === localSeatId && thiefPlayer.isHuman && !thiefPlayer.isBotControlled) {
             setAbilityMode('PHANTOM_THIEF_SETUP');
             addLog("Phantom Thief: Configura tu Chip de Predicción.");
         }
 
-        // Adventurer Setup (Human)
-        const humanAdv = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.ADVENTURER);
+        // Adventurer Setup (Local Human)
+        const humanAdv = newPlayers.find(p => p.id === localSeatId && p.character === CharacterType.ADVENTURER && p.isHuman && !p.isBotControlled);
         if (humanAdv && humanAdv.items.length === 0) {
             setAbilityMode('ADVENTURER_SETUP');
             addLog("Aventurero: Selecciona tus 2 objetos iniciales.");
         }
 
-        // Berserker Setup (Human)
-        const humanBerserker = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.BERSERKER);
+        // Berserker Setup (Local Human)
+        const humanBerserker = newPlayers.find(p => p.id === localSeatId && p.character === CharacterType.BERSERKER && p.isHuman && !p.isBotControlled);
         if (humanBerserker) {
             setAbilityMode('BERSERKER_SETUP');
             addLog("Berserker: ¡Prepárate para la batalla!");
         }
 
-        // King Setup (Human)
-        const humanKing = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.KING);
+        // King Setup (Local Human)
+        const humanKing = newPlayers.find(p => p.id === localSeatId && p.character === CharacterType.KING && p.isHuman && !p.isBotControlled);
         if (humanKing && humanKing.hand.length > 5) {
             setAbilityMode('KING_SETUP');
             addLog("Rey: Debes descartar 1 carta para quedarte con 5.");
         }
 
-        // Gambler Setup (Human)
-        const humanGambler = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.GAMBLER);
+        // Gambler Setup (Local Human)
+        const humanGambler = newPlayers.find(p => p.id === localSeatId && p.character === CharacterType.GAMBLER && p.isHuman && !p.isBotControlled);
         if (humanGambler && humanGambler.bid === undefined) {
             if (humanGambler.gambleSwaps && humanGambler.gambleSwaps > 0) setAbilityMode('GAMBLER_SWAP');
             else setAbilityMode('GAMBLE_BID');
             addLog("Apostador: ¡Haz tu predicción!");
         }
 
-        // Strategist Setup (Human)
-        const humanStrategist = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.STRATEGIST);
+        // Strategist Setup (Local Human)
+        const humanStrategist = newPlayers.find(p => p.id === localSeatId && p.character === CharacterType.STRATEGIST && p.isHuman && !p.isBotControlled);
         if (humanStrategist) {
             setAbilityMode('STRATEGIST_SETUP');
             addLog("Estratega: Define tu Plan Maestro de Trampas.");
         }
 
-        // Time Traveler Setup (Human)
-        const humanTimeTraveler = newPlayers.find(p => p.id === 'p1' && p.character === CharacterType.TIME_TRAVELER);
+        // Time Traveler Setup (Local Human)
+        const humanTimeTraveler = newPlayers.find(p => p.id === localSeatId && p.character === CharacterType.TIME_TRAVELER && p.isHuman && !p.isBotControlled);
         if (humanTimeTraveler && (!humanTimeTraveler.timeTravelPredictions || humanTimeTraveler.timeTravelPredictions.length === 0)) {
             setAbilityMode('TIME_TRAVELER_SETUP');
             addLog("Viajero del Tiempo: Configura tus visiones del futuro (predicciones).");
@@ -530,7 +524,7 @@ export const useGameLoop = () => {
         setRoundResults(newResults);
 
         setTimeout(() => {
-            const strategist = playersToUse.find(p => p.character === CharacterType.STRATEGIST && p.id === 'p1');
+            const strategist = playersToUse.find(p => p.character === CharacterType.STRATEGIST && p.id === localSeatId);
             const needsChoice = strategist && (strategist.wins === 0 || strategist.wins === 1);
             if (needsChoice) {
                 const choiceType: 'RARE' | 'BLACK7' = strategist.wins === 0 ? 'RARE' : 'BLACK7';
@@ -719,15 +713,15 @@ export const useGameLoop = () => {
                 setCurrentTrap(null);
             }
 
-            // 5. Check Time Traveler "Change the Past" Opportunity (Human P1 ONLY)
+            // 5. Check Time Traveler "Change the Past" Opportunity (Local Human ONLY)
             const winner = updatedPlayers[winnerIdx];
             if (winner.character === CharacterType.TIME_TRAVELER && trick < 5 && winner.timeTravelTokens > 0) {
-                if (winner.id === 'p1') {
-                    // Trigger Interception for human player
+                if (winner.id === localSeatId && winner.isHuman && !winner.isBotControlled) {
+                    // Trigger Interception for local human player
                     setAbilityMode('TIME_TRAVEL_WIN_CHOICE');
                     return; // STOP execution here to wait for user input
                 }
-                // AI Time Traveler: does not block the engine or pop up modal for p1
+                // AI Time Traveler: does not block the engine or pop up modal
             }
 
             setPlayedCards([]);
@@ -759,13 +753,14 @@ export const useGameLoop = () => {
         setTrapDeck,
         setTrick,
         setPhase,
-        setTrickStarterIdx
+        setTrickStarterIdx,
+        localPlayerId: localSeatId
     });
 
     const playCard = (cardId: string) => {
         if (isResolvingRef.current) return;
         const p = players[currentPlayerIdx];
-        const isUser = p.id === 'p1';
+        const isUser = p.id === localSeatId && p.isHuman && !p.isBotControlled;
 
         // AI Alchemist Turn: Automatically transmute 3 cards
         if (p.character === CharacterType.ALCHEMIST && !isUser) {
@@ -962,9 +957,10 @@ export const useGameLoop = () => {
         leadSuit, isRevolt, isKakumei, roundResults, logs, showLogs, strategistPendingChoice,
         strategistInheritedCard, abilityMode, selectedCards, viewingCharacter, itemCardToShow,
         viewingRules, isResolvingRef, gameResult, viewingTraps, trapDeck, aiDifficulty,
+        localSeatId,
         setPlayers, setPhase, setShowLogs, setViewingRules, setViewingCharacter, setItemCardToShow,
         setSelectedCards, setAbilityMode, setStrategistInheritedCard, setStrategistPendingChoice, setViewingTraps,
-        setAiDifficulty,
+        setAiDifficulty, setLocalSeatId,
         handlePlayerDisconnect, handlePlayerReconnect, handleBotTakeover,
         initGame, resetGame, addLog, selectCharacter, playCard, proceedFromSummary, performAction
     };

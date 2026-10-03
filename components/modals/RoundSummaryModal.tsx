@@ -5,12 +5,15 @@ import { CHARACTERS } from '../../game/core/constants';
 
 interface RoundSummaryModalProps {
     result: RoundResult | null;
-    onNext: () => void;
-    isLastRound: boolean;
+    onNext?: () => void;
+    onProceed?: () => void;
+    isLastRound?: boolean;
+    localPlayerId?: string;
 }
 
-export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, onNext, isLastRound }) => {
+export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, onNext, onProceed, isLastRound = false, localPlayerId = 'p1' }) => {
     if (!result) return null;
+    const handleProceed = onNext || onProceed || (() => {});
 
     return (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
@@ -31,15 +34,15 @@ export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, on
                                 <div className="relative">
                                     <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm flex items-center justify-center p-1">
                                         {char && (
-                                            <img
-                                                src={char.summaryThumbnailPath || char.thumbnailPath}
-                                                alt={char.name}
-                                                className="w-full h-full object-contain"
-                                            />
+                                             <img
+                                                 src={char.summaryThumbnailPath || char.thumbnailPath}
+                                                 alt={char.name}
+                                                 className="w-full h-full object-contain"
+                                             />
                                         )}
                                     </div>
-                                    <div className={`absolute -bottom-2 -right-2 px-2 py-1 rounded-md text-[10px] font-black text-white shadow-lg ${pr.playerId === 'p1' ? 'bg-teal-500' : 'bg-slate-600'}`}>
-                                        {pr.playerName === 'Tú' ? 'TÚ' : pr.playerName}
+                                    <div className={`absolute -bottom-2 -right-2 px-2 py-1 rounded-md text-[10px] font-black text-white shadow-lg ${pr.playerId === localPlayerId ? 'bg-teal-500' : 'bg-slate-600'}`}>
+                                        {pr.playerId === localPlayerId ? 'TÚ' : pr.playerName}
                                     </div>
                                 </div>
 
@@ -83,7 +86,7 @@ export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, on
 
                 <div className="flex justify-center">
                     <button
-                        onClick={onNext}
+                        onClick={handleProceed}
                         className="group relative px-10 py-5 bg-slate-900 rounded-2xl text-white font-black text-xl uppercase tracking-widest transition-all hover:bg-teal-600 hover:-translate-y-1 active:translate-y-0 shadow-lg"
                     >
                         <span className="relative z-10">

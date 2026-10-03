@@ -31,13 +31,15 @@ const App = () => {
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
     const [multiplayerRoomCode, setMultiplayerRoomCode] = useState('');
     const [localPlayerId, setLocalPlayerId] = useState('p1');
+    const [myInGameId, setMyInGameId] = useState('p1');
     const [isHost, setIsHost] = useState(false);
     const [participants, setParticipants] = useState<RoomParticipant[]>([]);
     const [fillEmptyWithBots, setFillEmptyWithBots] = useState(true);
     const [playerCount, setPlayerCount] = useState(3);
 
-    // AI Logic for solo or filled bot seats
+    // AI Logic for solo or filled bot seats (Only Host runs AI decisions in multiplayer)
     useAI({
+        enabled: !multiplayerRoomCode || isHost,
         phase: game.phase,
         currentPlayerIdx: game.currentPlayerIdx,
         players: game.players,
@@ -67,8 +69,15 @@ const App = () => {
         isKakumei: game.isKakumei
     });
 
-    const isCurrentPlayer = game.currentPlayerIdx === 0 && game.phase === GamePhase.TRICK_PLAYING && !game.isResolvingRef.current;
-    const currentPlayer = game.players[0];
+    const myPlayer = game.players.find(p => p.id === myInGameId) || game.players[0];
+    const isCurrentPlayer = game.players[game.currentPlayerIdx]?.id === myInGameId && game.phase === GamePhase.TRICK_PLAYING && !game.isResolvingRef.current;
+
+    const handleProceedSummary = () => {
+        game.proceedFromSummary();
+        if (multiplayerRoomCode) {
+            realtimeService.broadcast('PROCEED_ROUND', {});
+        }
+    };
 
     // Realtime Callbacks
     const setupRealtimeCallbacks = (): RealtimeCallbacks => ({
@@ -88,11 +97,16 @@ const App = () => {
             if (msg.type === 'START_GAME') {
                 const count = msg.payload.playerCount || 4;
                 const startingPlayers = msg.payload.players || getInitialPlayers(count);
+                const assignedSeat = msg.payload.seatMap?.[localPlayerId] || 'p2';
+                setMyInGameId(assignedSeat);
+                game.setLocalSeatId(assignedSeat);
                 game.initGame(GameMode.ALL_STAR, count, startingPlayers);
             } else if (msg.type === 'PLAY_CARD') {
                 game.playCard(msg.payload.cardId);
             } else if (msg.type === 'SELECT_CHARACTER') {
                 game.selectCharacter(msg.payload.character);
+            } else if (msg.type === 'PROCEED_ROUND') {
+                game.proceedFromSummary();
             }
         }
     });
@@ -124,42 +138,47 @@ const App = () => {
         const currentParts = realtimeService.getCurrentParticipants();
         const totalTarget = fillEmptyWithBots ? 4 : Math.max(2, currentParts.length);
 
-        const playerList: Player[] = currentParts.map((part, idx) => ({
-            id: part.id === localPlayerId ? 'p1' : `p${idx + 1}`,
-            name: part.name,
-            character: null,
-            hand: [],
-            wonCards: [],
-            items: [],
-            tasks: [],
-            beasts: [],
-            rearBeasts: [],
-            mp: 0,
-            magicElements: [],
-            score: 30,
-            goldCrowns: 0,
-            blackCrowns: 0,
-            wins: 0,
-            gambleSwaps: 0,
-            revoltUsed: false,
-            rulerUsedRuleAvoidance: false,
-            hermitUsedAbility: false,
-            hermitDiscarding: false,
-            strategistUsedIgnore: false,
-            betAmount: 0,
-            collectedCards: [],
-            timeTravelTokens: 0,
-            timeTravelPredictions: [],
-            berserkerDeck: [],
-            thiefTargetIds: [],
-            thiefChipValue: part.id === localPlayerId ? null : 0,
-            thiefBetrayalMode: false,
-            tasksAssigned: {},
-            isHuman: true,
-            isConnected: true,
-            disconnectCountdown: null,
-            isBotControlled: false
-        }));
+        const seatMap: Record<string, string> = {};
+        const playerList: Player[] = currentParts.map((part, idx) => {
+            const seatId = `p${idx + 1}`;
+            seatMap[part.id] = seatId;
+            return {
+                id: seatId,
+                name: part.name,
+                character: null,
+                hand: [],
+                wonCards: [],
+                items: [],
+                tasks: [],
+                beasts: [],
+                rearBeasts: [],
+                mp: 0,
+                magicElements: [],
+                score: 30,
+                goldCrowns: 0,
+                blackCrowns: 0,
+                wins: 0,
+                gambleSwaps: 0,
+                revoltUsed: false,
+                rulerUsedRuleAvoidance: false,
+                hermitUsedAbility: false,
+                hermitDiscarding: false,
+                strategistUsedIgnore: false,
+                betAmount: 0,
+                collectedCards: [],
+                timeTravelTokens: 0,
+                timeTravelPredictions: [],
+                berserkerDeck: [],
+                thiefTargetIds: [],
+                thiefChipValue: null,
+                thiefBetrayalMode: false,
+                tasksAssigned: {},
+                isHuman: true,
+                isConnected: true,
+                disconnectCountdown: null,
+                isBotControlled: false
+            };
+        });
 
         // Fill remaining with bots if requested
         let botIdx = playerList.length + 1;
@@ -203,10 +222,14 @@ const App = () => {
             botIdx++;
         }
 
+        setMyInGameId('p1');
+        game.setLocalSeatId('p1');
+
         // Broadcast to clients
         realtimeService.broadcast('START_GAME', {
             playerCount: playerList.length,
-            players: playerList
+            players: playerList,
+            seatMap
         });
 
         game.initGame(GameMode.ALL_STAR, playerList.length, playerList);
@@ -227,7 +250,7 @@ const App = () => {
     };
 
     return (
-        <div className="w-full h-screen bg-gray-900 text-white overflow-hidden flex flex-col font-sans select-none relative">
+        <div className="w-full h-screen bg-[#B9DED1] bg-pattern text-slate-800 overflow-hidden flex flex-col font-sans select-none relative">
 
             <GameHeader
                 phase={game.phase}
@@ -248,6 +271,10 @@ const App = () => {
                     onSelectMode={(mode) => game.initGame(mode, playerCount)}
                     onOpenRules={() => game.setViewingRules(true)}
                     onOpenMultiplayer={() => setIsJoinModalOpen(true)}
+                    onRejoinRoom={(code) => {
+                        const savedName = localStorage.getItem('tricktakers_player_name') || 'Jugador';
+                        handleJoinRoom(code, savedName);
+                    }}
                     aiDifficulty={game.aiDifficulty}
                     onSelectDifficulty={game.setAiDifficulty}
                     playerCount={playerCount}
@@ -271,12 +298,13 @@ const App = () => {
             )}
 
             {game.phase === GamePhase.CHARACTER_SELECTION && (
-                <div className="absolute inset-x-0 top-0 bottom-64 z-30 bg-slate-50/95 backdrop-blur-md overflow-hidden pt-20 shadow-2xl border-b border-slate-200">
+                <div className="absolute inset-x-0 top-16 bottom-0 z-30 bg-[#B9DED1]/95 bg-pattern backdrop-blur-lg overflow-y-auto custom-scrollbar shadow-2xl pt-4 pb-12">
                     <CharacterSelection
                         players={game.players}
                         characterPool={game.characterPool}
                         selectionOrder={game.selectionOrder}
                         selectionIndex={game.selectionIndex}
+                        localPlayerId={myInGameId}
                         selectCharacter={(char) => {
                             game.selectCharacter(char);
                             if (multiplayerRoomCode) {
@@ -301,12 +329,13 @@ const App = () => {
                         setSelectedCards={game.setSelectedCards}
                         setViewingCharacter={game.setViewingCharacter}
                         setItemCardToShow={game.setItemCardToShow}
+                        localPlayerId={myInGameId}
                     />
 
                     {/* Player Hand & Actions */}
                     <div className="w-full z-20 shrink-0">
                         <PlayerHandArea
-                            player={currentPlayer}
+                            player={myPlayer}
                             isCurrentPlayer={isCurrentPlayer}
                             playCard={handlePlayCard}
                             abilityMode={game.abilityMode}
@@ -330,13 +359,14 @@ const App = () => {
                         setPlayers={game.setPlayers}
                         performAction={game.performAction}
                         strategistPendingChoice={game.strategistPendingChoice}
+                        localPlayerId={myInGameId}
                         onStrategistChoice={(choice) => {
                             if (choice) {
                                 if (choice.type === 'BLACK7') {
-                                    game.setStrategistInheritedCard({ id: 'str-b7', suit: 'BLACK', value: 7, type: 'NUMBER', ownerId: 'p1' } as any);
+                                    game.setStrategistInheritedCard({ id: 'str-b7', suit: 'BLACK', value: 7, type: 'NUMBER', ownerId: myInGameId } as any);
                                 }
                                 game.setPlayers(prev => prev.map(pl => {
-                                    if (pl.character === '1C') {
+                                    if (pl.character === '1C' && pl.id === myInGameId) {
                                         return { ...pl, score: pl.score + choice.pointsObj };
                                     }
                                     return pl;
@@ -386,7 +416,8 @@ const App = () => {
             {game.roundResults && (
                 <RoundSummaryModal
                     result={game.roundResults}
-                    onProceed={game.proceedFromSummary}
+                    onProceed={handleProceedSummary}
+                    localPlayerId={myInGameId}
                 />
             )}
 

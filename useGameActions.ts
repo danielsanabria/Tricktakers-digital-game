@@ -28,6 +28,7 @@ interface GameActionsProps {
     setTrick: React.Dispatch<React.SetStateAction<number>>;
     setPhase: React.Dispatch<React.SetStateAction<any>>;
     setTrickStarterIdx: React.Dispatch<React.SetStateAction<number>>; // Added missing prop
+    localPlayerId?: string;
 }
 
 export const useGameActions = ({
@@ -54,8 +55,11 @@ export const useGameActions = ({
     setTrapDeck,
     setTrick,
     setPhase,
-    setTrickStarterIdx // Added missing prop
+    setTrickStarterIdx, // Added missing prop
+    localPlayerId = 'p1'
 }: GameActionsProps) => {
+
+    const myId = localPlayerId || 'p1';
 
     const performAction = useCallback((actionName: string, payload?: any) => {
         if (actionName === 'GAMBLER_EXECUTE_SWAP') {
@@ -64,11 +68,11 @@ export const useGameActions = ({
 
             const currentDrawPile = [...drawPile];
             const count = cardsToSwap.length;
-            const newCards = currentDrawPile.splice(0, count).map(c => ({ ...c, ownerId: 'p1' }));
+            const newCards = currentDrawPile.splice(0, count).map(c => ({ ...c, ownerId: myId }));
 
             setDrawPile(currentDrawPile);
             setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1') {
+                if (p.id === myId) {
                     const newHand = [...p.hand.filter(c => !cardsToSwap.includes(c.id)), ...newCards];
                     const remainingSwaps = (p.gambleSwaps || 0) - 1;
 
@@ -88,16 +92,16 @@ export const useGameActions = ({
             addLog(`El Tahúr cambió ${count} cartas.`);
         }
         else if (actionName === 'GAMBLER_SKIP_SWAP') {
-            setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, gambleSwaps: 0 } : p));
+            setPlayers(prev => prev.map(p => p.id === myId ? { ...p, gambleSwaps: 0 } : p));
             setAbilityMode('GAMBLE_BID');
         }
         else if (actionName === 'GAMBLER_BID') {
-            setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, bid: payload } : p));
+            setPlayers(prev => prev.map(p => p.id === myId ? { ...p, bid: payload } : p));
             setAbilityMode('GAMBLER_BETTING');
             addLog(`Has apostado por ganar ${payload} bazas.`);
         }
         else if (actionName === 'GAMBLER_SET_BET') {
-            setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, betAmount: payload } : p));
+            setPlayers(prev => prev.map(p => p.id === myId ? { ...p, betAmount: payload } : p));
             setAbilityMode('NONE');
             addLog(`Has apostado ${payload} puntos.`);
         }
@@ -106,7 +110,7 @@ export const useGameActions = ({
             const cardId = selectedCards[0];
 
             setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1') {
+                if (p.id === myId) {
                     // Check for multi-discard requirement
                     if (p.pendingItemEffect === 'DISCARD_2') {
                         addLog("Has descartado 1 carta. Debes descartar 1 más.");
@@ -137,7 +141,7 @@ export const useGameActions = ({
             // We need to know if we are finished.
             // We can check the player state? No, async.
             // We need to check current state.
-            const p1 = players.find(p => p.id === 'p1');
+            const p1 = players.find(p => p.id === myId);
             if (p1 && p1.pendingItemEffect === 'DISCARD_2') {
                 // We are GOING TO discard one. Next state will be DISCARD_1.
                 // So we STAY in KING_DISCARD.
@@ -148,10 +152,10 @@ export const useGameActions = ({
         else if (actionName === 'RULER_ASSIGN_TASKS') {
             const assignments = payload as Record<string, string>;
             setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1') {
+                if (p.id === myId) {
                     return { ...p, tasksAssigned: assignments };
                 }
-                if (p.id !== 'p1') {
+                if (p.id !== myId) {
                     const taskId = assignments[p.id];
                     const task = TASKS.find(t => t.id === taskId);
                     if (task) return { ...p, tasks: [task] };
@@ -163,7 +167,7 @@ export const useGameActions = ({
         }
         else if (actionName === 'PHANTOM_THIEF_SETUP') {
             const chipValue = (payload as number) || 0;
-            setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+            setPlayers(prev => prev.map(p => p.id === myId ? {
                 ...p,
                 thiefChipValue: chipValue
             } : p));
@@ -172,11 +176,11 @@ export const useGameActions = ({
         }
         else if (actionName === 'TRIGGER_KAKUMEI') {
             setIsKakumei(prev => !prev);
-            setPlayers(prev => prev.map(p => p.id === 'p1' ? { ...p, revoltsLeft: (p.revoltsLeft || 0) - 1 } : p));
+            setPlayers(prev => prev.map(p => p.id === myId ? { ...p, revoltsLeft: (p.revoltsLeft || 0) - 1 } : p));
             addLog(`¡LA RESISTENCIA HA INICIADO UNA REVOLUCIÓN!`);
         }
         else if (actionName === 'TIME_TRAVEL_REWIND') {
-            const p = players.find(player => player.id === 'p1');
+            const p = players.find(player => player.id === myId);
             if (playedCards.length > 0 && p && p.timeTravelTokens > 0) {
                 // 1. Return cards to owners
                 const cardsToReturn = [...playedCards];
@@ -185,7 +189,7 @@ export const useGameActions = ({
                 // to prevent race conditions and double-invocation issues.
 
                 const currentDeck = [...drawPile];
-                const drawnCards = currentDeck.splice(0, 2).map(c => ({ ...c, ownerId: 'p1' }));
+                const drawnCards = currentDeck.splice(0, 2).map(c => ({ ...c, ownerId: myId }));
                 setDrawPile(currentDeck); // Update deck state outside functional update
 
                 setPlayers(prev => {
@@ -199,7 +203,7 @@ export const useGameActions = ({
                         }
 
                         // B. Time Traveler specific updates (Token -1, Add Drawn Cards)
-                        if (pl.id === 'p1') {
+                        if (pl.id === myId) {
                             return {
                                 ...pl,
                                 hand: [...newHand, ...drawnCards], // Add drawn cards
@@ -223,12 +227,12 @@ export const useGameActions = ({
 
 
         else if (actionName === 'TIME_TRAVEL_PREDICT') {
-            const p = players.find(player => player.id === 'p1');
+            const p = players.find(player => player.id === myId);
             if (p) {
                 const { gold, black1, black2 } = payload;
                 const predictions = [gold, black1, black2];
 
-                setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+                setPlayers(prev => prev.map(pl => pl.id === myId ? {
                     ...pl,
                     timeTravelPredictions: predictions
                 } : pl));
@@ -242,7 +246,7 @@ export const useGameActions = ({
                 addLog("Debes seleccionar exactamente 3 cartas para la Alquimia.");
                 return;
             }
-            const p = players.find(player => player.id === 'p1');
+            const p = players.find(player => player.id === myId);
             if (!p) return;
 
             // 1. Calculate Alchemy Value & Elements
@@ -318,7 +322,7 @@ export const useGameActions = ({
             const remainingHand = p.hand.filter(c => !selectedCards.includes(c.id));
             const newHand = [...remainingHand, ...drawnCards];
 
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+            setPlayers(prev => prev.map(pl => pl.id === myId ? {
                 ...pl,
                 hand: newHand,
                 alchemistDeck: alchemistDeck,
@@ -342,7 +346,7 @@ export const useGameActions = ({
                 alchemistDeck: alchemistDeck,
                 magicElements: newElements
             };
-            const updatedPlayers = players.map(pl => pl.id === 'p1' ? updatedP1 : pl);
+            const updatedPlayers = players.map(pl => pl.id === myId ? updatedP1 : pl);
 
             if (newPlayed.length < players.length) {
                 setCurrentPlayerIdx(prev => (prev + 1) % players.length);
@@ -357,7 +361,7 @@ export const useGameActions = ({
         else if (actionName === 'ALCHEMIST_RESOLVE_LEAD') {
             // Called from Modal when Leading
             const { suit } = payload;
-            const p = players.find(player => player.id === 'p1');
+            const p = players.find(player => player.id === myId);
             if (!p) return;
 
             // Recalculate (safe assuming selectedCards didn't change because modal blocks interaction)
@@ -402,7 +406,7 @@ export const useGameActions = ({
             const remainingHand = p.hand.filter(c => !selectedCards.includes(c.id));
             const newHand = [...remainingHand, ...drawnCards];
 
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+            setPlayers(prev => prev.map(pl => pl.id === myId ? {
                 ...pl,
                 hand: newHand,
                 alchemistDeck: alchemistDeck,
@@ -421,7 +425,7 @@ export const useGameActions = ({
                 alchemistDeck: alchemistDeck,
                 magicElements: newElements
             };
-            const updatedPlayersLead = players.map(pl => pl.id === 'p1' ? updatedP1Lead : pl);
+            const updatedPlayersLead = players.map(pl => pl.id === myId ? updatedP1Lead : pl);
 
             if (newPlayedLead.length < players.length) {
                 setCurrentPlayerIdx(prev => (prev + 1) % players.length);
@@ -436,7 +440,7 @@ export const useGameActions = ({
         else if (actionName === 'TIME_TRAVEL_FINISH_REWIND') {
             const { discardedCardIds } = payload;
             setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1') {
+                if (p.id === myId) {
                     return {
                         ...p,
                         hand: p.hand.filter(c => !discardedCardIds.includes(c.id))
@@ -459,7 +463,7 @@ export const useGameActions = ({
 
             // Logic: Samurai triggered this, so Samurai IS the winner.
             // But we need the index.
-            const winnerId = 'p1'; // Samurai is always p1 if this modal appeared
+            const winnerId = myId;
             const winnerIdx = players.findIndex(p => p.id === winnerId);
 
             // Calculate Score Updates (Simplified version of resolveTrick logic)
@@ -502,7 +506,7 @@ export const useGameActions = ({
             // FALLBACK FOR NOW (To unblock):
             // Assume no complex trap interactions for this specific edge case or apply basic win.
             // Trigger standard "Win" update.
-            const p1 = players.find(p => p.id === 'p1')!;
+            const p1 = players.find(p => p.id === myId)!;
 
             // Calculate points from playedCards
             // (Simplification: Just sum values? Or use scoring logic?)
@@ -525,7 +529,7 @@ export const useGameActions = ({
 
             // Simplified Resolution:
             setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1') {
+                if (p.id === myId) {
                     return {
                         ...p,
                         wins: p.wins + 1,
@@ -541,7 +545,7 @@ export const useGameActions = ({
             // Reset Table
             setPlayedCards([]);
             setLeadSuit(null);
-            setCurrentPlayerIdx(players.findIndex(p => p.id === 'p1'));
+            setCurrentPlayerIdx(players.findIndex(p => p.id === myId));
 
             isResolvingRef.current = false; // Resume loop
 
@@ -553,12 +557,12 @@ export const useGameActions = ({
             }
         }
         else if (actionName === 'TIME_TRAVEL_CHANGE_PAST') {
-            const p = players.find(player => player.id === 'p1');
+            const p = players.find(player => player.id === myId);
             if (p && p.timeTravelTokens > 0) {
                 // 1. Take All Cards
-                const cardsTaken = [...playedCards].map(c => ({ ...c, ownerId: 'p1' }));
+                const cardsTaken = [...playedCards].map(c => ({ ...c, ownerId: myId }));
                 setPlayers(prev => prev.map(pl => {
-                    if (pl.id === 'p1') {
+                    if (pl.id === myId) {
                         return {
                             ...pl,
                             hand: [...pl.hand, ...cardsTaken],
@@ -601,7 +605,7 @@ export const useGameActions = ({
                     // No, strict mode requires pure functions.
 
                     // Let's search in `prev`?
-                    const p1 = prev.find(pl => pl.id === 'p1');
+                    const p1 = prev.find(pl => pl.id === myId);
                     if (p1) {
                         const card = p1.hand.find(c => c.id === cardId);
                         if (card) {
@@ -611,7 +615,7 @@ export const useGameActions = ({
                 }
 
                 // 2. If P1: Remove all assigned cards
-                if (p.id === 'p1') {
+                if (p.id === myId) {
                     const assignedIds = Object.values(assignments);
                     return { ...p, hand: p.hand.filter(c => !assignedIds.includes(c.id)) };
                 }
@@ -665,9 +669,9 @@ export const useGameActions = ({
             const takenCard = playedCards.find(c => c.id === cardId);
 
             if (takenCard) {
-                setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+                setPlayers(prev => prev.map(p => p.id === myId ? {
                     ...p,
-                    hand: [...p.hand, { ...takenCard, ownerId: 'p1', isFacedown: false }]
+                    hand: [...p.hand, { ...takenCard, ownerId: myId, isFacedown: false }]
                 } : p));
 
                 // Remove from playedCards so it's not scored later
@@ -690,12 +694,12 @@ export const useGameActions = ({
             const { cardId } = payload;
             if (!cardId) return;
 
-            setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+            setPlayers(prev => prev.map(p => p.id === myId ? {
                 ...p,
                 hand: p.hand.filter(c => c.id !== cardId)
             } : p));
 
-            const discarded = players.find(p => p.id === 'p1')?.hand.find(c => c.id === cardId);
+            const discarded = players.find(p => p.id === myId)?.hand.find(c => c.id === cardId);
             addLog(`Samurai descarta ${discarded?.suit} ${discarded?.value} como sacrificio.`);
 
             setAbilityMode('NONE');
@@ -703,7 +707,7 @@ export const useGameActions = ({
         }
         else if (actionName === 'STRATEGIST_EXECUTE_DISCARD') {
             const { cardId } = payload;
-            setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+            setPlayers(prev => prev.map(p => p.id === myId ? {
                 ...p,
                 hand: p.hand.filter(c => c.id !== cardId)
             } : p));
@@ -715,7 +719,7 @@ export const useGameActions = ({
             const takenCard = playedCards.find(c => c.id === cardId);
 
             if (takenCard) {
-                setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+                setPlayers(prev => prev.map(p => p.id === myId ? {
                     ...p,
                     collectedCards: [...p.collectedCards, takenCard] // Add to collection
                 } : p));
@@ -733,7 +737,7 @@ export const useGameActions = ({
             }
         }
         else if (actionName === 'HERMIT_START_ABILITY') {
-            const p = players.find(player => player.id === 'p1');
+            const p = players.find(player => player.id === myId);
             if (!p || (p as any).hermitUsedAbility) {
                 addLog("Ya has usado tu habilidad este turno.");
                 return;
@@ -741,11 +745,11 @@ export const useGameActions = ({
 
             const currentDrawPile = [...drawPile];
             if (currentDrawPile.length > 0) {
-                const newCard = { ...currentDrawPile.shift()!, ownerId: 'p1' };
+                const newCard = { ...currentDrawPile.shift()!, ownerId: myId };
                 setDrawPile(currentDrawPile);
 
                 // Set flag immediately to prevent multi-draws AND set Discarding flag
-                setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+                setPlayers(prev => prev.map(pl => pl.id === myId ? {
                     ...pl,
                     hand: [...pl.hand, newCard],
                     hermitUsedAbility: true,
@@ -761,7 +765,7 @@ export const useGameActions = ({
         else if (actionName === 'HERMIT_EXECUTE_DISCARD') {
             if (selectedCards.length !== 1) return;
             const cardId = selectedCards[0];
-            setPlayers(prev => prev.map(p => p.id === 'p1' ? {
+            setPlayers(prev => prev.map(p => p.id === myId ? {
                 ...p,
                 hand: p.hand.filter(c => c.id !== cardId),
                 hermitUsedAbility: true,
@@ -772,14 +776,14 @@ export const useGameActions = ({
             addLog("Ermitaño descartó una carta.");
         }
         else if (actionName === 'SUMMONER_COMMAND_DRAW') {
-            const p = players.find(x => x.id === 'p1');
+            const p = players.find(x => x.id === myId);
             if (!p || p.mp < 1) return;
 
             const currentDrawPile = [...drawPile];
             if (currentDrawPile.length > 0) {
-                const newCard = { ...currentDrawPile.shift()!, ownerId: 'p1' };
+                const newCard = { ...currentDrawPile.shift()!, ownerId: myId };
                 setDrawPile(currentDrawPile);
-                setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+                setPlayers(prev => prev.map(pl => pl.id === myId ? {
                     ...pl,
                     hand: [...pl.hand, newCard],
                     mp: pl.mp - 1
@@ -796,7 +800,7 @@ export const useGameActions = ({
             if (!redItem || !blueItem) return;
 
             setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1') {
+                if (p.id === myId) {
                     return {
                         ...p,
                         items: [redItem, blueItem],
@@ -813,7 +817,7 @@ export const useGameActions = ({
 
             // Logic to Finalize Setup (Visual Card Swap)
             setPlayers(prev => {
-                const p1 = prev.find(p => p.id === 'p1');
+                const p1 = prev.find(p => p.id === myId);
                 if (!p1 || !p1.thiefPartnerId) return prev;
 
                 const partner = prev.find(p => p.id === p1.thiefPartnerId);
@@ -840,7 +844,7 @@ export const useGameActions = ({
 
                 // 2. Set Chip & Return
                 return prev.map(p => {
-                    if (p.id === 'p1') return { ...p, thiefChipValue: chip };
+                    if (p.id === myId) return { ...p, thiefChipValue: chip };
                     if (p.id === partner.id) return { ...p, hand: hand };
                     return p;
                 });
@@ -854,24 +858,24 @@ export const useGameActions = ({
             // addLog("Selecciona una carta para intercambiar con tu socio."); // Optional log, maybe too spammy?
         }
         else if (actionName === 'PHANTOM_TOGGLE_CHIP') {
-            const p = players.find(player => player.id === 'p1');
+            const p = players.find(player => player.id === myId);
             if (p) {
                 const current = p.thiefChipValue || 0;
                 const nextVal = current === 0 ? 1 : 0;
-                setPlayers(prev => prev.map(pl => pl.id === 'p1' ? { ...pl, thiefChipValue: nextVal } : pl));
+                setPlayers(prev => prev.map(pl => pl.id === myId ? { ...pl, thiefChipValue: nextVal } : pl));
                 addLog(`Chip de Predicción actualizado: ${nextVal === 0 ? '0' : '±1'}`);
             }
         }
         else if (actionName === 'PHANTOM_TOGGLE_BETRAYAL') {
-            const p = players.find(player => player.id === 'p1');
+            const p = players.find(player => player.id === myId);
             if (p) {
                 const nextVal = !p.thiefBetrayalMode;
-                setPlayers(prev => prev.map(pl => pl.id === 'p1' ? { ...pl, thiefBetrayalMode: nextVal } : pl));
+                setPlayers(prev => prev.map(pl => pl.id === myId ? { ...pl, thiefBetrayalMode: nextVal } : pl));
                 addLog(`Modo Traición: ${nextVal ? 'ACTIVADO' : 'Desactivado'}`);
             }
         }
         else if (actionName === 'PHANTOM_EXCHANGE_REQUEST') {
-            const player = players.find(p => p.id === 'p1');
+            const player = players.find(p => p.id === myId);
             if (!player) return;
 
             if (selectedCards.length !== 1) {
@@ -906,11 +910,11 @@ export const useGameActions = ({
         }
         else if (actionName === 'SUMMON_TO_REAR') {
             const beastId = payload;
-            const p = players.find(x => x.id === 'p1');
+            const p = players.find(x => x.id === myId);
             const beast = BEASTS.find(b => b.id === beastId);
             if (!p || !beast || p.mp < beast.mpCost || p.rearBeasts.length >= 2) return;
 
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+            setPlayers(prev => prev.map(pl => pl.id === myId ? {
                 ...pl,
                 mp: pl.mp - beast.mpCost,
                 rearBeasts: [...pl.rearBeasts, beastId]
@@ -920,7 +924,7 @@ export const useGameActions = ({
         }
         else if (actionName === 'MOVE_TO_FRONT') {
             const beastId = payload;
-            const p = players.find(x => x.id === 'p1');
+            const p = players.find(x => x.id === myId);
             if (!p || playedCards.length === 0) return;
 
             const beast = BEASTS.find(b => b.id === beastId);
@@ -939,7 +943,7 @@ export const useGameActions = ({
                 return;
             }
 
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+            setPlayers(prev => prev.map(pl => pl.id === myId ? {
                 ...pl,
                 mp: pl.mp - cost,
                 frontBeastId: beastId,
@@ -951,7 +955,7 @@ export const useGameActions = ({
         else if (actionName === 'CHOOSE_INITIAL_ITEM') {
             const item = payload as Item;
             setPlayers(prev => prev.map(pl => {
-                if (pl.id === 'p1') {
+                if (pl.id === myId) {
                     const newItems = [...pl.items, item];
                     const hasRed = newItems.some(i => i.type === 'RED');
                     const hasBlue = newItems.some(i => i.type === 'BLUE');
@@ -964,7 +968,7 @@ export const useGameActions = ({
         }
         else if (actionName === 'USE_ITEM') {
             const item = payload as Item;
-            const p = players.find(x => x.id === 'p1');
+            const p = players.find(x => x.id === myId);
             if (!p || (p as any).adventurerUsedItem) {
                 addLog("Ya has usado un objeto en esta baza.");
                 return;
@@ -1016,7 +1020,7 @@ export const useGameActions = ({
                 newAbilityMode = 'ADVENTURER_SWAP';
             } else if (item.effect === 'GAIN_30') {
                 setPlayers(prev => prev.map(pl => {
-                    if (pl.id === 'p1') {
+                    if (pl.id === myId) {
                         return { ...pl, score: pl.score + 30 };
                     }
                     return pl;
@@ -1024,14 +1028,14 @@ export const useGameActions = ({
                 addLog("Recuperaste 30 puntos.");
             } else if (item.effect === 'GAIN_20') {
                 setPlayers(prev => prev.map(pl => {
-                    if (pl.id === 'p1') {
+                    if (pl.id === myId) {
                         return { ...pl, score: pl.score + 20 };
                     }
                     return pl;
                 }));
                 addLog("Recuperaste 20 puntos.");
             } else if (item.effect === 'PASS_LEAD') {
-                const isCurrentPlayer = currentPlayerIdx === players.findIndex(p => p.id === 'p1');
+                const isCurrentPlayer = currentPlayerIdx === players.findIndex(p => p.id === myId);
                 if (currentPlayerIdx === trickStarterIdx && isCurrentPlayer) {
                     setTrickStarterIdx((prev) => (prev + 1) % players.length);
                     setCurrentPlayerIdx((prev) => (prev + 1) % players.length);
@@ -1040,7 +1044,7 @@ export const useGameActions = ({
                     addLog("El objeto solo funciona si estás liderando la baza.");
                 }
             } else if (item.effect === 'PLAY_LAST') {
-                const isCurrentPlayer = currentPlayerIdx === players.findIndex(p => p.id === 'p1');
+                const isCurrentPlayer = currentPlayerIdx === players.findIndex(p => p.id === myId);
                 if (currentPlayerIdx === trickStarterIdx && isCurrentPlayer) {
                     setTrickStarterIdx((prev) => (prev + 1) % players.length);
                     setCurrentPlayerIdx((prev) => (prev + 1) % players.length);
@@ -1058,7 +1062,7 @@ export const useGameActions = ({
 
             // 3. Update Player State
             setPlayers(prev => prev.map(pl => {
-                if (pl.id !== 'p1') return pl;
+                if (pl.id !== myId) return pl;
 
                 let newHand = pl.hand;
                 let pendingEffect = pl.pendingItemEffect;
@@ -1104,7 +1108,7 @@ export const useGameActions = ({
         else if (actionName === 'BERSERKER_EXECUTE_ROUND3' || actionName === 'ROUND3_EXECUTE_BLACK_CROWN') {
             if (selectedCards.length < 1) return;
             setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1') {
+                if (p.id === myId) {
                     if (p.character === CharacterType.BERSERKER && p.berserkerDeck) {
                         const cardsInHandIds = p.hand.map(c => c.id);
                         const unselectedReserved = p.berserkerDeck.filter(c => !cardsInHandIds.includes(c.id));
@@ -1148,11 +1152,11 @@ export const useGameActions = ({
         }
         else if (actionName === 'SUMMON_TO_REAR') {
             const beastId = payload;
-            const p = players.find(x => x.id === 'p1');
+            const p = players.find(x => x.id === myId);
             const beast = BEASTS.find(b => b.id === beastId);
             if (!p || !beast || p.mp < beast.mpCost || p.rearBeasts.length >= 2) return;
 
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+            setPlayers(prev => prev.map(pl => pl.id === myId ? {
                 ...pl,
                 mp: pl.mp - beast.mpCost,
                 rearBeasts: [...pl.rearBeasts, beastId]
@@ -1162,17 +1166,17 @@ export const useGameActions = ({
         }
         else if (actionName === 'SUMMONER_EQUIP_BEAST') {
             const beastId = payload;
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? { ...pl, frontBeastId: beastId } : pl));
+            setPlayers(prev => prev.map(pl => pl.id === myId ? { ...pl, frontBeastId: beastId } : pl));
             setAbilityMode('SUMMONER_SELECT_CARD');
             addLog("Selecciona una carta para atacar con la bestia.");
         }
         else if (actionName === 'SUMMONER_CANCEL_ATTACK') {
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? { ...pl, frontBeastId: null } : pl));
+            setPlayers(prev => prev.map(pl => pl.id === myId ? { ...pl, frontBeastId: null } : pl));
             setAbilityMode('NONE');
             setSelectedCards([]);
         }
         else if (actionName === 'SUMMONER_EXECUTE_ATTACK') {
-            const p = players.find(x => x.id === 'p1');
+            const p = players.find(x => x.id === myId);
             if (!p || !p.frontBeastId || selectedCards.length !== 1) return;
 
             const beast = BEASTS.find(b => b.id === p.frontBeastId);
@@ -1195,7 +1199,7 @@ export const useGameActions = ({
 
             // Execute Play
             // Remove card, update MP, add to playedCards
-            setPlayers(prev => prev.map(pl => pl.id === 'p1' ? {
+            setPlayers(prev => prev.map(pl => pl.id === myId ? {
                 ...pl,
                 hand: pl.hand.filter(c => c.id !== card.id),
                 mp: pl.mp - cost,
@@ -1203,7 +1207,7 @@ export const useGameActions = ({
                 rearBeasts: pl.rearBeasts.filter(id => id !== beast.id)
             } : pl));
 
-            const playedCard = { ...card, ownerId: 'p1' };
+            const playedCard = { ...card, ownerId: myId };
             if (playedCards.length === 0 && playedCard.suit !== Suit.COLORLESS) {
                 setLeadSuit(playedCard.suit);
             }
@@ -1224,7 +1228,7 @@ export const useGameActions = ({
                     rearBeasts: p.rearBeasts.filter(id => id !== beast.id),
                     frontBeastId: beast.id // Ensure it's set for logic calculation in resolveTrick
                 };
-                const updatedPlayers = players.map(pl => pl.id === 'p1' ? updatedP1 : pl);
+                const updatedPlayers = players.map(pl => pl.id === myId ? updatedP1 : pl);
                 resolveTrick(newPlayed, updatedPlayers);
             }
         }
@@ -1241,11 +1245,11 @@ export const useGameActions = ({
                 // Assuming infinite deck or reshuffle logic exists elsewhere or we simply take all.
             }
 
-            const drawn = currentDrawPile.splice(0, count).map(c => ({ ...c, ownerId: 'p1' }));
+            const drawn = currentDrawPile.splice(0, count).map(c => ({ ...c, ownerId: myId }));
             setDrawPile(currentDrawPile);
 
             setPlayers(prev => prev.map(p => {
-                if (p.id === 'p1') {
+                if (p.id === myId) {
                     const handAfterDiscard = p.hand.filter(c => !cardIds.includes(c.id));
                     return {
                         ...p,

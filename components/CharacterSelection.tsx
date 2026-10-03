@@ -9,6 +9,7 @@ interface CharacterSelectionProps {
     selectionIndex: number;
     characterPool: CharacterType[];
     selectCharacter: (charType: CharacterType) => void;
+    localPlayerId?: string;
 }
 
 export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
@@ -16,10 +17,11 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
     selectionOrder,
     selectionIndex,
     characterPool,
-    selectCharacter
+    selectCharacter,
+    localPlayerId = 'p1'
 }) => {
     const currentPicker = players.find(p => p.id === selectionOrder[selectionIndex]);
-    const isUserTurn = currentPicker?.id === 'p1';
+    const isUserTurn = currentPicker?.id === localPlayerId;
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col h-full animate-in fade-in duration-500">

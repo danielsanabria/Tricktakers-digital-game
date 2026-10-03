@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface JoinRoomModalProps {
     isOpen: boolean;
@@ -14,24 +14,35 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
     onJoinRoom
 }) => {
     const [mode, setMode] = useState<'SELECT' | 'CREATE' | 'JOIN'>('SELECT');
-    const [playerName, setPlayerName] = useState('Jugador ' + Math.floor(100 + Math.random() * 900));
+    const [playerName, setPlayerName] = useState(() => {
+        return localStorage.getItem('tricktakers_player_name') || ('Jugador ' + Math.floor(100 + Math.random() * 900));
+    });
     const [roomCode, setRoomCode] = useState('');
+    const [lastRoom, setLastRoom] = useState<string | null>(null);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        const savedRoom = localStorage.getItem('tricktakers_last_room');
+        if (savedRoom) setLastRoom(savedRoom);
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
     const handleCreate = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!playerName.trim()) {
+        const trimmed = playerName.trim();
+        if (!trimmed) {
             setError('Ingresa tu nombre para continuar.');
             return;
         }
-        onCreateRoom(playerName.trim());
+        localStorage.setItem('tricktakers_player_name', trimmed);
+        onCreateRoom(trimmed);
     };
 
     const handleJoin = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!playerName.trim()) {
+        const trimmedName = playerName.trim();
+        if (!trimmedName) {
             setError('Ingresa tu nombre.');
             return;
         }
@@ -39,7 +50,15 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
             setError('El código de la sala debe tener 4 caracteres.');
             return;
         }
-        onJoinRoom(roomCode.trim().toUpperCase(), playerName.trim());
+        localStorage.setItem('tricktakers_player_name', trimmedName);
+        onJoinRoom(roomCode.trim().toUpperCase(), trimmedName);
+    };
+
+    const handleRejoin = (code: string) => {
+        const trimmedName = playerName.trim();
+        if (!trimmedName) return;
+        localStorage.setItem('tricktakers_player_name', trimmedName);
+        onJoinRoom(code.toUpperCase(), trimmedName);
     };
 
     return (
@@ -69,6 +88,27 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                 {error && (
                     <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold flex items-center gap-2">
                         <i className="fa-solid fa-circle-exclamation"></i> {error}
+                    </div>
+                )}
+
+                {/* Rejoin Banner if lastRoom exists */}
+                {lastRoom && mode === 'SELECT' && (
+                    <div className="mb-4 p-3.5 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-2xl flex items-center justify-between shadow-sm">
+                        <div className="text-left">
+                            <span className="block text-[9px] font-black uppercase text-teal-600 tracking-wider">
+                                Partida reciente detectada
+                            </span>
+                            <span className="font-black text-sm text-slate-800">
+                                Sala <span className="font-mono text-teal-600 font-bold">{lastRoom}</span>
+                            </span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => handleRejoin(lastRoom)}
+                            className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-teal-600 transition-colors shadow-md flex items-center gap-1.5"
+                        >
+                            <i className="fa-solid fa-rotate-right text-xs"></i> Reunirse
+                        </button>
                     </div>
                 )}
 

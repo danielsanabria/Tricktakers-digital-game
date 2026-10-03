@@ -5,6 +5,7 @@ interface HomeMenuProps {
     onSelectMode: (mode: GameMode) => void;
     onOpenRules: () => void;
     onOpenMultiplayer?: () => void;
+    onRejoinRoom?: (roomCode: string) => void;
     aiDifficulty?: AIDifficulty;
     onSelectDifficulty?: (difficulty: AIDifficulty) => void;
     playerCount?: number;
@@ -15,13 +16,14 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
     onSelectMode,
     onOpenRules,
     onOpenMultiplayer,
+    onRejoinRoom,
     aiDifficulty = AIDifficulty.INTERMEDIATE,
     onSelectDifficulty,
     playerCount = 3,
     onSelectPlayerCount
 }) => {
     return (
-        <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-white overflow-y-auto custom-scrollbar relative">
+        <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-transparent overflow-y-auto custom-scrollbar relative">
 
             <div className="relative z-10 w-full max-w-6xl flex flex-col items-center pt-8 md:pt-0 pb-12 md:pb-0">
                 {/* Logo Replacement */}
@@ -108,38 +110,57 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                     )}
                 </div>
 
-                {/* Multiplayer Online Banner Button */}
-                {onOpenMultiplayer && (
-                    <div className="w-full max-w-5xl mb-6">
+            {/* Multiplayer Online Banner Button */}
+            {onOpenMultiplayer && (
+                <div className="w-full max-w-5xl mb-6">
+                    <button
+                        type="button"
+                        onClick={onOpenMultiplayer}
+                        className="w-full p-4 sm:p-5 rounded-3xl bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-between shadow-2xl hover:-translate-y-1 transition-all duration-300 border-2 border-teal-500/40 hover:border-teal-400 group relative overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-teal-500/10 via-transparent to-teal-500/5 pointer-events-none"></div>
+                        <div className="flex items-center gap-4 text-left relative z-10">
+                            <div className="w-12 h-12 rounded-2xl bg-teal-500/20 border border-teal-400/40 text-teal-300 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">
+                                <i className="fa-solid fa-globe"></i>
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-black text-lg sm:text-xl uppercase tracking-tight text-white">
+                                        Multijugador Online
+                                    </h3>
+                                    <span className="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/40 font-black text-[10px] uppercase tracking-wider">
+                                        Tiempo Real
+                                    </span>
+                                </div>
+                                <p className="text-slate-300 text-xs sm:text-sm font-medium mt-0.5">
+                                    Crea una sala privada o únete mediante código PIN (2 a 4 jugadores)
+                                </p>
+                            </div>
+                        </div>
+                        <div className="hidden sm:flex items-center gap-2 font-black text-xs uppercase tracking-wider bg-teal-500 hover:bg-teal-400 text-slate-950 px-5 py-2.5 rounded-full shadow-lg group-hover:shadow-teal-500/30 transition-all relative z-10">
+                            Entrar al Lobby <i className="fa-solid fa-arrow-right"></i>
+                        </div>
+                    </button>
+                </div>
+            )}
+
+            {/* Quick Rejoin if saved room */}
+            {(() => {
+                const savedRoom = typeof window !== 'undefined' ? localStorage.getItem('tricktakers_last_room') : null;
+                if (!savedRoom || !onRejoinRoom) return null;
+                return (
+                    <div className="w-full max-w-5xl mb-6 -mt-3 flex justify-end">
                         <button
                             type="button"
-                            onClick={onOpenMultiplayer}
-                            className="w-full p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-teal-600 via-teal-500 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white flex items-center justify-between shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border-2 border-teal-400/40 group"
+                            onClick={() => onRejoinRoom(savedRoom)}
+                            className="px-5 py-2.5 bg-white/95 backdrop-blur-md text-slate-800 border-2 border-teal-500/40 rounded-full text-xs font-black hover:bg-teal-50 transition-all shadow-md flex items-center gap-2 group"
                         >
-                            <div className="flex items-center gap-4 text-left">
-                                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
-                                    <i className="fa-solid fa-globe"></i>
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="font-black text-lg sm:text-xl uppercase tracking-tight">
-                                            Multijugador Online
-                                        </h3>
-                                        <span className="px-2 py-0.5 rounded-full bg-white text-teal-700 font-black text-[10px] uppercase tracking-wider shadow-sm">
-                                            En Tiempo Real
-                                        </span>
-                                    </div>
-                                    <p className="text-teal-50 text-xs sm:text-sm font-medium mt-0.5 opacity-90">
-                                        Crea una sala o únete con un código PIN (2 a 4 jugadores)
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="hidden sm:flex items-center gap-2 font-black text-xs uppercase tracking-wider bg-white/10 px-4 py-2 rounded-full border border-white/20">
-                                Entrar al Lobby <i className="fa-solid fa-arrow-right"></i>
-                            </div>
+                            <i className="fa-solid fa-arrow-rotate-right text-teal-600 text-xs group-hover:rotate-180 transition-transform"></i>
+                            Reunirse a la Sala <strong className="text-teal-700 font-mono tracking-widest">{savedRoom}</strong>
                         </button>
                     </div>
-                )}
+                );
+            })()}
 
                 {/* Local Modes Grid */}
                 <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">

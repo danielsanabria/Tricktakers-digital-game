@@ -38,6 +38,7 @@ interface ModalsContainerProps {
     trick: number;
     playedCards?: Card[];
     selectedCards?: string[]; // Add this prop
+    localPlayerId?: string;
 }
 
 export const ModalsContainer: React.FC<ModalsContainerProps> = ({
@@ -58,15 +59,17 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
     trapDeck,
     trick,
     playedCards = [],
-    selectedCards = []
+    selectedCards = [],
+    localPlayerId = 'p1'
 }) => {
     console.log('ModalsContainer rendering with abilityMode:', abilityMode);
 
+    const localPlayer = players.find(p => p.id === localPlayerId) || players[0];
+
     // Helper to get card objects from IDs for Alchemist
     const getAlchemistSelectedCards = () => {
-        const p1 = players.find(p => p.id === 'p1');
-        if (!p1) return [];
-        return p1.hand.filter(c => selectedCards.includes(c.id));
+        if (!localPlayer) return [];
+        return localPlayer.hand.filter(c => selectedCards.includes(c.id));
     };
 
     return (
@@ -195,7 +198,7 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
             {/* Time Traveler Discard Modal */}
             {abilityMode === 'TIME_TRAVEL_DRAW_DISCARD' && (
                 <TimeTravelerDiscardModal
-                    player={players.find(p => p.id === 'p1')!}
+                    player={localPlayer}
                     onConfirm={(ids) => performAction('TIME_TRAVEL_FINISH_REWIND', { discardedCardIds: ids })}
                 />
             )}
@@ -211,8 +214,8 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
             {/* Time Traveler Distribute Modal */}
             {abilityMode === 'TIME_TRAVEL_DISTRIBUTE' && (
                 <TimeTravelerDistributeModal
-                    player={players.find(p => p.id === 'p1')!}
-                    opponents={players.filter(p => p.id !== 'p1')}
+                    player={localPlayer}
+                    opponents={players.filter(p => p.id !== localPlayerId)}
                     onConfirm={(assignments) => performAction('TIME_TRAVEL_EXECUTE_DISTRIBUTION', assignments)}
                 />
             )}
@@ -248,10 +251,10 @@ export const ModalsContainer: React.FC<ModalsContainerProps> = ({
                 />
             )}
             {/* Adventurer Swap Modal */}
-            {abilityMode === 'ADVENTURER_SWAP' && players.find(p => p.id === 'p1') && (
+            {abilityMode === 'ADVENTURER_SWAP' && localPlayer && (
                 <AdventurerSwapModal
-                    player={players.find(p => p.id === 'p1')!}
-                    maxSelectable={players.find(p => p.id === 'p1')?.pendingItemEffect === 'DISCARD_2' ? 2 : 1}
+                    player={localPlayer}
+                    maxSelectable={localPlayer.pendingItemEffect === 'DISCARD_2' ? 2 : 1}
                     onConfirm={(cardIds) => performAction('ADVENTURER_EXECUTE_SWAP', { cardIds })}
                 />
             )}

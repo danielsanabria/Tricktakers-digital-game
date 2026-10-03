@@ -44,8 +44,8 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
     const canStart = isHost && (participants.length >= 2 || (participants.length >= 1 && fillEmptyWithBots));
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-white overflow-y-auto custom-scrollbar relative">
-            <div className="relative z-10 w-full max-w-2xl flex flex-col items-center pt-4 pb-12">
+        <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-transparent overflow-y-auto custom-scrollbar relative">
+            <div className="relative z-10 w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 sm:p-10 flex flex-col items-center my-auto">
 
                 {/* Back / Leave button */}
                 <button
@@ -66,24 +66,24 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                 </div>
 
                 {/* Room Code Badge */}
-                <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 sm:p-5 w-full max-w-md mb-8 flex flex-col items-center shadow-sm">
+                <div className="bg-gradient-to-b from-teal-50/80 to-slate-50 border-2 border-teal-200/80 rounded-2xl p-4 sm:p-5 w-full max-w-md mb-8 flex flex-col items-center shadow-sm">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Código de Invitación
                     </span>
                     <div className="flex items-center gap-3">
-                        <span className="text-4xl font-black tracking-[0.25em] text-teal-500 font-mono">
+                        <span className="text-4xl font-black tracking-[0.25em] text-teal-600 font-mono">
                             {roomCode}
                         </span>
                         <button
                             onClick={handleCopyCode}
-                            className="p-2.5 rounded-xl bg-teal-50 text-teal-600 hover:bg-teal-100 transition-all text-sm font-bold"
+                            className="p-2.5 rounded-xl bg-white border border-teal-200 text-teal-600 hover:bg-teal-50 transition-all text-sm font-bold shadow-sm"
                             title="Copiar código"
                         >
                             <i className={`fa-solid ${copied ? 'fa-check text-emerald-600' : 'fa-copy'}`}></i>
                         </button>
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-2">
-                        {copied ? '¡Código copiado al portapapeles!' : 'Comparte este código para que se unan hasta 4 jugadores'}
+                    <span className="text-[10px] text-slate-400 mt-2 font-medium">
+                        {copied ? '¡Código copiado al portapapeles!' : 'Comparte este código para que se unan tus rivales'}
                     </span>
                 </div>
 
