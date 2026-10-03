@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { GamePhase, GameMode } from './game/core/types';
+import React, { useState, useRef } from 'react';
+import { GamePhase, GameMode, Player } from './game/core/types';
 import { CHARACTERS } from './game/core/constants';
 import CharacterModal from './components/CharacterModal';
 import { CharacterSelection } from './components/CharacterSelection';
@@ -7,8 +7,10 @@ import { LogsPanel } from './components/LogsPanel';
 import { GameOverScreen } from './components/screens/GameOverScreen';
 import { RoundSummaryModal } from './components/modals/RoundSummaryModal';
 import { HomeMenu } from './components/screens/HomeMenu';
+import { LobbyScreen } from './components/screens/LobbyScreen';
+import { JoinRoomModal } from './components/modals/JoinRoomModal';
 
-// New Components
+// Components
 import { GameHeader } from './components/GameHeader';
 import { GameTable } from './components/GameTable';
 import { PlayerHandArea } from './components/PlayerHandArea';
@@ -16,15 +18,25 @@ import { ModalsContainer } from './components/modals/ModalsContainer';
 import { RulebooksModal } from './components/modals/RulebooksModal';
 import { ItemCardModal } from './components/modals/ItemCardModal';
 
-// Hooks
-import { useGameLoop } from './hooks/useGameLoop';
+// Hooks & Services
+import { useGameLoop, getInitialPlayers } from './hooks/useGameLoop';
 import { useAI } from './hooks/useAI';
+import { realtimeService, RoomParticipant, RealtimeCallbacks } from './services/realtimeService';
 
 const App = () => {
     // 1. Hooks - The Engine
     const game = useGameLoop();
 
-    // 2. AI Logic
+    // 2. Multiplayer State
+    const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+    const [multiplayerRoomCode, setMultiplayerRoomCode] = useState('');
+    const [localPlayerId, setLocalPlayerId] = useState('p1');
+    const [isHost, setIsHost] = useState(false);
+    const [participants, setParticipants] = useState<RoomParticipant[]>([]);
+    const [fillEmptyWithBots, setFillEmptyWithBots] = useState(true);
+    const [playerCount, setPlayerCount] = useState(3);
+
+    // AI Logic for solo or filled bot seats
     useAI({
         phase: game.phase,
         currentPlayerIdx: game.currentPlayerIdx,
@@ -36,8 +48,18 @@ const App = () => {
         selectionIndex: game.selectionIndex,
         selectionOrder: game.selectionOrder,
         characterPool: game.characterPool,
-        selectCharacter: game.selectCharacter,
-        playCard: game.playCard,
+        selectCharacter: (char) => {
+            game.selectCharacter(char);
+            if (multiplayerRoomCode) {
+                realtimeService.broadcast('SELECT_CHARACTER', { character: char });
+            }
+        },
+        playCard: (cardId) => {
+            game.playCard(cardId);
+            if (multiplayerRoomCode) {
+                realtimeService.broadcast('PLAY_CARD', { cardId });
+            }
+        },
         trick: game.trick,
         round: game.round,
         difficulty: game.aiDifficulty,
@@ -46,9 +68,163 @@ const App = () => {
     });
 
     const isCurrentPlayer = game.currentPlayerIdx === 0 && game.phase === GamePhase.TRICK_PLAYING && !game.isResolvingRef.current;
+    const currentPlayer = game.players[0];
 
-    // Derived state for props
-    const currentPlayer = game.players[0]; // Human is always p1
+    // Realtime Callbacks
+    const setupRealtimeCallbacks = (): RealtimeCallbacks => ({
+        onParticipantsChange: (pList) => {
+            setParticipants(pList);
+        },
+        onDisconnectGracePeriod: (pId, secondsLeft) => {
+            game.handlePlayerDisconnect(pId, secondsLeft);
+        },
+        onPlayerReconnected: (pId) => {
+            game.handlePlayerReconnect(pId);
+        },
+        onBotTakeover: (pId) => {
+            game.handleBotTakeover(pId);
+        },
+        onMessage: (msg) => {
+            if (msg.type === 'START_GAME') {
+                const count = msg.payload.playerCount || 4;
+                const startingPlayers = msg.payload.players || getInitialPlayers(count);
+                game.initGame(GameMode.ALL_STAR, count, startingPlayers);
+            } else if (msg.type === 'PLAY_CARD') {
+                game.playCard(msg.payload.cardId);
+            } else if (msg.type === 'SELECT_CHARACTER') {
+                game.selectCharacter(msg.payload.character);
+            }
+        }
+    });
+
+    // Multiplayer Room Handlers
+    const handleCreateRoom = async (playerName: string) => {
+        const code = realtimeService.generateRoomCode();
+        setMultiplayerRoomCode(code);
+        setLocalPlayerId('p1');
+        setIsHost(true);
+        setIsJoinModalOpen(false);
+
+        await realtimeService.joinRoom(code, 'p1', playerName, true, setupRealtimeCallbacks());
+        game.setPhase(GamePhase.LOBBY);
+    };
+
+    const handleJoinRoom = async (code: string, playerName: string) => {
+        const pId = 'p_' + Math.floor(1000 + Math.random() * 9000);
+        setMultiplayerRoomCode(code);
+        setLocalPlayerId(pId);
+        setIsHost(false);
+        setIsJoinModalOpen(false);
+
+        await realtimeService.joinRoom(code, pId, playerName, false, setupRealtimeCallbacks());
+        game.setPhase(GamePhase.LOBBY);
+    };
+
+    const handleStartGameFromLobby = () => {
+        const currentParts = realtimeService.getCurrentParticipants();
+        const totalTarget = fillEmptyWithBots ? 4 : Math.max(2, currentParts.length);
+
+        const playerList: Player[] = currentParts.map((part, idx) => ({
+            id: part.id === localPlayerId ? 'p1' : `p${idx + 1}`,
+            name: part.name,
+            character: null,
+            hand: [],
+            wonCards: [],
+            items: [],
+            tasks: [],
+            beasts: [],
+            rearBeasts: [],
+            mp: 0,
+            magicElements: [],
+            score: 30,
+            goldCrowns: 0,
+            blackCrowns: 0,
+            wins: 0,
+            gambleSwaps: 0,
+            revoltUsed: false,
+            rulerUsedRuleAvoidance: false,
+            hermitUsedAbility: false,
+            hermitDiscarding: false,
+            strategistUsedIgnore: false,
+            betAmount: 0,
+            collectedCards: [],
+            timeTravelTokens: 0,
+            timeTravelPredictions: [],
+            berserkerDeck: [],
+            thiefTargetIds: [],
+            thiefChipValue: part.id === localPlayerId ? null : 0,
+            thiefBetrayalMode: false,
+            tasksAssigned: {},
+            isHuman: true,
+            isConnected: true,
+            disconnectCountdown: null,
+            isBotControlled: false
+        }));
+
+        // Fill remaining with bots if requested
+        let botIdx = playerList.length + 1;
+        while (playerList.length < totalTarget) {
+            playerList.push({
+                id: `p${botIdx}`,
+                name: `Bot ${botIdx - 1}`,
+                character: null,
+                hand: [],
+                wonCards: [],
+                items: [],
+                tasks: [],
+                beasts: [],
+                rearBeasts: [],
+                mp: 0,
+                magicElements: [],
+                score: 30,
+                goldCrowns: 0,
+                blackCrowns: 0,
+                wins: 0,
+                gambleSwaps: 0,
+                revoltUsed: false,
+                rulerUsedRuleAvoidance: false,
+                hermitUsedAbility: false,
+                hermitDiscarding: false,
+                strategistUsedIgnore: false,
+                betAmount: 0,
+                collectedCards: [],
+                timeTravelTokens: 0,
+                timeTravelPredictions: [],
+                berserkerDeck: [],
+                thiefTargetIds: [],
+                thiefChipValue: 0,
+                thiefBetrayalMode: false,
+                tasksAssigned: {},
+                isHuman: false,
+                isConnected: true,
+                disconnectCountdown: null,
+                isBotControlled: true
+            });
+            botIdx++;
+        }
+
+        // Broadcast to clients
+        realtimeService.broadcast('START_GAME', {
+            playerCount: playerList.length,
+            players: playerList
+        });
+
+        game.initGame(GameMode.ALL_STAR, playerList.length, playerList);
+    };
+
+    const handleLeaveLobby = () => {
+        realtimeService.leaveRoom();
+        setMultiplayerRoomCode('');
+        setParticipants([]);
+        game.setPhase(GamePhase.MODE_SELECTION);
+    };
+
+    const handlePlayCard = (cardId: string) => {
+        game.playCard(cardId);
+        if (multiplayerRoomCode) {
+            realtimeService.broadcast('PLAY_CARD', { cardId });
+        }
+    };
 
     return (
         <div className="w-full h-screen bg-gray-900 text-white overflow-hidden flex flex-col font-sans select-none relative">
@@ -57,7 +233,10 @@ const App = () => {
                 phase={game.phase}
                 round={game.round}
                 trick={game.trick}
-                resetGame={game.resetGame}
+                resetGame={() => {
+                    if (multiplayerRoomCode) handleLeaveLobby();
+                    else game.resetGame();
+                }}
                 toggleLogs={() => game.setShowLogs(!game.showLogs)}
                 showLogs={game.showLogs}
                 aiDifficulty={game.aiDifficulty}
@@ -66,10 +245,28 @@ const App = () => {
 
             {game.phase === GamePhase.MODE_SELECTION && (
                 <HomeMenu
-                    onSelectMode={(mode) => game.initGame(mode)}
+                    onSelectMode={(mode) => game.initGame(mode, playerCount)}
                     onOpenRules={() => game.setViewingRules(true)}
+                    onOpenMultiplayer={() => setIsJoinModalOpen(true)}
                     aiDifficulty={game.aiDifficulty}
                     onSelectDifficulty={game.setAiDifficulty}
+                    playerCount={playerCount}
+                    onSelectPlayerCount={setPlayerCount}
+                />
+            )}
+
+            {game.phase === GamePhase.LOBBY && (
+                <LobbyScreen
+                    roomCode={multiplayerRoomCode}
+                    participants={participants}
+                    localPlayerId={localPlayerId}
+                    isHost={isHost}
+                    fillEmptyWithBots={fillEmptyWithBots}
+                    setFillEmptyWithBots={setFillEmptyWithBots}
+                    aiDifficulty={game.aiDifficulty}
+                    setAiDifficulty={game.setAiDifficulty}
+                    onStartGame={handleStartGameFromLobby}
+                    onLeaveLobby={handleLeaveLobby}
                 />
             )}
 
@@ -80,13 +277,18 @@ const App = () => {
                         characterPool={game.characterPool}
                         selectionOrder={game.selectionOrder}
                         selectionIndex={game.selectionIndex}
-                        selectCharacter={game.selectCharacter}
+                        selectCharacter={(char) => {
+                            game.selectCharacter(char);
+                            if (multiplayerRoomCode) {
+                                realtimeService.broadcast('SELECT_CHARACTER', { character: char });
+                            }
+                        }}
                     />
                 </div>
             )}
 
             {/* Game Table Area - Visible in PLAYING, SELECTION, etc. */}
-            {game.phase !== GamePhase.MODE_SELECTION && (
+            {game.phase !== GamePhase.MODE_SELECTION && game.phase !== GamePhase.LOBBY && (
                 <>
                     <GameTable
                         players={game.players}
@@ -106,14 +308,13 @@ const App = () => {
                         <PlayerHandArea
                             player={currentPlayer}
                             isCurrentPlayer={isCurrentPlayer}
-                            playCard={game.playCard}
+                            playCard={handlePlayCard}
                             abilityMode={game.abilityMode}
                             setAbilityMode={game.setAbilityMode}
                             selectedCards={game.selectedCards}
                             setSelectedCards={game.setSelectedCards}
-                            performAction={game.performAction} // From useGameLoop -> useGameActions
+                            performAction={game.performAction}
                             round={game.round}
-
                             setViewingCharacter={game.setViewingCharacter}
                             setItemCardToShow={game.setItemCardToShow}
                             onReviewTraps={() => game.setViewingTraps(true)}
@@ -133,86 +334,68 @@ const App = () => {
                             if (choice) {
                                 if (choice.type === 'BLACK7') {
                                     game.setStrategistInheritedCard({ id: 'str-b7', suit: 'BLACK', value: 7, type: 'NUMBER', ownerId: 'p1' } as any);
-                                    game.addLog("Estratega elige: Heredar 7 Negro.");
-                                } else {
-                                    game.setStrategistInheritedCard({ id: 'str-rare', suit: 'COLORLESS', value: 0, type: 'RARE', ownerId: 'p1' } as any);
-                                    game.addLog("Estratega elige: Heredar Carta Rara.");
                                 }
-                            } else {
-                                game.addLog("Estratega no elige nada.");
+                                game.setPlayers(prev => prev.map(pl => {
+                                    if (pl.character === '1C') {
+                                        return { ...pl, score: pl.score + choice.pointsObj };
+                                    }
+                                    return pl;
+                                }));
                             }
                             game.setStrategistPendingChoice(null);
-                            game.proceedFromSummary(); // Go to next phase
                         }}
-                        strategistInheritedCard={game.strategistInheritedCard}
-                        setStrategistInheritedCard={game.setStrategistInheritedCard}
-
-                        addLog={game.addLog}
-                        viewingTraps={game.viewingTraps}
-                        setViewingTraps={game.setViewingTraps}
-                        trapDeck={game.trapDeck}
-                        trick={game.trick}
-                        playedCards={game.playedCards}
-                        selectedCards={game.selectedCards}
                     />
-
-                    {/* Logs Panel */}
-                    {game.showLogs && (
-                        <LogsPanel logs={game.logs} onClose={() => game.setShowLogs(false)} />
-                    )}
                 </>
             )}
 
             {/* Global Modals */}
-            {game.viewingRules && <RulebooksModal onClose={() => game.setViewingRules(false)} />}
+            <LogsPanel
+                isOpen={game.showLogs}
+                onClose={() => game.setShowLogs(false)}
+                logs={game.logs}
+            />
 
+            <CharacterModal
+                character={game.viewingCharacter ? CHARACTERS[game.viewingCharacter] : null}
+                onClose={() => game.setViewingCharacter(null)}
+            />
+
+            <RulebooksModal
+                isOpen={game.viewingRules}
+                onClose={() => game.setViewingRules(false)}
+            />
+
+            <ItemCardModal
+                itemCardPath={typeof game.itemCardToShow === 'string' ? game.itemCardToShow : game.itemCardToShow?.itemCardPath || null}
+                onClose={() => game.setItemCardToShow(null)}
+            />
+
+            {/* Join / Create Multiplayer Room Modal */}
+            <JoinRoomModal
+                isOpen={isJoinModalOpen}
+                onClose={() => setIsJoinModalOpen(false)}
+                onCreateRoom={handleCreateRoom}
+                onJoinRoom={handleJoinRoom}
+            />
+
+            {/* Round Summary Modal */}
             {game.roundResults && (
                 <RoundSummaryModal
                     result={game.roundResults}
-                    onNext={() => {
-                        if (game.strategistPendingChoice) {
-                            // Wait for Strategist
-                        } else {
-                            game.proceedFromSummary();
-                        }
-                    }}
-                    isLastRound={game.round >= 3}
+                    onProceed={game.proceedFromSummary}
                 />
             )}
 
-            {game.phase === GamePhase.GAME_OVER && game.gameResult && (
+            {/* Game Over Screen */}
+            {game.phase === GamePhase.GAME_OVER && (
                 <GameOverScreen
-                    result={game.gameResult}
                     players={game.players}
-                    onReset={game.resetGame}
+                    result={game.gameResult}
+                    onRestart={() => {
+                        if (multiplayerRoomCode) handleLeaveLobby();
+                        else game.resetGame();
+                    }}
                 />
-            )}
-
-            {/* Reusable Modals */}
-            {game.viewingCharacter && (
-                <CharacterModal
-                    character={CHARACTERS[game.viewingCharacter]}
-                    onClose={() => game.setViewingCharacter(null)}
-                />
-            )}
-
-            {game.itemCardToShow && (
-                <ItemCardModal
-                    imageUrl={typeof game.itemCardToShow === 'string' ? game.itemCardToShow : game.itemCardToShow?.itemCardPath || null}
-                    onClose={() => game.setItemCardToShow(null)}
-                />
-            )}
-
-            {/* Footer / Rulebook Button - Hidden on Home Screen */}
-            {game.phase !== GamePhase.MODE_SELECTION && (
-                <div className="absolute bottom-4 left-4 z-50">
-                    <button
-                        onClick={() => game.setViewingRules(true)}
-                        className="bg-gray-800/80 hover:bg-gray-700/80 text-white/50 hover:text-white px-3 py-1 rounded-full text-xs font-medium transition-colors backdrop-blur-sm border border-white/10"
-                    >
-                        Reglamentos
-                    </button>
-                </div>
             )}
         </div>
     );

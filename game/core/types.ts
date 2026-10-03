@@ -153,6 +153,12 @@ export interface Player {
   thiefBetrayalMode?: boolean;
   tasksAssigned?: Record<string, string[]>;
   alchemistDeck?: Card[];
+
+  // Multiplayer & Presence
+  isHuman?: boolean;
+  isConnected?: boolean;
+  disconnectCountdown?: number | null;
+  isBotControlled?: boolean;
 }
 
 export interface PlayerRoundResult {
@@ -173,6 +179,7 @@ export interface RoundResult {
 
 export enum GamePhase {
   MODE_SELECTION = 'MODE_SELECTION',
+  LOBBY = 'LOBBY',
   CHARACTER_SELECTION = 'CHARACTER_SELECTION',
   SETUP = 'SETUP',
   TRICK_PLAYING = 'TRICK_PLAYING',
@@ -184,7 +191,8 @@ export enum GamePhase {
 export enum GameMode {
   BASIC = 'BASIC',
   ADVANCED = 'ADVANCED',
-  ALL_STAR = 'ALL_STAR'
+  ALL_STAR = 'ALL_STAR',
+  MULTIPLAYER = 'MULTIPLAYER'
 }
 
 export interface SetupContext {

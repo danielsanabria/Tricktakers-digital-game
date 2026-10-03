@@ -31,8 +31,31 @@ export const GameTable: React.FC<GameTableProps> = ({
 }) => {
     return (
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4 flex flex-col pb-4">
-            {/* Oponentes (Rivales) */}
-            <div className="grid grid-cols-2 gap-4 mb-4 shrink-0">
+            {/* Disconnection Grace Period Alert Banner */}
+            {players.some(p => p.disconnectCountdown !== null && p.disconnectCountdown !== undefined) && (
+                <div className="mb-3 p-3 bg-amber-50 border border-amber-300 rounded-2xl flex items-center justify-between text-amber-900 text-xs px-4 shadow-sm animate-pulse">
+                    <div className="flex items-center gap-2">
+                        <i className="fa-solid fa-triangle-exclamation text-amber-600 text-sm"></i>
+                        <span>
+                            <strong>
+                                {players.find(p => p.disconnectCountdown !== null)?.name}
+                            </strong> se ha desconectado. Esperando reconexión...
+                        </span>
+                    </div>
+                    <span className="font-mono font-black text-amber-700 bg-amber-200/80 px-2 py-0.5 rounded-lg border border-amber-300">
+                        {players.find(p => p.disconnectCountdown !== null)?.disconnectCountdown}s
+                    </span>
+                </div>
+            )}
+
+            {/* Oponentes (Rivales: 1, 2 o 3 según número de jugadores) */}
+            <div className={`grid gap-3 sm:gap-4 mb-4 shrink-0 ${
+                players.length === 2
+                    ? 'grid-cols-1 max-w-sm mx-auto w-full'
+                    : players.length === 3
+                    ? 'grid-cols-1 sm:grid-cols-2'
+                    : 'grid-cols-1 sm:grid-cols-3'
+            }`}>
                 {players.slice(1).map(p => (
                     <PlayerBoard
                         key={p.id}

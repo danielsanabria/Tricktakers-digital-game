@@ -115,6 +115,16 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
               <h3 className={`font-black uppercase tracking-tight text-slate-800 ${isHuman ? 'text-xl' : 'text-sm'}`}>
                 {player.name}
               </h3>
+              {player.disconnectCountdown !== null && player.disconnectCountdown !== undefined && (
+                <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full font-black animate-pulse flex items-center gap-1 border border-amber-200" title="Reconectando">
+                  <i className="fa-solid fa-wifi text-[8px]"></i> {player.disconnectCountdown}s
+                </span>
+              )}
+              {player.isBotControlled && (
+                <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5" title="Controlado temporalmente por IA">
+                  <i className="fa-solid fa-robot text-[8px]"></i> Bot
+                </span>
+              )}
               {/* Active Abilities Icons/Badges next to name */}
               <div className="flex gap-1">
                 {player.thiefBetrayalMode && <span title="Traición Activa" className="text-xs text-red-500 font-bold">🗡️</span>}

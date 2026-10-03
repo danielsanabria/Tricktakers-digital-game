@@ -8,12 +8,53 @@ import { PhantomThiefLogic } from '../logic/characters/logic_PhantomThief';
 import { calculateAlchemyValue } from '../game/core/alchemyUtils';
 import { useGameActions } from '../useGameActions';
 
-// Initial Players
-const getInitialPlayers = (): Player[] => [
-    { id: 'p1', name: 'Tú', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, hermitDiscarding: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: null, thiefBetrayalMode: false, tasksAssigned: {} }, // ChipValue NULL defines not set
-    { id: 'p2', name: 'Rival 1', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, hermitDiscarding: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} },
-    { id: 'p3', name: 'Rival 2', character: null, hand: [], wonCards: [], items: [], tasks: [], beasts: [], rearBeasts: [], mp: 0, magicElements: [], score: 30, goldCrowns: 0, blackCrowns: 0, wins: 0, gambleSwaps: 0, revoltUsed: false, rulerUsedRuleAvoidance: false, hermitUsedAbility: false, hermitDiscarding: false, strategistUsedIgnore: false, betAmount: 0, collectedCards: [], timeTravelTokens: 0, timeTravelPredictions: [], berserkerDeck: [], thiefTargetIds: [], thiefChipValue: 0, thiefBetrayalMode: false, tasksAssigned: {} }
-];
+// Initial Players generator (supporting 2, 3, or 4 players)
+const createInitialPlayer = (id: string, name: string, isHuman = false): Player => ({
+    id,
+    name,
+    character: null,
+    hand: [],
+    wonCards: [],
+    items: [],
+    tasks: [],
+    beasts: [],
+    rearBeasts: [],
+    mp: 0,
+    magicElements: [],
+    score: 30,
+    goldCrowns: 0,
+    blackCrowns: 0,
+    wins: 0,
+    gambleSwaps: 0,
+    revoltUsed: false,
+    rulerUsedRuleAvoidance: false,
+    hermitUsedAbility: false,
+    hermitDiscarding: false,
+    strategistUsedIgnore: false,
+    betAmount: 0,
+    collectedCards: [],
+    timeTravelTokens: 0,
+    timeTravelPredictions: [],
+    berserkerDeck: [],
+    thiefTargetIds: [],
+    thiefChipValue: isHuman ? null : 0,
+    thiefBetrayalMode: false,
+    tasksAssigned: {},
+    isHuman,
+    isConnected: true,
+    disconnectCountdown: null,
+    isBotControlled: !isHuman
+});
+
+export const getInitialPlayers = (count: number = 3): Player[] => {
+    const list: Player[] = [
+        createInitialPlayer('p1', 'Tú', true),
+        createInitialPlayer('p2', 'Rival 1', false),
+    ];
+    if (count >= 3) list.push(createInitialPlayer('p3', 'Rival 2', false));
+    if (count >= 4) list.push(createInitialPlayer('p4', 'Rival 3', false));
+    return list;
+};
 
 export const useGameLoop = () => {
     // ...
@@ -311,9 +352,10 @@ export const useGameLoop = () => {
         addLog(`Ronda ${r}: Selección de personajes en marcha.`);
     };
 
-    const initGame = (mode: GameMode) => {
+    const initGame = (mode: GameMode, playerCount: number = 3, customPlayers?: Player[]) => {
         setGameMode(mode);
-        setPlayers(getInitialPlayers());
+        const startingPlayers = customPlayers || getInitialPlayers(playerCount);
+        setPlayers(startingPlayers);
         setRound(1);
         setTrick(1);
 
@@ -325,7 +367,36 @@ export const useGameLoop = () => {
         }
 
         setAdvancedModeDeck(initialDeck);
-        prepareRoundSelection(1, mode, initialDeck, getInitialPlayers(), []);
+        prepareRoundSelection(1, mode, initialDeck, startingPlayers, []);
+    };
+
+    const handlePlayerDisconnect = (playerId: string, secondsRemaining: number) => {
+        setPlayers(prev => prev.map(p => {
+            if (p.id === playerId) {
+                return { ...p, isConnected: false, disconnectCountdown: secondsRemaining };
+            }
+            return p;
+        }));
+    };
+
+    const handlePlayerReconnect = (playerId: string) => {
+        setPlayers(prev => prev.map(p => {
+            if (p.id === playerId) {
+                addLog(`¡${p.name} se ha reconectado!`);
+                return { ...p, isConnected: true, disconnectCountdown: null, isBotControlled: false };
+            }
+            return p;
+        }));
+    };
+
+    const handleBotTakeover = (playerId: string) => {
+        setPlayers(prev => prev.map(p => {
+            if (p.id === playerId) {
+                addLog(`Tiempo agotado: La IA toma el control de ${p.name}.`);
+                return { ...p, disconnectCountdown: null, isBotControlled: true };
+            }
+            return p;
+        }));
     };
 
     const selectCharacter = (charType: CharacterType) => {
@@ -894,6 +965,7 @@ export const useGameLoop = () => {
         setPlayers, setPhase, setShowLogs, setViewingRules, setViewingCharacter, setItemCardToShow,
         setSelectedCards, setAbilityMode, setStrategistInheritedCard, setStrategistPendingChoice, setViewingTraps,
         setAiDifficulty,
+        handlePlayerDisconnect, handlePlayerReconnect, handleBotTakeover,
         initGame, resetGame, addLog, selectCharacter, playCard, proceedFromSummary, performAction
     };
 };
