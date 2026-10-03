@@ -22,6 +22,7 @@ export type RealtimeActionType =
     | 'DISCONNECT_WARNING'
     | 'RECONNECT'
     | 'BOT_TAKEOVER'
+    | 'SYNC_PARTICIPANTS'
     | 'SYNC_FULL_STATE';
 
 export interface RealtimeMessage {
@@ -260,6 +261,19 @@ class RealtimeService {
         if (message.type === 'ROOM_UPDATE' && message.payload?.participant) {
             const p = message.payload.participant as RoomParticipant;
             this.participants.set(p.id, p);
+            this.notifyParticipants();
+
+            // If this node is host, reply with full list of participants to sync guest
+            const myParticipant = this.localPlayerId ? this.participants.get(this.localPlayerId) : null;
+            if (myParticipant?.isHost) {
+                this.broadcast('SYNC_PARTICIPANTS', {
+                    participants: Array.from(this.participants.values())
+                });
+            }
+        } else if (message.type === 'SYNC_PARTICIPANTS' && Array.isArray(message.payload?.participants)) {
+            message.payload.participants.forEach((part: RoomParticipant) => {
+                this.participants.set(part.id, part);
+            });
             this.notifyParticipants();
         } else if (message.type === 'RECONNECT') {
             const reconnectedId = message.payload?.playerId || message.payload?.participantId;

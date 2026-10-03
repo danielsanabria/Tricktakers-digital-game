@@ -37,6 +37,7 @@ const App = () => {
     const [fillEmptyWithBots, setFillEmptyWithBots] = useState(true);
     const [playerCount, setPlayerCount] = useState(3);
     const seatMapRef = useRef<Record<string, string>>({});
+    const localPlayerIdRef = useRef<string>('p1');
 
     const getPersistentParticipantId = (): string => {
         let pId = localStorage.getItem('tricktakers_participant_id');
@@ -113,7 +114,7 @@ const App = () => {
                 if (msg.payload.seatMap) {
                     seatMapRef.current = msg.payload.seatMap;
                 }
-                const assignedSeat = msg.payload.seatMap?.[localPlayerId] || 'p2';
+                const assignedSeat = msg.payload.seatMap?.[localPlayerIdRef.current] || 'p2';
                 setMyInGameId(assignedSeat);
                 game.setLocalSeatId(assignedSeat);
                 game.initGame(GameMode.ALL_STAR, count, startingPlayers);
@@ -153,7 +154,7 @@ const App = () => {
                 const payload = msg.payload;
                 if (payload.seatMap) {
                     seatMapRef.current = payload.seatMap;
-                    const mySeat = payload.seatMap[localPlayerId] || 'p2';
+                    const mySeat = payload.seatMap[localPlayerIdRef.current] || 'p2';
                     setMyInGameId(mySeat);
                     game.setLocalSeatId(mySeat);
                 }
@@ -169,6 +170,7 @@ const App = () => {
         localStorage.setItem('tricktakers_player_name', playerName);
         setMultiplayerRoomCode(code);
         setLocalPlayerId('p1');
+        localPlayerIdRef.current = 'p1';
         setIsHost(true);
         setIsJoinModalOpen(false);
 
@@ -182,6 +184,7 @@ const App = () => {
         localStorage.setItem('tricktakers_player_name', playerName);
         setMultiplayerRoomCode(code);
         setLocalPlayerId(pId);
+        localPlayerIdRef.current = pId;
         setIsHost(false);
         setIsJoinModalOpen(false);
 
