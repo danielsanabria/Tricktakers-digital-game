@@ -1,10 +1,13 @@
 import React from 'react';
 
 interface RulebooksModalProps {
+    isOpen?: boolean;
     onClose: () => void;
 }
 
-export const RulebooksModal: React.FC<RulebooksModalProps> = ({ onClose }) => {
+export const RulebooksModal: React.FC<RulebooksModalProps> = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+
     return (
         <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
             <div className="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl space-y-6" onClick={e => e.stopPropagation()}>

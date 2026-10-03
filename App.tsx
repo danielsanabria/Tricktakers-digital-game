@@ -349,21 +349,25 @@ const App = () => {
             )}
 
             {/* Global Modals */}
-            <LogsPanel
-                isOpen={game.showLogs}
-                onClose={() => game.setShowLogs(false)}
-                logs={game.logs}
-            />
+            {game.showLogs && (
+                <LogsPanel
+                    isOpen={game.showLogs}
+                    onClose={() => game.setShowLogs(false)}
+                    logs={game.logs}
+                />
+            )}
 
             <CharacterModal
                 character={game.viewingCharacter ? CHARACTERS[game.viewingCharacter] : null}
                 onClose={() => game.setViewingCharacter(null)}
             />
 
-            <RulebooksModal
-                isOpen={game.viewingRules}
-                onClose={() => game.setViewingRules(false)}
-            />
+            {game.viewingRules && (
+                <RulebooksModal
+                    isOpen={game.viewingRules}
+                    onClose={() => game.setViewingRules(false)}
+                />
+            )}
 
             <ItemCardModal
                 itemCardPath={typeof game.itemCardToShow === 'string' ? game.itemCardToShow : game.itemCardToShow?.itemCardPath || null}
