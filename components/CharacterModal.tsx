@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { CharacterData } from '../game/core/types';
 
 interface CharacterModalProps {
-  character: CharacterData;
+  character: CharacterData | null;
   onClose: () => void;
 }
 
 const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) => {
+  if (!character) return null;
+
   const [imgSrc, setImgSrc] = useState<string>('');
   const [attemptIndex, setAttemptIndex] = useState(0);
   const [hasFinalError, setHasFinalError] = useState(false);

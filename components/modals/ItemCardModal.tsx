@@ -1,11 +1,15 @@
 import React from 'react';
 
 interface ItemCardModalProps {
-    imageUrl: string;
+    imageUrl?: string | null;
+    itemCardPath?: string | null;
     onClose: () => void;
 }
 
-export const ItemCardModal: React.FC<ItemCardModalProps> = ({ imageUrl, onClose }) => {
+export const ItemCardModal: React.FC<ItemCardModalProps> = ({ imageUrl, itemCardPath, onClose }) => {
+    const src = imageUrl || itemCardPath;
+    if (!src) return null;
+
     return (
         <div
             className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-300"
@@ -13,7 +17,7 @@ export const ItemCardModal: React.FC<ItemCardModalProps> = ({ imageUrl, onClose 
         >
             <div className="relative max-w-sm w-full animate-in zoom-in duration-300">
                 <img
-                    src={imageUrl}
+                    src={src}
                     className="w-full rounded-2xl shadow-2xl border-4 border-slate-700"
                     alt="Item Card"
                 />
