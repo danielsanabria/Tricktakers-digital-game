@@ -24,7 +24,9 @@ export type RealtimeActionType =
     | 'RECONNECT'
     | 'BOT_TAKEOVER'
     | 'SYNC_PARTICIPANTS'
-    | 'SYNC_FULL_STATE';
+    | 'SYNC_FULL_STATE'
+    | 'REQUEST_SYNC'
+    | 'PROCEED_ROUND';
 
 export interface RealtimeMessage {
     type: RealtimeActionType;

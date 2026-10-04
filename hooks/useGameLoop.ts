@@ -402,8 +402,8 @@ export const useGameLoop = () => {
         }));
     };
 
-    const selectCharacter = (charType: CharacterType) => {
-        const currentPickerId = selectionOrder[selectionIndex];
+    const selectCharacter = (charType: CharacterType, targetPlayerId?: string) => {
+        const currentPickerId = targetPlayerId || selectionOrder[selectionIndex];
         const picker = players.find(p => p.id === currentPickerId);
 
         // REGLA: El jugador que jugó como Rey en la ronda anterior no puede elegir al Rey
@@ -977,21 +977,47 @@ export const useGameLoop = () => {
         roundResults?: RoundResult | null;
         gameResult?: TournamentResult | null;
     }) => {
-        if (state.phase !== undefined) setPhase(state.phase);
-        if (state.round !== undefined) setRound(state.round);
-        if (state.trick !== undefined) setTrick(state.trick);
-        if (state.players) setPlayers(state.players);
-        if (state.currentPlayerIdx !== undefined) setCurrentPlayerIdx(state.currentPlayerIdx);
-        if (state.leadSuit !== undefined) setLeadSuit(state.leadSuit);
-        if (state.playedCards) setPlayedCards(state.playedCards);
-        if (state.isKakumei !== undefined) setIsKakumei(state.isKakumei);
-        if (state.isRevolt !== undefined) setIsRevolt(state.isRevolt);
-        if (state.characterPool) setCharacterPool(state.characterPool);
-        if (state.selectionOrder) setSelectionOrder(state.selectionOrder);
-        if (state.selectionIndex !== undefined) setSelectionIndex(state.selectionIndex);
-        if (state.gameMode !== undefined) setGameMode(state.gameMode);
-        if (state.roundResults !== undefined) setRoundResults(state.roundResults);
-        if (state.gameResult !== undefined) setGameResult(state.gameResult);
+        if (state.phase !== undefined) setPhase(prev => prev !== state.phase ? state.phase! : prev);
+        if (state.round !== undefined) setRound(prev => prev !== state.round ? state.round! : prev);
+        if (state.trick !== undefined) setTrick(prev => prev !== state.trick ? state.trick! : prev);
+        if (state.currentPlayerIdx !== undefined) setCurrentPlayerIdx(prev => prev !== state.currentPlayerIdx ? state.currentPlayerIdx! : prev);
+        if (state.leadSuit !== undefined) setLeadSuit(prev => prev !== state.leadSuit ? state.leadSuit : prev);
+        if (state.isKakumei !== undefined) setIsKakumei(prev => prev !== state.isKakumei ? state.isKakumei! : prev);
+        if (state.isRevolt !== undefined) setIsRevolt(prev => prev !== state.isRevolt ? state.isRevolt! : prev);
+        if (state.selectionIndex !== undefined) setSelectionIndex(prev => prev !== state.selectionIndex ? state.selectionIndex! : prev);
+        if (state.gameMode !== undefined) setGameMode(prev => prev !== state.gameMode ? state.gameMode! : prev);
+        if (state.roundResults !== undefined) setRoundResults(prev => prev !== state.roundResults ? state.roundResults! : prev);
+        if (state.gameResult !== undefined) setGameResult(prev => prev !== state.gameResult ? state.gameResult! : prev);
+
+        if (state.players) {
+            setPlayers(prev => {
+                const prevStr = JSON.stringify(prev);
+                const nextStr = JSON.stringify(state.players);
+                return prevStr === nextStr ? prev : state.players!;
+            });
+        }
+        if (state.playedCards) {
+            setPlayedCards(prev => {
+                const prevStr = JSON.stringify(prev);
+                const nextStr = JSON.stringify(state.playedCards);
+                return prevStr === nextStr ? prev : state.playedCards!;
+            });
+        }
+        if (state.characterPool) {
+            setCharacterPool(prev => {
+                const prevStr = JSON.stringify(prev);
+                const nextStr = JSON.stringify(state.characterPool);
+                return prevStr === nextStr ? prev : state.characterPool!;
+            });
+        }
+        if (state.selectionOrder) {
+            setSelectionOrder(prev => {
+                const prevStr = JSON.stringify(prev);
+                const nextStr = JSON.stringify(state.selectionOrder);
+                return prevStr === nextStr ? prev : state.selectionOrder!;
+            });
+        }
+
         isResolvingRef.current = false;
         isRoundResolvingRef.current = false;
     };

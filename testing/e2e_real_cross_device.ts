@@ -269,6 +269,79 @@ async function run() {
     }
     console.log("✅ BOTH Host and Guest see their 5 dealt cards clearly during Character Selection!");
 
+    // --- STEP 6: Sequential Character Selection Synchronization ---
+    console.log("\n--- STEP 6: Sequential Character Selection Synchronization ---");
+    // Find who has the active turn first
+    const hostActive = await pageHost.evaluate(() => {
+        return !!document.querySelector('.animate-pulse.text-teal-500');
+    });
+    const guestActive = await pageGuest.evaluate(() => {
+        return !!document.querySelector('.animate-pulse.text-teal-500');
+    });
+    console.log(`  Initial Turn: Host active=${hostActive}, Guest active=${guestActive}`);
+
+    const firstPage = hostActive ? pageHost : pageGuest;
+    const secondPage = hostActive ? pageGuest : pageHost;
+    const firstRole = hostActive ? 'Host' : 'Guest';
+    const secondRole = hostActive ? 'Guest' : 'Host';
+
+    // First player clicks first available character
+    console.log(`  ${firstRole} selects a character...`);
+    await firstPage.evaluate(() => {
+        const selectableCards = Array.from(document.querySelectorAll('.aspect-\\[2\\/3\\]')).filter(el => {
+            return !el.parentElement?.classList.contains('opacity-50');
+        });
+        const firstCard = selectableCards[0]?.parentElement;
+        if (firstCard) (firstCard as HTMLElement).click();
+    });
+    await delay(2000);
+
+    // Verify second player's screen updates to show it is now their turn!
+    let turnPassedToSecond = false;
+    for (let i = 0; i < 10; i++) {
+        await delay(1000);
+        const secondHasTurn = await secondPage.evaluate(() => {
+            return !!document.querySelector('.animate-pulse.text-teal-500');
+        });
+        console.log(`  Check second player turn [${i + 1}/10]: ${secondRole} active turn = ${secondHasTurn}`);
+        if (secondHasTurn) {
+            turnPassedToSecond = true;
+            break;
+        }
+    }
+
+    if (!turnPassedToSecond) {
+        throw new Error(`Turn synchronization failed: ${secondRole} did not receive active turn after ${firstRole} picked!`);
+    }
+    console.log(`✅ Turn SUCCESSFULLY synchronized! ${secondRole} now has active turn.`);
+
+    // Second player selects character
+    console.log(`  ${secondRole} selects a character...`);
+    await secondPage.evaluate(() => {
+        const selectableCards = Array.from(document.querySelectorAll('.aspect-\\[2\\/3\\]')).filter(el => {
+            return !el.parentElement?.classList.contains('opacity-50');
+        });
+        const secondCard = selectableCards[1]?.parentElement || selectableCards[0]?.parentElement;
+        if (secondCard) (secondCard as HTMLElement).click();
+    });
+    await delay(3500);
+
+    // Verify both browsers transition into the main gameplay phase (GameTable)
+    const hostInGame = await pageHost.evaluate(() => {
+        const text = document.body.textContent || '';
+        return text.includes('Baza') || text.includes('Mesa') || !text.includes('Selección de Personaje');
+    });
+    const guestInGame = await pageGuest.evaluate(() => {
+        const text = document.body.textContent || '';
+        return text.includes('Baza') || text.includes('Mesa') || !text.includes('Selección de Personaje');
+    });
+
+    console.log(`  Host transitioned to match: ${hostInGame}, Guest transitioned to match: ${guestInGame}`);
+    if (!hostInGame || !guestInGame) {
+        throw new Error("Match did not start properly after both characters were chosen!");
+    }
+    console.log("✅ BOTH players successfully completed Character Selection and entered the match!");
+
     console.log("\n=================================================");
     console.log("  🎉 ALL CROSS-DEVICE MULTIPLAYER TESTS PASSED!  ");
     console.log("=================================================\n");

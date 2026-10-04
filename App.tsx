@@ -112,7 +112,11 @@ const App = () => {
                 }
             } else if (msg.type === 'SELECT_CHARACTER') {
                 if (isHostRef.current) {
-                    game.selectCharacter(msg.payload.character);
+                    game.selectCharacter(msg.payload.character, msg.payload.playerId);
+                }
+            } else if (msg.type === 'REQUEST_SYNC') {
+                if (isHostRef.current) {
+                    broadcastGameState();
                 }
             } else if (msg.type === 'PROCEED_ROUND') {
                 if (isHostRef.current) {
@@ -126,24 +130,7 @@ const App = () => {
                         game.handlePlayerReconnect(mappedSeat);
                     }
                     if (game.phase !== GamePhase.LOBBY && game.phase !== GamePhase.MODE_SELECTION) {
-                        realtimeService.broadcast('SYNC_FULL_STATE', {
-                            phase: game.phase,
-                            round: game.round,
-                            trick: game.trick,
-                            players: game.players,
-                            currentPlayerIdx: game.currentPlayerIdx,
-                            leadSuit: game.leadSuit,
-                            playedCards: game.playedCards,
-                            isKakumei: game.isKakumei,
-                            isRevolt: game.isRevolt,
-                            seatMap: seatMapRef.current,
-                            characterPool: game.characterPool,
-                            selectionOrder: game.selectionOrder,
-                            selectionIndex: game.selectionIndex,
-                            gameMode: game.gameMode,
-                            roundResults: game.roundResults,
-                            gameResult: game.gameResult
-                        });
+                        broadcastGameState();
                     }
                 }
             } else if (msg.type === 'SYNC_FULL_STATE') {
@@ -159,13 +146,8 @@ const App = () => {
         }
     });
 
-    // Keep realtime callbacks fresh on every render
-    useEffect(() => {
-        realtimeService.updateCallbacks(setupRealtimeCallbacks());
-    });
-
-    // Authoritative Host Game State Sync: Host broadcasts full state on every change
-    useEffect(() => {
+    // Helper to broadcast authoritative game state across all channels
+    const broadcastGameState = () => {
         if (!multiplayerRoomCode || !isHostRef.current) return;
         if (game.phase === GamePhase.MODE_SELECTION || game.phase === GamePhase.LOBBY) return;
 
@@ -187,19 +169,74 @@ const App = () => {
             roundResults: game.roundResults,
             gameResult: game.gameResult
         });
+    };
+
+    // Keep realtime callbacks fresh on every render
+    useEffect(() => {
+        realtimeService.updateCallbacks(setupRealtimeCallbacks());
+    });
+
+    // 1. Reactive Host Sync: broadcasts immediately whenever any game state changes
+    useEffect(() => {
+        broadcastGameState();
     }, [
         game.phase,
         game.round,
         game.trick,
         game.players,
         game.currentPlayerIdx,
+        game.leadSuit,
         game.playedCards,
+        game.isKakumei,
+        game.isRevolt,
         game.selectionIndex,
+        game.selectionOrder,
         game.characterPool,
         game.roundResults,
         game.gameResult,
         multiplayerRoomCode
     ]);
+
+    // 2. Periodic Authoritative Heartbeat from Host (every 1000ms, like the lobby sync)
+    useEffect(() => {
+        if (!multiplayerRoomCode || !isHostRef.current) return;
+        if (game.phase === GamePhase.MODE_SELECTION || game.phase === GamePhase.LOBBY) return;
+
+        const syncInterval = setInterval(() => {
+            broadcastGameState();
+        }, 1000);
+
+        return () => clearInterval(syncInterval);
+    }, [
+        multiplayerRoomCode,
+        isHost,
+        game.phase,
+        game.round,
+        game.trick,
+        game.players,
+        game.currentPlayerIdx,
+        game.leadSuit,
+        game.playedCards,
+        game.isKakumei,
+        game.isRevolt,
+        game.selectionIndex,
+        game.selectionOrder,
+        game.characterPool,
+        game.roundResults,
+        game.gameResult
+    ]);
+
+    // 3. Periodic Guest Sync Request (every 1500ms) - ensures guest catches up if any packet was dropped
+    useEffect(() => {
+        if (!multiplayerRoomCode || isHostRef.current) return;
+        if (game.phase === GamePhase.MODE_SELECTION || game.phase === GamePhase.LOBBY) return;
+
+        const requestInterval = setInterval(() => {
+            realtimeService.broadcast('REQUEST_SYNC', { playerId: myInGameId });
+        }, 1500);
+
+        return () => clearInterval(requestInterval);
+    }, [multiplayerRoomCode, isHost, game.phase, myInGameId]);
 
     // Multiplayer Room Handlers
     const handleCreateRoom = async (playerName: string) => {
@@ -412,7 +449,7 @@ const App = () => {
                         playerHand={myPlayer?.hand || []}
                         selectCharacter={(char) => {
                             if (!multiplayerRoomCode || isHostRef.current) {
-                                game.selectCharacter(char);
+                                game.selectCharacter(char, myInGameId);
                             } else {
                                 realtimeService.broadcast('SELECT_CHARACTER', { character: char, playerId: myInGameId });
                             }
