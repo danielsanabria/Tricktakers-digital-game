@@ -64,6 +64,7 @@ class RealtimeService {
 
     // Cross-Device High-Speed WebSocket (MQTT.js)
     private mqttClient: any = null;
+    private lobbySyncInterval: any = null;
 
     // WebRTC PeerJS State for Direct P2P
     private peer: any = null;
@@ -185,6 +186,26 @@ class RealtimeService {
         // Broadcast join message across buses
         this.broadcast('ROOM_UPDATE', { participant });
         this.notifyParticipants();
+
+        // Start periodic heartbeat/sync in room so participants always stay discovered
+        if (this.lobbySyncInterval) {
+            clearInterval(this.lobbySyncInterval);
+        }
+        this.lobbySyncInterval = setInterval(() => {
+            if (this.currentRoomCode && this.participants.size > 0) {
+                const myP = this.localPlayerId ? this.participants.get(this.localPlayerId) : null;
+                if (myP) {
+                    if (this.isHost || myP.isHost) {
+                        this.broadcast('SYNC_PARTICIPANTS', {
+                            participants: Array.from(this.participants.values())
+                        });
+                    } else {
+                        this.broadcast('ROOM_UPDATE', { participant: myP });
+                    }
+                }
+            }
+        }, 2000);
+
         return true;
     }
 
@@ -215,11 +236,24 @@ class RealtimeService {
 
             this.mqttClient.on('message', (_t: string, payload: any) => {
                 try {
-                    const msg = JSON.parse(payload.toString()) as RealtimeMessage;
+                    let text: string;
+                    if (typeof payload === 'string') {
+                        text = payload;
+                    } else if (payload instanceof Uint8Array || ArrayBuffer.isView(payload)) {
+                        text = new TextDecoder('utf-8').decode(payload);
+                    } else if (typeof payload.toString === 'function') {
+                        text = payload.toString('utf-8');
+                    } else {
+                        text = String(payload);
+                    }
+
+                    const msg = JSON.parse(text) as RealtimeMessage;
                     if (msg && msg.roomCode === this.currentRoomCode && msg.senderId !== this.localPlayerId) {
                         this.handleIncomingMessage(msg);
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error('[MQTT Decode Error]:', e);
+                }
             });
 
             this.mqttClient.on('error', (err: any) => {
@@ -536,7 +570,7 @@ class RealtimeService {
 
             // If this node is host, reply with full list of participants to sync guest
             const myParticipant = this.localPlayerId ? this.participants.get(this.localPlayerId) : null;
-            if (myParticipant?.isHost) {
+            if (this.isHost || myParticipant?.isHost) {
                 this.broadcast('SYNC_PARTICIPANTS', {
                     participants: Array.from(this.participants.values())
                 });
@@ -567,6 +601,11 @@ class RealtimeService {
      * Leave current room and cleanup all WebRTC, WebSocket, and broadcast channels
      */
     leaveRoom() {
+        if (this.lobbySyncInterval) {
+            clearInterval(this.lobbySyncInterval);
+            this.lobbySyncInterval = null;
+        }
+
         if (this.mqttClient) {
             try { this.mqttClient.end(true); } catch (e) {}
             this.mqttClient = null;
