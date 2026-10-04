@@ -56,9 +56,9 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
     const badge = getDifficultyBadge();
 
     return (
-        <header className="px-6 pt-10 pb-4 md:py-4 flex items-center justify-between border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-            <div className="flex items-center gap-4">
-                <img src="/assets/logo/logo.svg" alt="Tricktakers Logo" className="h-10 w-auto" />
+        <header className="px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between border-b border-[#E7DFD0] bg-[#FCFAF6]/95 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+            <div className="flex items-center gap-3">
+                <img src="/assets/logo/logo.svg" alt="Tricktakers Logo" className="h-8 sm:h-10 w-auto" />
             </div>
 
             <div className="flex items-center gap-3">

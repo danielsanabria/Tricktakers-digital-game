@@ -9,47 +9,47 @@ export const RulebooksModal: React.FC<RulebooksModalProps> = ({ isOpen, onClose 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
-            <div className="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl space-y-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] bg-stone-950/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
+            <div className="bg-[#FCFAF6] rounded-2xl sm:rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border-2 border-[#E7DFD0] space-y-6" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Manuales de Reglas</h3>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-200 rounded-full hover:bg-slate-300 text-slate-900 hover:text-black transition-colors shadow-sm">
+                    <h3 className="text-2xl font-black text-[#23272E] uppercase tracking-tight">Manuales de Reglas</h3>
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-[#EFE9DC] hover:bg-[#E5DDCB] rounded-full text-[#6B5E4F] transition-colors shadow-sm active:scale-95">
                         <i className="fa-solid fa-xmark font-bold"></i>
                     </button>
                 </div>
-                <p className="text-slate-500 text-sm">Consulta las reglas oficiales para resolver tus dudas.</p>
+                <p className="text-[#7D7060] text-xs sm:text-sm font-medium">Consulta las reglas y referencias oficiales para resolver cualquier duda durante la partida.</p>
 
                 <div className="grid grid-cols-1 gap-4">
                     <a
                         href="/rules/Tricktakers_Base_Rulebook_copia.pdf"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 transition-all group"
+                        className="flex items-center gap-4 p-4 rounded-2xl border-2 border-[#E7DFD0] hover:border-[#3E6B52] hover:bg-[#F2F7F4] transition-all group active:scale-[0.99]"
                     >
-                        <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center text-teal-700 group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 bg-[#3E6B52]/15 border border-[#3E6B52]/30 rounded-xl flex items-center justify-center text-[#2D543F] group-hover:scale-110 transition-transform">
                             <i className="fa-solid fa-book text-xl"></i>
                         </div>
                         <div>
-                            <div className="font-bold text-slate-800 group-hover:text-teal-800">Tricktakers Base</div>
-                            <div className="text-xs text-slate-400">Reglas fundamentales y personajes básicos.</div>
+                            <div className="font-bold text-[#23272E] group-hover:text-[#2D543F]">Tricktakers Base</div>
+                            <div className="text-xs text-[#7D7060]">Reglas fundamentales y 8 personajes iniciales.</div>
                         </div>
-                        <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-slate-300 group-hover:text-teal-500"></i>
+                        <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-[#A09382] group-hover:text-[#2D543F]"></i>
                     </a>
 
                     <a
                         href="/rules/tricktakers_ex_rules_en_copia.pdf"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 transition-all group"
+                        className="flex items-center gap-4 p-4 rounded-2xl border-2 border-[#E7DFD0] hover:border-[#C59B27] hover:bg-[#F7F2E8] transition-all group active:scale-[0.99]"
                     >
-                        <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center text-amber-700 group-hover:scale-110 transition-transform">
+                        <div className="w-12 h-12 bg-[#C59B27]/15 border border-[#C59B27]/30 rounded-xl flex items-center justify-center text-[#966E0F] group-hover:scale-110 transition-transform">
                             <i className="fa-solid fa-scroll text-xl"></i>
                         </div>
                         <div>
-                            <div className="font-bold text-slate-800 group-hover:text-amber-800">Expansión (Inglés)</div>
-                            <div className="text-xs text-slate-400">Nuevos personajes y mecánicas avanzadas.</div>
+                            <div className="font-bold text-[#23272E] group-hover:text-[#966E0F]">Expansión (Inglés)</div>
+                            <div className="text-xs text-[#7D7060]">Nuevos personajes y mecánicas avanzadas.</div>
                         </div>
-                        <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-slate-300 group-hover:text-amber-500"></i>
+                        <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-[#A09382] group-hover:text-[#966E0F]"></i>
                     </a>
                 </div>
             </div>

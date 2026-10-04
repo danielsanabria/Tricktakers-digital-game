@@ -66,46 +66,46 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-[2rem] max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-stone-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#FCFAF6] rounded-2xl sm:rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border-2 border-[#E7DFD0] relative animate-in fade-in zoom-in-95 duration-200">
 
                 {/* Close button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 font-bold transition-colors"
+                    className="absolute top-5 right-5 w-8 h-8 rounded-full bg-[#EFE9DC] hover:bg-[#E5DDCB] flex items-center justify-center text-[#6B5E4F] font-bold transition-colors"
                 >
                     <i className="fa-solid fa-xmark text-sm"></i>
                 </button>
 
                 <div className="text-center mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl mx-auto mb-3 shadow-inner">
-                        <i className="fa-solid fa-users"></i>
+                    <div className="w-12 h-12 rounded-2xl bg-[#C59B27]/15 border border-[#C59B27]/30 text-[#966E0F] flex items-center justify-center text-xl mx-auto mb-3 shadow-inner">
+                        <i className="fa-solid fa-crown"></i>
                     </div>
-                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+                    <h3 className="text-2xl font-black text-[#23272E] uppercase tracking-tight">
                         Multijugador Online
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                        Juega con hasta 4 amigos en tiempo real
+                    <p className="text-xs text-[#7D7060] mt-1 font-medium">
+                        Juega con hasta 4 rivales en tiempo real
                     </p>
                 </div>
 
                 {error && (
-                    <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold flex items-center gap-2">
+                    <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
                         <i className="fa-solid fa-circle-exclamation"></i> {error}
                     </div>
                 )}
 
                 {/* Rejoin Banner if lastRoom exists */}
                 {lastRoom && mode === 'SELECT' && (
-                    <div className="mb-4 p-3.5 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-2xl flex items-center justify-between shadow-sm">
+                    <div className="mb-4 p-3.5 bg-[#F7F2E8] border border-[#D8CFBC] rounded-2xl flex items-center justify-between shadow-sm">
                         <div className="text-left">
-                            <span className="block text-[9px] font-black uppercase text-teal-600 tracking-wider">
+                            <span className="block text-[9px] font-black uppercase text-[#966E0F] tracking-wider">
                                 Partida reciente detectada
                             </span>
-                            <span className="font-black text-sm text-slate-800 flex items-center gap-1.5">
-                                Sala <span className="font-mono text-teal-600 font-bold">{lastRoom}</span>
+                            <span className="font-black text-sm text-[#23272E] flex items-center gap-1.5">
+                                Sala <span className="font-mono text-[#966E0F] font-bold">{lastRoom}</span>
                                 {localStorage.getItem('tricktakers_is_host_' + lastRoom) === 'true' && (
-                                    <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black flex items-center gap-1">
+                                    <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black flex items-center gap-1 border border-amber-300">
                                         <i className="fa-solid fa-crown text-[9px]"></i> Anfitrión
                                     </span>
                                 )}
@@ -114,9 +114,9 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                         <button
                             type="button"
                             onClick={() => handleRejoin(lastRoom)}
-                            className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-teal-600 transition-colors shadow-md flex items-center gap-1.5"
+                            className="px-4 py-2 bg-[#23272E] text-[#FCFAF6] rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#3E4550] transition-colors shadow-md flex items-center gap-1.5 active:scale-95"
                         >
-                            <i className="fa-solid fa-rotate-right text-xs"></i> Reunirse
+                            <i className="fa-solid fa-rotate-right text-xs text-[#C59B27]"></i> Reunirse
                         </button>
                     </div>
                 )}
@@ -127,33 +127,33 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                         <button
                             type="button"
                             onClick={() => { setError(''); setMode('CREATE'); }}
-                            className="p-4 rounded-2xl border-2 border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 transition-all text-left flex items-center justify-between group"
+                            className="p-4 rounded-2xl border-2 border-[#E7DFD0] hover:border-[#C59B27] hover:bg-[#F5EFE3] transition-all text-left flex items-center justify-between group active:scale-[0.99]"
                         >
                             <div>
-                                <h4 className="font-black text-sm text-slate-800 uppercase tracking-tight group-hover:text-teal-600">
+                                <h4 className="font-black text-sm text-[#23272E] uppercase tracking-tight group-hover:text-[#966E0F]">
                                     Crear Nueva Sala
                                 </h4>
-                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                <p className="text-[11px] text-[#7D7060] mt-0.5 font-medium">
                                     Genera un código e invita hasta a 3 amigos
                                 </p>
                             </div>
-                            <i className="fa-solid fa-plus text-slate-300 group-hover:text-teal-500 text-lg"></i>
+                            <i className="fa-solid fa-plus text-[#A09382] group-hover:text-[#966E0F] text-lg"></i>
                         </button>
 
                         <button
                             type="button"
                             onClick={() => { setError(''); setMode('JOIN'); }}
-                            className="p-4 rounded-2xl border-2 border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 transition-all text-left flex items-center justify-between group"
+                            className="p-4 rounded-2xl border-2 border-[#E7DFD0] hover:border-[#C59B27] hover:bg-[#F5EFE3] transition-all text-left flex items-center justify-between group active:scale-[0.99]"
                         >
                             <div>
-                                <h4 className="font-black text-sm text-slate-800 uppercase tracking-tight group-hover:text-teal-600">
+                                <h4 className="font-black text-sm text-[#23272E] uppercase tracking-tight group-hover:text-[#966E0F]">
                                     Unirse con Código
                                 </h4>
-                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                <p className="text-[11px] text-[#7D7060] mt-0.5 font-medium">
                                     Introduce el PIN de 4 letras de tu amigo
                                 </p>
                             </div>
-                            <i className="fa-solid fa-arrow-right-to-bracket text-slate-300 group-hover:text-teal-500 text-lg"></i>
+                            <i className="fa-solid fa-arrow-right-to-bracket text-[#A09382] group-hover:text-[#966E0F] text-lg"></i>
                         </button>
                     </div>
                 )}
@@ -162,7 +162,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                 {mode === 'CREATE' && (
                     <form onSubmit={handleCreate} className="flex flex-col gap-4">
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 text-left">
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-[#7D7060] mb-1 text-left">
                                 Tu Nombre o Apodo
                             </label>
                             <input
@@ -170,7 +170,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                                 maxLength={16}
                                 value={playerName}
                                 onChange={(e) => setPlayerName(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                className="w-full px-4 py-3 rounded-xl border border-[#D8CFBC] bg-white text-[#23272E] font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#C59B27] focus:border-[#C59B27]"
                                 placeholder="Ej: Daniel"
                                 autoFocus
                             />
@@ -180,13 +180,13 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                             <button
                                 type="button"
                                 onClick={() => setMode('SELECT')}
-                                className="flex-1 py-3 rounded-full border border-slate-200 text-slate-600 font-bold text-xs uppercase"
+                                className="flex-1 py-3 rounded-full border border-[#D8CFBC] text-[#6B5E4F] font-bold text-xs uppercase hover:bg-[#EFE9DC] transition-colors"
                             >
                                 Atrás
                             </button>
                             <button
                                 type="submit"
-                                className="flex-1 py-3 rounded-full bg-slate-900 text-white font-black text-xs uppercase tracking-wider hover:bg-teal-600 transition-colors shadow-md"
+                                className="flex-1 py-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all"
                             >
                                 Crear Sala
                             </button>
@@ -198,7 +198,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                 {mode === 'JOIN' && (
                     <form onSubmit={handleJoin} className="flex flex-col gap-4">
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 text-left">
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-[#7D7060] mb-1 text-left">
                                 Tu Nombre o Apodo
                             </label>
                             <input
@@ -206,13 +206,13 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                                 maxLength={16}
                                 value={playerName}
                                 onChange={(e) => setPlayerName(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                className="w-full px-4 py-3 rounded-xl border border-[#D8CFBC] bg-white text-[#23272E] font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#C59B27] focus:border-[#C59B27]"
                                 placeholder="Ej: Elena"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 text-left">
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-[#7D7060] mb-1 text-left">
                                 Código de la Sala (4 Letras)
                             </label>
                             <input
@@ -220,7 +220,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                                 maxLength={4}
                                 value={roomCode}
                                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 font-black text-center text-xl tracking-[0.3em] font-mono focus:outline-none focus:ring-2 focus:ring-teal-500 uppercase"
+                                className="w-full px-4 py-3 rounded-xl border border-[#D8CFBC] bg-white text-[#23272E] font-black text-center text-xl tracking-[0.3em] font-mono focus:outline-none focus:ring-2 focus:ring-[#C59B27] focus:border-[#C59B27] uppercase"
                                 placeholder="ABCD"
                                 autoFocus
                             />
@@ -230,13 +230,13 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                             <button
                                 type="button"
                                 onClick={() => setMode('SELECT')}
-                                className="flex-1 py-3 rounded-full border border-slate-200 text-slate-600 font-bold text-xs uppercase"
+                                className="flex-1 py-3 rounded-full border border-[#D8CFBC] text-[#6B5E4F] font-bold text-xs uppercase hover:bg-[#EFE9DC] transition-colors"
                             >
                                 Atrás
                             </button>
                             <button
                                 type="submit"
-                                className="flex-1 py-3 rounded-full bg-slate-900 text-white font-black text-xs uppercase tracking-wider hover:bg-teal-600 transition-colors shadow-md"
+                                className="flex-1 py-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all"
                             >
                                 Unirse
                             </button>

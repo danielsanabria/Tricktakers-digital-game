@@ -45,50 +45,50 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
 
     return (
         <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-transparent overflow-y-auto custom-scrollbar relative">
-            <div className="relative z-10 w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 shadow-2xl p-6 sm:p-10 flex flex-col items-center my-auto">
+            <div className="relative z-10 w-full max-w-2xl bg-[#FCFAF6]/98 backdrop-blur-xl rounded-2xl sm:rounded-[2.5rem] border-2 border-[#E7DFD0] shadow-2xl p-5 sm:p-8 md:p-10 flex flex-col items-center my-auto">
 
                 {/* Back / Leave button */}
                 <button
                     onClick={onLeaveLobby}
-                    className="self-start mb-6 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-2"
+                    className="self-start mb-5 sm:mb-6 px-4 py-2 rounded-xl bg-[#EFE9DC] hover:bg-[#E5DDCB] text-[#6B5E4F] text-xs font-bold transition-all flex items-center gap-2 active:scale-95"
                 >
                     <i className="fa-solid fa-arrow-left"></i> Salir de la Sala
                 </button>
 
                 {/* Title and Room Code Card */}
-                <div className="mb-6">
-                    <span className="text-[10px] uppercase font-black tracking-widest text-teal-600 block mb-1">
+                <div className="mb-5 sm:mb-6">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-[#966E0F] block mb-1">
                         Sala Multijugador en Tiempo Real
                     </span>
-                    <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">
+                    <h2 className="text-2xl sm:text-3xl font-black text-[#23272E] uppercase tracking-tight">
                         Lobby de Torneo
                     </h2>
                 </div>
 
                 {/* Room Code Badge */}
-                <div className="bg-gradient-to-b from-teal-50/80 to-slate-50 border-2 border-teal-200/80 rounded-2xl p-4 sm:p-5 w-full max-w-md mb-8 flex flex-col items-center shadow-sm">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <div className="bg-[#F7F2E8] border-2 border-[#D8CFBC] rounded-2xl p-4 sm:p-5 w-full max-w-md mb-6 sm:mb-8 flex flex-col items-center shadow-sm">
+                    <span className="text-xs font-bold text-[#7D7060] uppercase tracking-wider mb-1">
                         Código de Invitación
                     </span>
                     <div className="flex items-center gap-3">
-                        <span className="text-4xl font-black tracking-[0.25em] text-teal-600 font-mono">
+                        <span className="text-3xl sm:text-4xl font-black tracking-[0.25em] text-[#966E0F] font-mono">
                             {roomCode}
                         </span>
                         <button
                             onClick={handleCopyCode}
-                            className="p-2.5 rounded-xl bg-white border border-teal-200 text-teal-600 hover:bg-teal-50 transition-all text-sm font-bold shadow-sm"
+                            className="p-2.5 rounded-xl bg-white border border-[#D8CFBC] text-[#966E0F] hover:bg-[#EFE9DC] transition-all text-sm font-bold shadow-sm active:scale-95"
                             title="Copiar código"
                         >
                             <i className={`fa-solid ${copied ? 'fa-check text-emerald-600' : 'fa-copy'}`}></i>
                         </button>
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-2 font-medium">
+                    <span className="text-[10px] text-[#7D7060] mt-2 font-medium">
                         {copied ? '¡Código copiado al portapapeles!' : 'Comparte este código para que se unan tus rivales'}
                     </span>
                 </div>
 
                 {/* Slots Grid (4 slots) */}
-                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-8">
+                <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-6 sm:mb-8">
                     {slots.map((participant, index) => {
                         const slotNum = index + 1;
                         if (participant) {
@@ -99,33 +99,33 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                     key={participant.id}
                                     className={`p-4 rounded-2xl border flex items-center justify-between transition-all ${
                                         isLocal
-                                            ? 'bg-teal-50/50 border-teal-300 ring-2 ring-teal-100'
+                                            ? 'bg-[#FAF4E6] border-[#C59B27] ring-2 ring-[#F0DFC0]'
                                             : isDisconnected
                                             ? 'bg-amber-50 border-amber-300'
-                                            : 'bg-white border-slate-200 shadow-sm'
+                                            : 'bg-white border-[#E7DFD0] shadow-sm'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
-                                            participant.isHost ? 'bg-amber-500 text-white' : 'bg-slate-800 text-white'
+                                            participant.isHost ? 'bg-[#C59B27] text-stone-950' : 'bg-[#23272E] text-white'
                                         }`}>
                                             {participant.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div className="text-left">
                                             <div className="flex items-center gap-1.5">
-                                                <span className="font-black text-sm text-slate-900">
+                                                <span className="font-black text-sm text-[#23272E]">
                                                     {participant.name}
                                                 </span>
                                                 {isLocal && (
-                                                    <span className="text-[9px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-bold">
+                                                    <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black border border-amber-300">
                                                         Tú
                                                     </span>
                                                 )}
                                                 {participant.isHost && (
-                                                    <i className="fa-solid fa-crown text-amber-500 text-xs" title="Anfitrión"></i>
+                                                    <i className="fa-solid fa-crown text-[#C59B27] text-xs" title="Anfitrión"></i>
                                                 )}
                                             </div>
-                                            <span className="text-[10px] text-slate-400 font-semibold block">
+                                            <span className="text-[10px] text-[#7D7060] font-semibold block">
                                                 {participant.isHost ? 'Anfitrión de la Sala' : 'Jugador Conectado'}
                                             </span>
                                         </div>
@@ -146,22 +146,22 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                             return (
                                 <div
                                     key={`slot-${slotNum}`}
-                                    className="p-4 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-between opacity-80"
+                                    className="p-4 rounded-2xl border-2 border-dashed border-[#D8CFBC] bg-[#F7F2E8]/60 flex items-center justify-between opacity-80"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-400 flex items-center justify-center font-bold text-xs">
+                                        <div className="w-10 h-10 rounded-xl bg-[#EFE9DC] text-[#7D7060] flex items-center justify-center font-bold text-xs">
                                             {slotNum}
                                         </div>
                                         <div className="text-left">
-                                            <span className="font-bold text-xs text-slate-500 block">
+                                            <span className="font-bold text-xs text-[#6B5E4F] block">
                                                 {fillEmptyWithBots ? `Bot ${slotNum} (${aiDifficulty})` : `Puesto ${slotNum} Vacío`}
                                             </span>
-                                            <span className="text-[10px] text-slate-400">
+                                            <span className="text-[10px] text-[#A09382]">
                                                 {fillEmptyWithBots ? 'Reemplazo automático' : 'Esperando jugador...'}
                                             </span>
                                         </div>
                                     </div>
-                                    <i className={`fa-solid ${fillEmptyWithBots ? 'fa-robot text-teal-500' : 'fa-user-plus text-slate-300'}`}></i>
+                                    <i className={`fa-solid ${fillEmptyWithBots ? 'fa-robot text-[#966E0F]' : 'fa-user-plus text-[#C8C0B2]'}`}></i>
                                 </div>
                             );
                         }
@@ -170,13 +170,13 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
 
                 {/* Host Controls */}
                 {isHost && (
-                    <div className="w-full max-w-md bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 text-left">
+                    <div className="w-full max-w-md bg-[#F7F2E8] border border-[#D8CFBC] rounded-2xl p-4 mb-6 text-left">
                         <div className="flex items-center justify-between mb-3">
                             <div>
-                                <span className="font-black text-xs text-slate-800 block">
+                                <span className="font-black text-xs text-[#23272E] block">
                                     Llenar asientos vacíos con Bots
                                 </span>
-                                <span className="text-[10px] text-slate-400">
+                                <span className="text-[10px] text-[#7D7060]">
                                     Permite empezar la partida aunque seáis 2 o 3 personas
                                 </span>
                             </div>
@@ -184,13 +184,13 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                 type="checkbox"
                                 checked={fillEmptyWithBots}
                                 onChange={(e) => setFillEmptyWithBots(e.target.checked)}
-                                className="w-5 h-5 accent-teal-500 rounded cursor-pointer"
+                                className="w-5 h-5 accent-[#C59B27] rounded cursor-pointer"
                             />
                         </div>
 
                         {fillEmptyWithBots && (
-                            <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-                                <span className="text-[11px] font-bold text-slate-600">Nivel de los Bots:</span>
+                            <div className="pt-2 border-t border-[#D8CFBC] flex items-center justify-between">
+                                <span className="text-[11px] font-bold text-[#6B5E4F]">Nivel de los Bots:</span>
                                 <div className="inline-flex gap-1">
                                     {(['BEGINNER', 'INTERMEDIATE', 'EXPERT'] as AIDifficulty[]).map((d) => (
                                         <button
@@ -199,8 +199,12 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                             onClick={() => setAiDifficulty(d)}
                                             className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
                                                 aiDifficulty === d
-                                                    ? 'bg-teal-500 text-white shadow-sm'
-                                                    : 'bg-white border text-slate-600'
+                                                    ? d === 'BEGINNER'
+                                                        ? 'bg-[#3E6B52] text-white shadow-sm'
+                                                        : d === 'INTERMEDIATE'
+                                                        ? 'bg-[#B88222] text-white shadow-sm'
+                                                        : 'bg-[#6B3E7A] text-white shadow-sm'
+                                                    : 'bg-white border border-[#D8CFBC] text-[#6B5E4F]'
                                             }`}
                                         >
                                             {d === 'BEGINNER' ? 'Fácil' : d === 'INTERMEDIATE' ? 'Medio' : 'Experto'}
@@ -219,15 +223,15 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                         disabled={!canStart}
                         className={`w-full max-w-md py-4 rounded-full font-black text-sm uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${
                             canStart
-                                ? 'bg-slate-900 text-white hover:bg-teal-600 hover:shadow-teal-500/20 active:scale-95'
-                                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 shadow-amber-950/20 active:scale-95'
+                                : 'bg-[#E5DDCB] text-[#A09382] cursor-not-allowed'
                         }`}
                     >
                         <i className="fa-solid fa-play"></i> Iniciar Torneo ({participants.length}/4)
                     </button>
                 ) : (
-                    <div className="flex items-center gap-2 text-slate-500 font-bold text-xs animate-pulse">
-                        <i className="fa-solid fa-circle-notch fa-spin"></i> Esperando a que el anfitrión inicie el torneo...
+                    <div className="flex items-center gap-2 text-[#7D7060] font-bold text-xs animate-pulse">
+                        <i className="fa-solid fa-circle-notch fa-spin text-[#C59B27]"></i> Esperando a que el anfitrión inicie el torneo...
                     </div>
                 )}
 
