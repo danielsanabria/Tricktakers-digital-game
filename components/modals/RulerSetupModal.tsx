@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Player } from '../../game/core/types';
 import { TASKS } from '../../game/core/constants';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface RulerSetupModalProps {
     otherPlayers: Player[];
@@ -8,13 +9,14 @@ interface RulerSetupModalProps {
 }
 
 export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, onConfirm }) => {
+    const { t } = useTranslation();
+    const isSpanish = t('common.language') === 'es';
     const [assignments, setAssignments] = useState<Record<string, string>>({});
     const [activePlayerId, setActivePlayerId] = useState<string>(otherPlayers[0]?.id || '');
 
     const handleAssign = (taskId: string) => {
-        // Check if this task is already assigned to ANOTHER player (enforcing unique cards)
         const isAssignedToOther = Object.entries(assignments).some(([pid, tid]) => pid !== activePlayerId && tid === taskId);
-        if (isAssignedToOther) return; // Prevent duplicate assignment
+        if (isAssignedToOther) return;
 
         setAssignments(prev => ({
             ...prev,
@@ -34,8 +36,12 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                         <span className="text-4xl">👑</span>
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black text-amber-500 tracking-tighter uppercase italic">La Voluntad del Rey</h2>
-                        <p className="text-amber-200/60 text-sm mt-1">Asigna una tarea única a cada súbdito. Si cumplen sus tareas, serás recompensado.</p>
+                        <h2 className="text-3xl font-black text-amber-500 tracking-tighter uppercase italic">
+                            {t('modals.rulerSetupTitle')}
+                        </h2>
+                        <p className="text-amber-200/60 text-sm mt-1">
+                            {t('modals.rulerSetupDesc')}
+                        </p>
                     </div>
                 </div>
 
@@ -43,9 +49,13 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                 <div className="flex flex-1 overflow-hidden">
                     {/* Left: Players List */}
                     <div className="w-80 bg-slate-950/50 border-r border-white/5 flex flex-col p-4 gap-3 overflow-y-auto shrink-0">
-                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-2">Súbditos</h3>
+                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-2">
+                            {isSpanish ? 'Súbditos' : 'Subjects'}
+                        </h3>
                         {otherPlayers.map(player => {
-                            const assignedTask = TASKS.find(t => t.id === assignments[player.id]);
+                            const assignedTaskId = assignments[player.id];
+                            const translatedTask = assignedTaskId ? (t(`gameData.tasks.${assignedTaskId}`) as { name: string; condition: string } | undefined) : null;
+                            const taskName = translatedTask?.name || TASKS.find(t => t.id === assignedTaskId)?.name;
                             const isActive = player.id === activePlayerId;
 
                             return (
@@ -61,7 +71,7 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                                         <span className={`font-bold uppercase tracking-wider ${isActive ? 'text-amber-200' : 'text-slate-300'}`}>
                                             {player.name}
                                         </span>
-                                        {assignedTask ? (
+                                        {taskName ? (
                                             <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs border border-emerald-500/50">
                                                 <i className="fa-solid fa-check"></i>
                                             </div>
@@ -70,13 +80,15 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                                         )}
                                     </div>
 
-                                    {assignedTask ? (
+                                    {taskName ? (
                                         <div className="text-xs text-amber-100/70 truncate flex items-center gap-2">
                                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                                            {assignedTask.name}
+                                            {taskName}
                                         </div>
                                     ) : (
-                                        <div className="text-xs text-slate-400 italic">Esperando órdenes...</div>
+                                        <div className="text-xs text-slate-400 italic">
+                                            {isSpanish ? 'Esperando órdenes...' : 'Awaiting decrees...'}
+                                        </div>
                                     )}
 
                                     {isActive && (
@@ -91,11 +103,17 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                     <div className="flex-1 bg-slate-900/50 p-8 overflow-y-auto">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-                                Decretos Disponibles <span className="text-slate-600">({TASKS.length})</span>
+                                {isSpanish ? 'Decretos Disponibles' : 'Available Decrees'} <span className="text-slate-600">({TASKS.length})</span>
                             </h3>
                             <div className="flex gap-4 text-xs">
-                                <span className="flex items-center gap-2 text-slate-400"><span className="w-3 h-3 rounded bg-amber-500/20 border border-amber-500/50"></span> Seleccionado</span>
-                                <span className="flex items-center gap-2 text-slate-400"><span className="w-3 h-3 rounded bg-slate-800 opacity-50 grayscale"></span> Asignado a otro</span>
+                                <span className="flex items-center gap-2 text-slate-400">
+                                    <span className="w-3 h-3 rounded bg-amber-500/20 border border-amber-500/50"></span>
+                                    {isSpanish ? 'Seleccionado' : 'Selected'}
+                                </span>
+                                <span className="flex items-center gap-2 text-slate-400">
+                                    <span className="w-3 h-3 rounded bg-slate-800 opacity-50 grayscale"></span>
+                                    {isSpanish ? 'Asignado a otro' : 'Assigned to other'}
+                                </span>
                             </div>
                         </div>
 
@@ -124,18 +142,14 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                                             className="absolute inset-0 w-full h-full object-cover"
                                         />
 
-                                        {/* Overlay Gradient for Text Readability if needed, but cards have text. 
-                                            However, we might want to highlight selection clearly. */}
                                         <div className={`absolute inset-0 transition-opacity ${isAssignedToThis ? 'bg-amber-500/10' : 'bg-black/0 group-hover:bg-white/5'}`}></div>
 
-                                        {/* Selection Indicator */}
                                         {isAssignedToThis && (
                                             <div className="absolute top-2 right-2 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shadow-lg text-black font-bold">
                                                 <i className="fa-solid fa-check"></i>
                                             </div>
                                         )}
 
-                                        {/* Assigned to Other Indicator */}
                                         {isAssignedToOther && (
                                             <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
                                                 <div className="bg-slate-800 text-slate-200 px-3 py-1 rounded-full text-xs font-bold border border-slate-600 shadow-xl transform -rotate-12">
@@ -143,12 +157,6 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                                                 </div>
                                             </div>
                                         )}
-
-                                        {/* Hover Details (if image fails or for clarity) */}
-                                        {/* <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-4 translate-y-full group-hover:translate-y-0 transition-transform">
-                                            <div className="text-white font-bold text-sm">{task.name}</div>
-                                            <div className="text-amber-400 text-xs">{task.points} pts</div>
-                                        </div> */}
                                     </button>
                                 );
                             })}
@@ -159,7 +167,9 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                 {/* Footer */}
                 <div className="p-6 border-t border-white/5 bg-slate-900 shrink-0 flex justify-between items-center">
                     <div className="text-slate-500 text-sm">
-                        {Object.keys(assignments).length} de {otherPlayers.length} tares asignadas
+                        {isSpanish
+                            ? `${Object.keys(assignments).length} de ${otherPlayers.length} tareas asignadas`
+                            : `${Object.keys(assignments).length} of ${otherPlayers.length} tasks assigned`}
                     </div>
                     <button
                         onClick={() => onConfirm(assignments)}
@@ -169,7 +179,7 @@ export const RulerSetupModal: React.FC<RulerSetupModalProps> = ({ otherPlayers, 
                             : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                             }`}
                     >
-                        Promulgar Decretos
+                        {t('modals.confirmTasks')}
                     </button>
                 </div>
             </div>

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { RoomParticipant } from '../../services/realtimeService';
 import { AIDifficulty } from '../../game/core/types';
+import { useTranslation } from '../../i18n/LanguageContext';
+import { LanguageSelector } from '../LanguageSelector';
 
 interface LobbyScreenProps {
     roomCode: string;
@@ -27,6 +29,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
     onStartGame,
     onLeaveLobby
 }) => {
+    const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
 
     const handleCopyCode = () => {
@@ -47,28 +50,31 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-transparent overflow-y-auto custom-scrollbar relative">
             <div className="relative z-10 w-full max-w-2xl bg-[#FCFAF6]/98 backdrop-blur-xl rounded-2xl sm:rounded-[2.5rem] border-2 border-[#E7DFD0] shadow-2xl p-5 sm:p-8 md:p-10 flex flex-col items-center my-auto">
 
-                {/* Back / Leave button */}
-                <button
-                    onClick={onLeaveLobby}
-                    className="self-start mb-5 sm:mb-6 px-4 py-2 rounded-xl bg-[#EFE9DC] hover:bg-[#E5DDCB] text-[#6B5E4F] text-xs font-bold transition-all flex items-center gap-2 active:scale-95"
-                >
-                    <i className="fa-solid fa-arrow-left"></i> Salir de la Sala
-                </button>
+                {/* Back / Leave button & Language selector header */}
+                <div className="w-full flex items-center justify-between mb-5 sm:mb-6">
+                    <button
+                        onClick={onLeaveLobby}
+                        className="px-4 py-2 rounded-xl bg-[#EFE9DC] hover:bg-[#E5DDCB] text-[#6B5E4F] text-xs font-bold transition-all flex items-center gap-2 active:scale-95"
+                    >
+                        <i className="fa-solid fa-arrow-left"></i> {t('lobby.leaveLobby')}
+                    </button>
+                    <LanguageSelector compact />
+                </div>
 
                 {/* Title and Room Code Card */}
                 <div className="mb-5 sm:mb-6">
                     <span className="text-[10px] uppercase font-black tracking-widest text-[#966E0F] block mb-1">
-                        Sala Multijugador en Tiempo Real
+                        {t('home.multiplayerTitle')}
                     </span>
                     <h2 className="text-2xl sm:text-3xl font-black text-[#23272E] uppercase tracking-tight">
-                        Lobby de Torneo
+                        {t('lobby.waitingForPlayers')}
                     </h2>
                 </div>
 
                 {/* Room Code Badge */}
                 <div className="bg-[#F7F2E8] border-2 border-[#D8CFBC] rounded-2xl p-4 sm:p-5 w-full max-w-md mb-6 sm:mb-8 flex flex-col items-center shadow-sm">
                     <span className="text-xs font-bold text-[#7D7060] uppercase tracking-wider mb-1">
-                        Código de Invitación
+                        {t('lobby.roomCode')}
                     </span>
                     <div className="flex items-center gap-3">
                         <span className="text-3xl sm:text-4xl font-black tracking-[0.25em] text-[#966E0F] font-mono">
@@ -77,13 +83,13 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                         <button
                             onClick={handleCopyCode}
                             className="p-2.5 rounded-xl bg-white border border-[#D8CFBC] text-[#966E0F] hover:bg-[#EFE9DC] transition-all text-sm font-bold shadow-sm active:scale-95"
-                            title="Copiar código"
+                            title={t('common.copy')}
                         >
                             <i className={`fa-solid ${copied ? 'fa-check text-emerald-600' : 'fa-copy'}`}></i>
                         </button>
                     </div>
                     <span className="text-[10px] text-[#7D7060] mt-2 font-medium">
-                        {copied ? '¡Código copiado al portapapeles!' : 'Comparte este código para que se unan tus rivales'}
+                        {copied ? t('common.copied') : t('lobby.shareCodeHint')}
                     </span>
                 </div>
 
@@ -118,15 +124,15 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                                 </span>
                                                 {isLocal && (
                                                     <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black border border-amber-300">
-                                                        Tú
+                                                        {t('common.you')}
                                                     </span>
                                                 )}
                                                 {participant.isHost && (
-                                                    <i className="fa-solid fa-crown text-[#C59B27] text-xs" title="Anfitrión"></i>
+                                                    <i className="fa-solid fa-crown text-[#C59B27] text-xs" title={t('common.host')}></i>
                                                 )}
                                             </div>
                                             <span className="text-[10px] text-[#7D7060] font-semibold block">
-                                                {participant.isHost ? 'Anfitrión de la Sala' : 'Jugador Conectado'}
+                                                {participant.isHost ? t('common.host') : t('lobby.playerSlot')}
                                             </span>
                                         </div>
                                     </div>
@@ -137,7 +143,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                             <i className="fa-solid fa-wifi"></i> {participant.disconnectCountdown}s
                                         </div>
                                     ) : (
-                                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100" title="En línea"></div>
+                                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100" title="Online"></div>
                                     )}
                                 </div>
                             );
@@ -154,10 +160,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                         </div>
                                         <div className="text-left">
                                             <span className="font-bold text-xs text-[#6B5E4F] block">
-                                                {fillEmptyWithBots ? `Bot ${slotNum} (${aiDifficulty})` : `Puesto ${slotNum} Vacío`}
+                                                {fillEmptyWithBots ? `${t('common.bot')} ${slotNum} (${aiDifficulty})` : `${t('lobby.openSlot')} ${slotNum}`}
                                             </span>
                                             <span className="text-[10px] text-[#A09382]">
-                                                {fillEmptyWithBots ? 'Reemplazo automático' : 'Esperando jugador...'}
+                                                {fillEmptyWithBots ? 'AI' : t('lobby.waitingForPlayers')}
                                             </span>
                                         </div>
                                     </div>
@@ -174,10 +180,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                         <div className="flex items-center justify-between mb-3">
                             <div>
                                 <span className="font-black text-xs text-[#23272E] block">
-                                    Llenar asientos vacíos con Bots
+                                    {t('lobby.fillBotsLabel')}
                                 </span>
                                 <span className="text-[10px] text-[#7D7060]">
-                                    Permite empezar la partida aunque seáis 2 o 3 personas
+                                    (2-4 Players)
                                 </span>
                             </div>
                             <input
@@ -190,7 +196,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
 
                         {fillEmptyWithBots && (
                             <div className="pt-2 border-t border-[#D8CFBC] flex items-center justify-between">
-                                <span className="text-[11px] font-bold text-[#6B5E4F]">Nivel de los Bots:</span>
+                                <span className="text-[11px] font-bold text-[#6B5E4F]">{t('lobby.botDifficultyLabel')}:</span>
                                 <div className="inline-flex gap-1">
                                     {(['BEGINNER', 'INTERMEDIATE', 'EXPERT'] as AIDifficulty[]).map((d) => (
                                         <button
@@ -207,7 +213,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                                     : 'bg-white border border-[#D8CFBC] text-[#6B5E4F]'
                                             }`}
                                         >
-                                            {d === 'BEGINNER' ? 'Fácil' : d === 'INTERMEDIATE' ? 'Medio' : 'Experto'}
+                                            {d === 'BEGINNER' ? t('home.aiBeginner') : d === 'INTERMEDIATE' ? t('home.aiIntermediate') : t('home.aiExpert')}
                                         </button>
                                     ))}
                                 </div>
@@ -227,11 +233,11 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                 : 'bg-[#E5DDCB] text-[#A09382] cursor-not-allowed'
                         }`}
                     >
-                        <i className="fa-solid fa-play"></i> Iniciar Torneo ({participants.length}/4)
+                        <i className="fa-solid fa-play"></i> {t('lobby.startGame')} ({participants.length}/4)
                     </button>
                 ) : (
                     <div className="flex items-center gap-2 text-[#7D7060] font-bold text-xs animate-pulse">
-                        <i className="fa-solid fa-circle-notch fa-spin text-[#C59B27]"></i> Esperando a que el anfitrión inicie el torneo...
+                        <i className="fa-solid fa-circle-notch fa-spin text-[#C59B27]"></i> {t('lobby.waitingHost')}
                     </div>
                 )}
 

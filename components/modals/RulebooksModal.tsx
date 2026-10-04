@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface RulebooksModalProps {
     isOpen?: boolean;
@@ -7,17 +8,22 @@ interface RulebooksModalProps {
 
 export const RulebooksModal: React.FC<RulebooksModalProps> = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
+    const { t } = useTranslation();
 
     return (
         <div className="fixed inset-0 z-[100] bg-stone-950/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onClose}>
             <div className="bg-[#FCFAF6] rounded-2xl sm:rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border-2 border-[#E7DFD0] space-y-6" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-2xl font-black text-[#23272E] uppercase tracking-tight">Manuales de Reglas</h3>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-[#EFE9DC] hover:bg-[#E5DDCB] rounded-full text-[#6B5E4F] transition-colors shadow-sm active:scale-95">
+                    <h3 className="text-2xl font-black text-[#23272E] uppercase tracking-tight">
+                        {t('modals.rulebooksTitle')}
+                    </h3>
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-[#EFE9DC] hover:bg-[#E5DDCB] rounded-full text-[#6B5E4F] transition-colors shadow-sm active:scale-95 cursor-pointer">
                         <i className="fa-solid fa-xmark font-bold"></i>
                     </button>
                 </div>
-                <p className="text-[#7D7060] text-xs sm:text-sm font-medium">Consulta las reglas y referencias oficiales para resolver cualquier duda durante la partida.</p>
+                <p className="text-[#7D7060] text-xs sm:text-sm font-medium">
+                    {t('common.language') === 'Idioma' ? 'Consulta las reglas y referencias oficiales para resolver cualquier duda durante la partida.' : 'Consult official rules and references for guidance during tournament matches.'}
+                </p>
 
                 <div className="grid grid-cols-1 gap-4">
                     <a
@@ -30,8 +36,12 @@ export const RulebooksModal: React.FC<RulebooksModalProps> = ({ isOpen, onClose 
                             <i className="fa-solid fa-book text-xl"></i>
                         </div>
                         <div>
-                            <div className="font-bold text-[#23272E] group-hover:text-[#2D543F]">Tricktakers Base</div>
-                            <div className="text-xs text-[#7D7060]">Reglas fundamentales y 8 personajes iniciales.</div>
+                            <div className="font-bold text-[#23272E] group-hover:text-[#2D543F]">
+                                {t('modals.baseRules')}
+                            </div>
+                            <div className="text-xs text-[#7D7060]">
+                                {t('common.language') === 'Idioma' ? 'Reglas fundamentales y 8 personajes iniciales.' : 'Core rules and 8 starting characters.'}
+                            </div>
                         </div>
                         <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-[#A09382] group-hover:text-[#2D543F]"></i>
                     </a>
@@ -46,8 +56,12 @@ export const RulebooksModal: React.FC<RulebooksModalProps> = ({ isOpen, onClose 
                             <i className="fa-solid fa-scroll text-xl"></i>
                         </div>
                         <div>
-                            <div className="font-bold text-[#23272E] group-hover:text-[#966E0F]">Expansión (Inglés)</div>
-                            <div className="text-xs text-[#7D7060]">Nuevos personajes y mecánicas avanzadas.</div>
+                            <div className="font-bold text-[#23272E] group-hover:text-[#966E0F]">
+                                {t('modals.exRules')}
+                            </div>
+                            <div className="text-xs text-[#7D7060]">
+                                {t('common.language') === 'Idioma' ? 'Nuevos personajes y mecánicas avanzadas.' : 'New characters and advanced mechanics.'}
+                            </div>
                         </div>
                         <i className="fa-solid fa-arrow-up-right-from-square ml-auto text-[#A09382] group-hover:text-[#966E0F]"></i>
                     </a>

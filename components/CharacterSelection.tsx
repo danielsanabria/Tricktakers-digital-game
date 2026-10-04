@@ -3,6 +3,7 @@ import React from 'react';
 import { Player, CharacterType, GamePhase, Card } from '../game/core/types';
 import { CHARACTERS } from '../game/core/constants';
 import GameCard from './GameCard';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface CharacterSelectionProps {
     players: Player[];
@@ -23,6 +24,7 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
     localPlayerId = 'p1',
     playerHand = []
 }) => {
+    const { t } = useTranslation();
     const currentPicker = players.find(p => p.id === selectionOrder[selectionIndex]);
     const isUserTurn = currentPicker?.id === localPlayerId;
     const [selectedChar, setSelectedChar] = React.useState<CharacterType | null>(null);
@@ -41,12 +43,14 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
         <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col h-full animate-in fade-in duration-500">
             {/* Header de Selección */}
             <div className="text-center mb-6">
-                <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 uppercase tracking-tighter mb-2">Selección de Personaje</h2>
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 uppercase tracking-tighter mb-2">
+                    {t('charSelect.title')}
+                </h2>
                 <div className="inline-flex items-center gap-4 bg-white px-8 py-3 rounded-full shadow-sm border border-slate-200">
-                    <span className="text-slate-400 font-bold uppercase text-xs tracking-widest">Turno actual</span>
+                    <span className="text-slate-400 font-bold uppercase text-xs tracking-widest">{t('charSelect.currentTurn')}</span>
                     <div className="w-px h-4 bg-slate-200"></div>
                     <span className={`font-black uppercase text-lg ${isUserTurn ? 'text-teal-500 animate-pulse' : 'text-slate-700'}`}>
-                        {currentPicker?.name} {isUserTurn ? '(¡Tu turno!)' : ''}
+                        {currentPicker?.name} {isUserTurn ? t('charSelect.yourTurnBadge') : ''}
                     </span>
                 </div>
             </div>
@@ -57,10 +61,10 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
                     <div className="flex items-center gap-2 mb-3">
                         <i className="fa-solid fa-layer-group text-teal-600 text-base"></i>
                         <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800">
-                            Tus 5 Cartas de esta Ronda
+                            {t('charSelect.yourHandTitle')}
                         </span>
                         <span className="text-[11px] text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full font-bold hidden sm:inline">
-                            Revisa tu mano para decidir qué personaje te conviene
+                            {t('charSelect.yourHandHint')}
                         </span>
                     </div>
                     <div className="flex flex-wrap gap-2.5 sm:gap-3.5 justify-center">
@@ -141,7 +145,7 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
                                                 <i className="fa-solid fa-check text-xl"></i>
                                             </div>
                                             <span className="text-white font-black text-xs uppercase tracking-widest bg-teal-800/80 px-3 py-1 rounded-full">
-                                                ¡Seleccionado!
+                                                {t('common.selected')}
                                             </span>
                                         </div>
                                     )}
@@ -150,7 +154,7 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
                                     {canSelect && !isSelectedByMe && (
                                         <div className="absolute inset-0 bg-teal-500/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <span className="bg-white text-teal-600 px-6 py-2 rounded-full font-black text-xs uppercase shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform">
-                                                Seleccionar
+                                                {t('charSelect.selectBtn')}
                                             </span>
                                         </div>
                                     )}

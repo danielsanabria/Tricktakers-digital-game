@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Player, Card } from '../../game/core/types';
 import GameCard from '../GameCard';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface CollectorLossModalProps {
     players: Player[];
@@ -16,10 +16,8 @@ export const CollectorLossModal: React.FC<CollectorLossModalProps> = ({
     onTakeCard,
     onSkip
 }) => {
-    // Check rule: "You cannot take cards if you win."
-    // This modal only appears if Collector lost, so safe.
-    // "Take 1 card played in that trick... face down".
-    // Available cards: All played cards.
+    const { t } = useTranslation();
+    const isSpanish = t('common.language') === 'es';
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -30,13 +28,17 @@ export const CollectorLossModal: React.FC<CollectorLossModalProps> = ({
 
                 <div className="relative z-10 text-center mb-6">
                     <h2 className="text-3xl font-black text-amber-500 uppercase tracking-tighter mb-2">
-                        Reserva del Coleccionista
+                        {isSpanish ? 'Reserva del Coleccionista' : 'Collector Reservation'}
                     </h2>
                     <p className="text-slate-300 font-bold max-w-lg mx-auto">
-                        Has perdido la baza. Puedes robar <span className="text-amber-400">1 carta</span> de la mesa para tu colección.
+                        {isSpanish
+                            ? <>Has perdido la baza. Puedes robar <span className="text-amber-400">1 carta</span> de la mesa para tu colección.</>
+                            : <>You lost the trick. You may take <span className="text-amber-400">1 card</span> from the trick into your collection.</>}
                     </p>
                     <p className="text-xs text-slate-500 mt-1 italic">
-                        (La carta se añadirá a tu colección, no a tu mano)
+                        {isSpanish
+                            ? '(La carta se añadirá a tu colección, no a tu mano)'
+                            : '(The card will be added to your collection, not to your hand)'}
                     </p>
                 </div>
 
@@ -49,9 +51,8 @@ export const CollectorLossModal: React.FC<CollectorLossModalProps> = ({
                                     <GameCard
                                         card={card}
                                         onClick={() => onTakeCard(card.id)}
-                                        className="w-24 h-36 md:w-28 md:h-40" // Slightly smaller or adaptive
+                                        className="w-24 h-36 md:w-28 md:h-40"
                                     />
-                                    {/* Overlay for "Pick Me" */}
                                     <div className="absolute inset-0 bg-amber-500/0 group-hover:bg-amber-500/10 transition-colors rounded-xl pointer-events-none" />
                                 </div>
                                 <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700">
@@ -67,7 +68,7 @@ export const CollectorLossModal: React.FC<CollectorLossModalProps> = ({
                         onClick={onSkip}
                         className="text-slate-400 hover:text-white hover:bg-slate-800 font-bold uppercase tracking-widest text-xs border border-slate-700 px-6 py-3 rounded-xl transition-all"
                     >
-                        No recoger nada
+                        {isSpanish ? 'No recoger nada' : 'Pass / Take None'}
                     </button>
                 </div>
             </div>

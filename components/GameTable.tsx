@@ -3,6 +3,7 @@ import { Player, Card, Suit, CharacterType } from '../game/core/types';
 import PlayerBoard from './PlayerBoard';
 import GameCard from './GameCard';
 import { CHARACTERS } from '../game/core/constants';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface GameTableProps {
     players: Player[];
@@ -31,6 +32,7 @@ export const GameTable: React.FC<GameTableProps> = ({
     setItemCardToShow,
     localPlayerId = 'p1'
 }) => {
+    const { t } = useTranslation();
     const opponents = players.filter(p => p.id !== localPlayerId);
 
     return (
@@ -43,7 +45,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                         <span>
                             <strong>
                                 {players.find(p => p.disconnectCountdown !== null)?.name}
-                            </strong> se ha desconectado. Esperando reconexión...
+                            </strong> {t('table.disconnectedWaiting')}
                         </span>
                     </div>
                     <span className="font-mono font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
@@ -80,7 +82,9 @@ export const GameTable: React.FC<GameTableProps> = ({
                     {playedCards.length === 0 && (
                         <div className="text-center opacity-30 select-none">
                             <i className={`fa-solid ${isKakumei ? 'fa-flag text-rose-500' : 'fa-shield text-teal-600'} text-7xl mb-3`}></i>
-                            <p className="font-black text-xl uppercase tracking-widest text-slate-700">{isKakumei ? 'REVOLUCIÓN ACTIVA' : 'CAMPO DE BATALLA'}</p>
+                            <p className="font-black text-xl uppercase tracking-widest text-slate-700">
+                                {isKakumei ? t('table.revolutionActive') : t('table.battlefield')}
+                            </p>
                         </div>
                     )}
                 </div>
@@ -113,7 +117,9 @@ export const GameTable: React.FC<GameTableProps> = ({
 
                 {leadSuit && (
                     <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white px-6 py-2 rounded-full border border-slate-200 shadow-xl flex items-center gap-3">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Palo Líder</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            {t('table.leadSuitBadge')}
+                        </span>
                         <div className={`w-3 h-3 rounded-full ${leadSuit === Suit.RED ? 'bg-rose-500' : leadSuit === Suit.BLUE ? 'bg-sky-500' : leadSuit === Suit.GREEN ? 'bg-teal-500' : 'bg-slate-900'}`}></div>
                     </div>
                 )}

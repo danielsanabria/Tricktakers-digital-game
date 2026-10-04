@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CharacterData } from '../game/core/types';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface CharacterModalProps {
   character: CharacterData | null;
@@ -10,6 +11,15 @@ interface CharacterModalProps {
 const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) => {
   if (!character) return null;
 
+  const { t, translations } = useTranslation();
+  const localized = translations.gameData.characters[character.id];
+  const charName = localized?.name || character.name;
+  const catchphrase = localized?.catchphrase || character.catchphrase;
+  const abilityName = localized?.abilityName || character.abilityName;
+  const description = localized?.description || character.description;
+  const winConditionText = localized?.winConditionText || character.winConditionText;
+  const difficulty = localized?.difficulty || character.difficulty;
+
   const [imgSrc, setImgSrc] = useState<string>('');
   const [attemptIndex, setAttemptIndex] = useState(0);
   const [hasFinalError, setHasFinalError] = useState(false);
@@ -17,13 +27,11 @@ const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) =
   // Generate fallback list
   const getCandidatePaths = (filename: string) => {
     const nameNoExt = filename.substring(0, filename.lastIndexOf('.'));
-    // Prioritize root assets folder as requested by user
     return [
-      `/assets/chars/${filename}`,           // 1. Correct Path
-      `/assets/${filename}`,                 // 2. Root Assets
+      `/assets/chars/${filename}`,
+      `/assets/${filename}`,
       `assets/${filename}`,
       `/assets/${filename.toLowerCase()}`,
-      // Extensions
       `/assets/chars/${nameNoExt}.png`,
       `/assets/chars/${nameNoExt}.jpg`,
       `/assets/chars/${nameNoExt}.jpeg`
@@ -68,16 +76,16 @@ const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) =
           <div className="bg-slate-100 flex-1 relative min-h-[400px]">
             {!hasFinalError && imgSrc ? (
               <img
-                key={imgSrc} // Force re-render on src change to trigger onError
+                key={imgSrc}
                 src={imgSrc}
-                alt={character.name}
+                alt={charName}
                 onError={handleError}
                 className="w-full h-auto object-contain"
               />
             ) : (
               <div className="flex flex-col items-center justify-center p-10 text-slate-400">
                 <i className="fa-solid fa-image-slash text-6xl mb-4"></i>
-                <p className="font-bold">Imagen no disponible</p>
+                <p className="font-bold">Image unavailable</p>
                 <p className="text-xs font-mono mt-2 bg-slate-200 px-2 py-1 rounded select-all break-all max-w-[200px] text-center">
                   {character.imagePath}
                 </p>
@@ -88,28 +96,28 @@ const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) =
           <div className="bg-slate-900 text-white p-6 text-center relative shrink-0">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-teal-500 to-transparent opacity-50"></div>
 
-            <h3 className="text-3xl font-black uppercase tracking-widest text-teal-400 mb-2">{character.name}</h3>
-            <p className="text-sm text-slate-300 italic mb-4 font-serif">"{character.catchphrase}"</p>
+            <h3 className="text-3xl font-black uppercase tracking-widest text-teal-400 mb-2">{charName}</h3>
+            <p className="text-sm text-slate-300 italic mb-4 font-serif">"{catchphrase}"</p>
 
             <div className="grid grid-cols-2 gap-4 text-left text-xs bg-slate-800/50 p-4 rounded-xl border border-slate-700">
               <div>
-                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">Habilidad</span>
-                <span className="text-white font-bold">{character.abilityName}</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">{t('modals.ability')}</span>
+                <span className="text-white font-bold">{abilityName}</span>
               </div>
               <div>
-                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">Dificultad</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">{t('modals.difficulty')}</span>
                 <span className={`font-bold ${character.difficulty === 'EASY' ? 'text-green-400' : character.difficulty === 'HARD' ? 'text-rose-400' : 'text-amber-400'}`}>
-                  {character.difficulty}
+                  {difficulty}
                 </span>
               </div>
               <div className="col-span-2 border-t border-slate-700 pt-2 mt-2">
-                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">Descripción</span>
-                <p className="text-slate-300 leading-relaxed">{character.description}</p>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">{t('modals.charInfoTitle')}</span>
+                <p className="text-slate-300 leading-relaxed">{description}</p>
               </div>
 
-              {/* Points Table - Added to visualize scoring since images might be missing */}
+              {/* Points Table */}
               <div className="col-span-2 border-t border-slate-700 pt-2 mt-2">
-                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-2">Tabla de Puntos</span>
+                <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-2">{t('modals.pointsByWins')}</span>
                 <div className="grid grid-cols-6 gap-0.5 text-center">
                   {[0, 1, 2, 3, 4, 5].map(wins => (
                     <div key={wins} className="bg-slate-700 p-1 rounded">
@@ -123,16 +131,16 @@ const CharacterModal: React.FC<CharacterModalProps> = ({ character, onClose }) =
                 </div>
               </div>
 
-              {character.winConditionText && (
+              {winConditionText && (
                 <div className="col-span-2 border-t border-slate-700 pt-2 mt-2">
-                  <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">Condición Victoria</span>
-                  <p className="text-amber-400 font-black">{character.winConditionText}</p>
+                  <span className="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">{t('modals.winCondition')}</span>
+                  <p className="text-amber-400 font-black">{winConditionText}</p>
                 </div>
               )}
             </div>
 
             <p className="mt-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
-              Click fuera para cerrar
+              {t('common.close')}
             </p>
           </div>
         </div>

@@ -1,13 +1,15 @@
-
 import React, { useState } from 'react';
 import { Trap } from '../../game/core/types';
 import { TRAPS } from '../../game/core/constants';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface StrategistTrapModalProps {
     onConfirm: (traps: Trap[]) => void;
 }
 
 export const StrategistTrapModal: React.FC<StrategistTrapModalProps> = ({ onConfirm }) => {
+    const { t } = useTranslation();
+    const isSpanish = t('common.language') === 'es';
     const [selectedOrder, setSelectedOrder] = useState<Trap[]>([]);
     const [availableTraps, setAvailableTraps] = useState<Trap[]>(TRAPS);
 
@@ -30,8 +32,14 @@ export const StrategistTrapModal: React.FC<StrategistTrapModalProps> = ({ onConf
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
             <div className="bg-slate-800 border-2 border-amber-500/50 p-6 rounded-xl max-w-4xl w-full shadow-2xl flex flex-col gap-6">
                 <div className="text-center">
-                    <h2 className="text-3xl font-black text-amber-500 uppercase tracking-widest mb-2">Plan Maestro</h2>
-                    <p className="text-amber-200/70">Ordena las 5 trampas para las 5 bazas de la ronda.</p>
+                    <h2 className="text-3xl font-black text-amber-500 uppercase tracking-widest mb-2">
+                        {isSpanish ? 'Plan Maestro' : 'Master Plan'}
+                    </h2>
+                    <p className="text-amber-200/70">
+                        {isSpanish
+                            ? 'Ordena las 5 trampas para las 5 bazas de la ronda.'
+                            : 'Set the order of your 5 traps for the 5 tricks of this round.'}
+                    </p>
                 </div>
 
                 {/* Slots for the 5 Tricks */}
@@ -40,7 +48,9 @@ export const StrategistTrapModal: React.FC<StrategistTrapModalProps> = ({ onConf
                         const trap = selectedOrder[idx];
                         return (
                             <div key={trickNum} className="flex flex-col items-center gap-2">
-                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Baza {trickNum}</div>
+                                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    {t('common.trick')} {trickNum}
+                                </div>
                                 <div className={`w-32 h-44 rounded-lg border-2 flex items-center justify-center relative overflow-hidden transition-all ${trap ? 'border-amber-500 shadow-amber-500/20 shadow-lg' : 'border-slate-700 bg-slate-900/50 border-dashed'}`}>
                                     {trap ? (
                                         <img src={trap.imagePath} alt={trap.name} className="w-full h-full object-cover" />
@@ -56,20 +66,25 @@ export const StrategistTrapModal: React.FC<StrategistTrapModalProps> = ({ onConf
                 {/* Available Traps */}
                 {!isComplete && (
                     <div className="grid grid-cols-5 gap-4">
-                        {availableTraps.map(trap => (
-                            <button
-                                key={trap.id}
-                                onClick={() => handleSelectTrap(trap)}
-                                className="group relative w-full aspect-[2/3] rounded-lg overflow-hidden border border-slate-600 hover:border-amber-400 hover:scale-105 transition-all shadow-lg"
-                            >
-                                <img src={trap.imagePath} alt={trap.name} className="w-full h-full object-cover" />
-                                <div className="absolute inset-x-0 bottom-0 bg-black/80 p-2 text-center transform translate-y-full group-hover:translate-y-0 transition-transform">
-                                    <div className="text-xs font-bold text-white">{trap.name}</div>
-                                    <div className="text-[10px] text-slate-300 leading-tight mt-1">{trap.description}</div>
-                                </div>
-                            </button>
-                        ))}
-                        {/* Fillers to keep grid stable if needed, but not strictly necessary with flex/grid */}
+                        {availableTraps.map(trap => {
+                            const translatedTrap = t(`gameData.traps.${trap.id}`) as { name: string; description: string } | undefined;
+                            const trapName = translatedTrap?.name || trap.name;
+                            const trapDesc = translatedTrap?.description || trap.description;
+
+                            return (
+                                <button
+                                    key={trap.id}
+                                    onClick={() => handleSelectTrap(trap)}
+                                    className="group relative w-full aspect-[2/3] rounded-lg overflow-hidden border border-slate-600 hover:border-amber-400 hover:scale-105 transition-all shadow-lg"
+                                >
+                                    <img src={trap.imagePath} alt={trapName} className="w-full h-full object-cover" />
+                                    <div className="absolute inset-x-0 bottom-0 bg-black/80 p-2 text-center transform translate-y-full group-hover:translate-y-0 transition-transform">
+                                        <div className="text-xs font-bold text-white">{trapName}</div>
+                                        <div className="text-[10px] text-slate-300 leading-tight mt-1">{trapDesc}</div>
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
 
@@ -78,16 +93,16 @@ export const StrategistTrapModal: React.FC<StrategistTrapModalProps> = ({ onConf
                     <button
                         onClick={handleUndo}
                         disabled={selectedOrder.length === 0}
-                        className="px-6 py-3 rounded-lg font-bold text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                        className="px-6 py-3 rounded-lg font-bold text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent transition-colors uppercase tracking-wider text-sm"
                     >
-                        DESHACER
+                        {isSpanish ? 'DESHACER' : 'UNDO'}
                     </button>
                     <button
                         onClick={() => onConfirm(selectedOrder)}
                         disabled={!isComplete}
-                        className="px-12 py-3 bg-gradient-to-r from-amber-600 to-orange-600 rounded-lg font-black text-white shadow-lg hover:shadow-amber-500/20 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:grayscale transition-all"
+                        className="px-12 py-3 bg-gradient-to-r from-amber-600 to-orange-600 rounded-lg font-black text-white shadow-lg hover:shadow-amber-500/20 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:grayscale transition-all uppercase tracking-wider text-sm"
                     >
-                        CONFIRMAR ESTRATEGIA
+                        {isSpanish ? 'CONFIRMAR ESTRATEGIA' : 'CONFIRM STRATEGY'}
                     </button>
                 </div>
             </div>

@@ -6,6 +6,7 @@ import GameCard from './GameCard';
 import { SummonerBoard } from './SummonerBoard';
 import { AlchemistBoard } from './AlchemistBoard';
 import { PhantomThiefBoard } from './PhantomThiefBoard';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface PlayerBoardProps {
   player: Player;
@@ -37,7 +38,10 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
   abilityMode,
   isLocalPlayer
 }) => {
+  const { t, translations } = useTranslation();
   const char = player.character ? CHARACTERS[player.character] : null;
+  const localizedChar = player.character ? translations.gameData.characters[player.character] : null;
+  const charName = localizedChar?.name || char?.name;
   const [imgSrc, setImgSrc] = useState<string>('');
   const [attemptIndex, setAttemptIndex] = useState(0);
 
@@ -118,26 +122,26 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
                 {player.name}
               </h3>
               {player.disconnectCountdown !== null && player.disconnectCountdown !== undefined && (
-                <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full font-black animate-pulse flex items-center gap-1 border border-amber-200" title="Reconectando">
+                <span className="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full font-black animate-pulse flex items-center gap-1 border border-amber-200" title={t('table.reconnecting')}>
                   <i className="fa-solid fa-wifi text-[8px]"></i> {player.disconnectCountdown}s
                 </span>
               )}
               {player.isBotControlled && (
-                <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5" title="Controlado temporalmente por IA">
-                  <i className="fa-solid fa-robot text-[8px]"></i> Bot
+                <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5" title={t('table.controlledByBot')}>
+                  <i className="fa-solid fa-robot text-[8px]"></i> {t('common.bot')}
                 </span>
               )}
               {/* Active Abilities Icons/Badges next to name */}
               <div className="flex gap-1">
-                {player.thiefBetrayalMode && <span title="Traición Activa" className="text-xs text-red-500 font-bold">🗡️</span>}
-                {player.rulerUsedRuleAvoidance && <span title="Reglas Ignoradas" className="text-xs text-purple-500 font-bold">👁️</span>}
-                {player.revoltUsed && <span title="Rebelión Usada" className="text-[10px] text-amber-500 font-bold">🔥</span>}
-                {player.hermitUsedAbility && <span title="Ermitaño Activo" className="text-[10px] text-blue-500 font-bold">🏔️</span>}
+                {player.thiefBetrayalMode && <span title="Treachery Active" className="text-xs text-red-500 font-bold">🗡️</span>}
+                {player.rulerUsedRuleAvoidance && <span title="Rules Ignored" className="text-xs text-purple-500 font-bold">👁️</span>}
+                {player.revoltUsed && <span title="Revolt Used" className="text-[10px] text-amber-500 font-bold">🔥</span>}
+                {player.hermitUsedAbility && <span title="Hermit Active" className="text-[10px] text-blue-500 font-bold">🏔️</span>}
               </div>
             </div>
             {char && (
               <span className={`font-bold uppercase tracking-widest text-teal-600 ${isHuman ? 'text-[10px]' : 'text-[8px]'}`}>
-                {char.name}
+                {charName}
               </span>
             )}
           </div>
@@ -170,55 +174,55 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
       {player.character === CharacterType.STRATEGIST && isHuman && onReviewTraps && (
         <button
           onClick={(e) => { e.stopPropagation(); onReviewTraps(); }}
-          className="w-full mb-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-500 border border-amber-500/30 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors"
+          className="w-full mb-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-500 border border-amber-500/30 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors cursor-pointer"
         >
-          <i className="fa-solid fa-eye"></i> Ver Trampas
+          <i className="fa-solid fa-eye"></i> {t('table.viewTrapsBtn')}
         </button>
       )}
 
-      {/* ÁREA DE ESTADÍSTICAS (Below header, good for mobile) */}
+      {/* ÁREA DE ESTADÍSTICAS */}
       <div className="flex justify-between items-center bg-slate-100 rounded-2xl p-3 mb-4 relative overflow-hidden">
         {/* Gambler Bid Overlay/Badge */}
         {player.character === CharacterType.GAMBLER && player.bid !== undefined && (
           <div className="absolute top-0 right-0 bg-amber-500 text-white px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-tighter">
-            Apuesta: {player.bid}
+            {t('table.betLabel')}: {player.bid}
           </div>
         )}
 
         {/* Summoner MP Badge */}
         {player.character === CharacterType.SUMMONER && (
           <div className="absolute top-0 right-0 bg-indigo-600 text-white px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-tighter flex items-center gap-1">
-            <i className="fa-solid fa-bolt text-[6px]"></i> {player.mp || 0} MP
+            <i className="fa-solid fa-bolt text-[6px]"></i> {player.mp || 0} {t('table.mpLabel')}
           </div>
         )}
 
         {/* Adventurer Slots Badge */}
         {player.character === CharacterType.ADVENTURER && (
           <div className="absolute top-0 right-0 bg-sky-600 text-white px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-tighter">
-            Salas: {player.items.length}/{player.itemSlots || 2}
+            {t('table.slotsLabel')}: {player.items.length}/{player.itemSlots || 2}
           </div>
         )}
 
         {/* Ruler Tasks Badge */}
         {player.character === CharacterType.RULER && player.tasks && player.tasks.length > 0 && (
           <div className="absolute top-0 right-0 bg-slate-800 text-white px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-tighter">
-            Tareas: {player.tasks.filter(t => t.completed).length}/{player.tasks.length}
+            {t('table.tasksLabel')}: {player.tasks.filter(t => t.completed).length}/{player.tasks.length}
           </div>
         )}
 
         {/* Resistance Revolt Badge */}
         {player.character === CharacterType.RESISTANCE && (
           <div className="absolute top-0 right-0 bg-rose-600 text-white px-2 py-0.5 rounded-bl-lg text-[8px] font-black uppercase tracking-tighter flex items-center gap-1">
-            {player.revoltUsed && <span className="animate-pulse">Activa</span>}
-            <span>Revoluciones: {player.revoltsLeft || 0}</span>
+            {player.revoltUsed && <span className="animate-pulse">{t('table.activeStatus')}</span>}
+            <span>{t('table.revoltsLabel')}: {player.revoltsLeft || 0}</span>
           </div>
         )}
         <div className="flex flex-col items-center w-1/2 border-r border-slate-200">
-          <span className="text-[9px] font-black uppercase text-slate-400">Puntos</span>
+          <span className="text-[9px] font-black uppercase text-slate-400">{t('table.pointsLabel')}</span>
           <span className={`${isHuman ? 'text-3xl' : 'text-xl'} font-black text-amber-500`}>{player.score}</span>
         </div>
         <div className="flex flex-col items-center w-1/2">
-          <span className="text-[9px] font-black uppercase text-slate-400">Bazas</span>
+          <span className="text-[9px] font-black uppercase text-slate-400">{t('table.tricksLabel')}</span>
           <div className="flex items-baseline gap-0.5">
             <span className={`${isHuman ? 'text-3xl' : 'text-xl'} font-black text-teal-500`}>
               {player.wins}
@@ -245,14 +249,14 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between px-2">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Tus Cartas ({player.hand.length})
+                {t('table.yourCards')} ({player.hand.length})
               </span>
               <span className={`text-[11px] font-bold px-3 py-0.5 rounded-full transition-all duration-300 ${
                 canPlay 
                   ? 'bg-teal-500 text-white animate-pulse shadow-md shadow-teal-500/30' 
                   : 'bg-slate-200 text-slate-500'
               }`}>
-                {canPlay ? '¡Es tu turno! Haz clic en una carta para jugarla' : 'Esperando el turno del rival...'}
+                {canPlay ? t('table.yourTurnPrompt') : t('table.waitingOpponentPrompt')}
               </span>
             </div>
             <div className={`flex flex-wrap gap-3 justify-center p-4 rounded-[1.5rem] border shadow-inner min-h-[160px] transition-colors duration-300 ${
@@ -270,19 +274,19 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
               ))}
               {player.hand.length === 0 && (
                 <div className="w-full flex items-center justify-center h-32 opacity-30">
-                  <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Sin cartas</p>
+                  <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">{t('common.noCards')}</p>
                 </div>
               )}
             </div>
           </div>
         ) : (
-          // RIVAL: Resumen Compacto (Sin cartas visibles)
+          // RIVAL: Resumen Compacto
           <div className="flex justify-between items-center">
             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-              {player.hand.length} Cartas en mano
+              {player.hand.length} {t('table.opponentHandCards')}
             </div>
             <div className="text-[10px] font-bold text-slate-300 italic">
-              Oculto
+              {t('common.hidden')}
             </div>
           </div>
         )

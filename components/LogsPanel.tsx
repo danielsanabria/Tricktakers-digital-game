@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface LogsPanelProps {
     isOpen?: boolean;
@@ -8,16 +9,19 @@ interface LogsPanelProps {
 
 export const LogsPanel: React.FC<LogsPanelProps> = ({ isOpen, logs, onClose }) => {
     if (!isOpen) return null;
+    const { t } = useTranslation();
 
     return (
         <div className="w-80 bg-white border-l border-slate-200 flex flex-col animate-in slide-in-from-right duration-300 fixed right-0 top-16 bottom-0 z-50 shadow-2xl">
             <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-black text-sm uppercase tracking-widest text-slate-400">Crónica del Torneo</h3>
+                <h3 className="font-black text-sm uppercase tracking-widest text-slate-400">
+                    {t('header.chronicleTitle')}
+                </h3>
                 {onClose && (
                     <button
                         onClick={onClose}
-                        className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 font-bold transition-colors"
-                        title="Cerrar"
+                        className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 font-bold transition-colors cursor-pointer"
+                        title={t('common.close')}
                     >
                         <i className="fa-solid fa-xmark text-xs"></i>
                     </button>

@@ -1,5 +1,7 @@
 import React from 'react';
 import { GamePhase, AIDifficulty } from '../game/core/types';
+import { useTranslation } from '../i18n/LanguageContext';
+import { LanguageSelector } from './LanguageSelector';
 
 interface GameHeaderProps {
     phase: GamePhase;
@@ -22,6 +24,8 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
     aiDifficulty = AIDifficulty.INTERMEDIATE,
     setAiDifficulty
 }) => {
+    const { t } = useTranslation();
+
     const cycleDifficulty = () => {
         if (!setAiDifficulty) return;
         if (aiDifficulty === AIDifficulty.BEGINNER) setAiDifficulty(AIDifficulty.INTERMEDIATE);
@@ -33,20 +37,20 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         switch (aiDifficulty) {
             case AIDifficulty.BEGINNER:
                 return {
-                    label: 'IA: Fácil',
+                    label: `${t('header.aiBadgePrefix')}${t('home.aiBeginner')}`,
                     icon: 'fa-seedling',
                     classes: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                 };
             case AIDifficulty.EXPERT:
                 return {
-                    label: 'IA: Experta',
+                    label: `${t('header.aiBadgePrefix')}${t('home.aiExpert')}`,
                     icon: 'fa-brain',
                     classes: 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
                 };
             case AIDifficulty.INTERMEDIATE:
             default:
                 return {
-                    label: 'IA: Media',
+                    label: `${t('header.aiBadgePrefix')}${t('home.aiIntermediate')}`,
                     icon: 'fa-chess',
                     classes: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                 };
@@ -67,7 +71,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
                     <button
                         onClick={cycleDifficulty}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all shadow-sm ${badge.classes}`}
-                        title="Cambiar nivel de la Inteligencia Artificial"
+                        title={t('header.aiTooltip')}
                     >
                         <i className={`fa-solid ${badge.icon} text-xs`}></i>
                         <span>{badge.label}</span>
@@ -77,29 +81,32 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
                 {phase === GamePhase.TRICK_PLAYING && (
                     <div className="hidden sm:flex gap-6 items-center bg-slate-50 px-4 py-1.5 rounded-full border border-slate-100">
                         <div className="text-center">
-                            <span className="block text-[8px] font-black text-slate-400 uppercase">Ronda</span>
+                            <span className="block text-[8px] font-black text-slate-400 uppercase">{t('common.round')}</span>
                             <span className="font-black text-xs text-slate-900">{round}/3</span>
                         </div>
                         <div className="text-center">
-                            <span className="block text-[8px] font-black text-slate-400 uppercase">Baza</span>
+                            <span className="block text-[8px] font-black text-slate-400 uppercase">{t('common.trick')}</span>
                             <span className="font-black text-xs text-teal-500">{trick}/5</span>
                         </div>
                     </div>
                 )}
 
+                {/* Language Switcher in Header */}
+                <LanguageSelector compact />
+
                 <div className="flex items-center gap-2">
                     <button
                         onClick={resetGame}
-                        className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-white hover:bg-rose-600 transition-all"
-                        title="Reiniciar"
+                        className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-white hover:bg-rose-600 transition-all cursor-pointer"
+                        title={t('header.restartTooltip')}
                     >
                         <i className="fa-solid fa-arrow-rotate-left text-sm"></i>
                     </button>
 
                     <button
                         onClick={toggleLogs}
-                        className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${showLogs ? 'bg-teal-500 text-white' : 'bg-white text-slate-600'}`}
-                        title="Log"
+                        className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${showLogs ? 'bg-teal-500 text-white' : 'bg-white text-slate-600'}`}
+                        title={t('header.logsTooltip')}
                     >
                         <i className="fa-solid fa-list-ul text-sm"></i>
                     </button>

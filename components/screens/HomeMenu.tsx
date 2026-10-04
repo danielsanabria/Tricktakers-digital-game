@@ -1,6 +1,8 @@
 import React from 'react';
 import { GameMode, AIDifficulty } from '../../game/core/types';
 import { InstallPwaPrompt } from '../InstallPwaPrompt';
+import { useTranslation } from '../../i18n/LanguageContext';
+import { LanguageSelector } from '../LanguageSelector';
 
 interface HomeMenuProps {
     onSelectMode: (mode: GameMode) => void;
@@ -23,6 +25,8 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
     playerCount = 3,
     onSelectPlayerCount
 }) => {
+    const { t } = useTranslation();
+
     return (
         <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-white overflow-y-auto custom-scrollbar relative">
 
@@ -38,7 +42,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                         <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start">
                             <span className="text-[10px] md:text-xs uppercase font-extrabold tracking-widest text-[#7D7060] flex items-center gap-1.5 shrink-0">
                                 <i className="fa-solid fa-users text-[#A09382] text-xs"></i>
-                                Jugadores en Mesa
+                                {t('home.playersAtTable')}
                             </span>
                             <div className="inline-flex p-1 bg-[#EFE9DC]/80 rounded-xl border border-[#DFD7C7] w-full sm:w-auto justify-center">
                                 {[2, 3, 4].map(num => (
@@ -64,7 +68,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                         <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
                             <span className="text-[10px] md:text-xs uppercase font-extrabold tracking-widest text-[#7D7060] flex items-center gap-1.5 shrink-0">
                                 <i className="fa-solid fa-chess text-[#A09382] text-xs"></i>
-                                Nivel Rivales (IA)
+                                {t('home.aiDifficulty')}
                             </span>
                             <div className="inline-flex p-1 bg-[#EFE9DC]/80 rounded-xl border border-[#DFD7C7] w-full sm:w-auto justify-center gap-1">
                                 <button
@@ -77,7 +81,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                                     }`}
                                 >
                                     <i className="fa-solid fa-seedling text-[11px]"></i>
-                                    Fácil
+                                    {t('home.aiBeginner')}
                                 </button>
                                 <button
                                     type="button"
@@ -89,7 +93,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                                     }`}
                                 >
                                     <i className="fa-solid fa-chess text-[11px]"></i>
-                                    Medio
+                                    {t('home.aiIntermediate')}
                                 </button>
                                 <button
                                     type="button"
@@ -101,7 +105,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                                     }`}
                                 >
                                     <i className="fa-solid fa-crown text-[11px]"></i>
-                                    Experto
+                                    {t('home.aiExpert')}
                                 </button>
                             </div>
                         </div>
@@ -127,20 +131,20 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                                 <div>
                                     <div className="flex flex-wrap items-center gap-2">
                                         <h3 className="font-black text-lg sm:text-xl uppercase tracking-wider text-[#FAF7F0]">
-                                            Multijugador Online
+                                            {t('home.multiplayerTitle')}
                                         </h3>
                                         <span className="px-2.5 py-0.5 rounded-full bg-[#C59B27]/20 text-[#E5B842] border border-[#C59B27]/40 font-black text-[9px] sm:text-[10px] uppercase tracking-widest">
-                                            Lobby en Vivo
+                                            LIVE
                                         </span>
                                     </div>
                                     <p className="text-[#C8C2B5] text-xs sm:text-sm font-medium mt-0.5">
-                                        Crea una sala privada o únete mediante código PIN (2 a 4 jugadores)
+                                        {t('home.multiplayerDesc')}
                                     </p>
                                 </div>
                             </div>
 
                             <div className="self-stretch sm:self-auto flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest bg-gradient-to-r from-[#D4AF37] to-[#C59B27] hover:from-[#E5B842] hover:to-[#D4AF37] text-[#1C222B] px-5 py-2.5 sm:py-3 rounded-full shadow-md group-hover:shadow-[#C59B27]/30 transition-all relative z-10 shrink-0">
-                                <span>Entrar al Lobby</span>
+                                <span>{t('lobby.startGame')}</span>
                                 <i className="fa-solid fa-arrow-right text-[11px] group-hover:translate-x-0.5 transition-transform"></i>
                             </div>
                         </button>
@@ -159,7 +163,7 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                                 className="px-4 sm:px-5 py-2 sm:py-2.5 bg-[#FCFAF6] text-[#23272E] border-2 border-[#C59B27]/50 rounded-full text-xs font-black hover:bg-[#F4EEDF] hover:border-[#C59B27] transition-all shadow-sm flex items-center gap-2 group active:scale-95"
                             >
                                 <i className="fa-solid fa-arrow-rotate-right text-[#C59B27] text-xs group-hover:rotate-180 transition-transform"></i>
-                                <span>Reunirse a la Sala</span>
+                                <span>{t('home.rejoinRoom')}</span>
                                 <strong className="text-[#966E0F] font-mono tracking-widest bg-[#EFE5CD] px-2 py-0.5 rounded-md">{savedRoom}</strong>
                             </button>
                         </div>
@@ -178,21 +182,21 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                             <img
                                 src="/assets/hp-assets/basico-mob.jpg"
                                 className="w-full h-full object-cover md:hidden opacity-95 group-hover:opacity-100 transition-opacity"
-                                alt="Modo Básico"
+                                alt={t('home.basicModeTitle')}
                             />
                             <img
                                 src="/assets/hp-assets/basico-desk.jpg"
                                 className="hidden md:block w-full h-full object-cover opacity-95 group-hover:opacity-100 transition-opacity"
-                                alt="Modo Básico"
+                                alt={t('home.basicModeTitle')}
                             />
                         </div>
 
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 text-center bg-black/10 group-hover:bg-transparent transition-colors">
                             <h4 className="text-white font-black text-2xl md:text-3xl uppercase tracking-wider mb-1.5 drop-shadow-md">
-                                Básico
+                                {t('home.basicModeTitle')}
                             </h4>
                             <p className="text-stone-100 text-xs md:text-sm font-medium leading-snug sm:leading-relaxed px-4 sm:px-8 opacity-95 drop-shadow-sm">
-                                Personajes iniciales recomendados para aprender las mecánicas.
+                                {t('home.basicModeDesc')}
                             </p>
                         </div>
                     </button>
@@ -206,21 +210,21 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                             <img
                                 src="/assets/hp-assets/avanzado-mob.jpg"
                                 className="w-full h-full object-cover md:hidden opacity-95 group-hover:opacity-100 transition-opacity"
-                                alt="Modo Avanzado"
+                                alt={t('home.advancedModeTitle')}
                             />
                             <img
                                 src="/assets/hp-assets/avanzado-desk.jpg"
                                 className="hidden md:block w-full h-full object-cover opacity-95 group-hover:opacity-100 transition-opacity"
-                                alt="Modo Avanzado"
+                                alt={t('home.advancedModeTitle')}
                             />
                         </div>
 
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 text-center bg-black/10 group-hover:bg-transparent transition-colors">
                             <h4 className="text-white font-black text-2xl md:text-3xl uppercase tracking-wider mb-1.5 drop-shadow-md">
-                                Avanzado
+                                {t('home.advancedModeTitle')}
                             </h4>
                             <p className="text-stone-100 text-xs md:text-sm font-medium leading-snug sm:leading-relaxed px-4 sm:px-8 opacity-95 drop-shadow-sm">
-                                Pool dinámico con personajes de la expansión y nuevas estrategias.
+                                {t('home.advancedModeDesc')}
                             </p>
                         </div>
                     </button>
@@ -234,35 +238,42 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                             <img
                                 src="/assets/hp-assets/all-star-mob.jpg"
                                 className="w-full h-full object-cover md:hidden opacity-95 group-hover:opacity-100 transition-opacity"
-                                alt="Modo All-Star"
+                                alt={t('home.allStarModeTitle')}
                             />
                             <img
                                 src="/assets/hp-assets/all-star-desk.jpg"
                                 className="hidden md:block w-full h-full object-cover opacity-95 group-hover:opacity-100 transition-opacity"
-                                alt="Modo All-Star"
+                                alt={t('home.allStarModeTitle')}
                             />
                         </div>
 
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 text-center bg-black/10 group-hover:bg-transparent transition-colors">
                             <h4 className="text-white font-black text-2xl md:text-3xl uppercase tracking-wider mb-1.5 drop-shadow-md">
-                                All-Star
+                                {t('home.allStarModeTitle')}
                             </h4>
                             <p className="text-stone-100 text-xs md:text-sm font-medium leading-snug sm:leading-relaxed px-4 sm:px-8 opacity-95 drop-shadow-sm">
-                                Caos total. Todos los personajes disponibles desde el inicio.
+                                {t('home.allStarModeDesc')}
                             </p>
                         </div>
                     </button>
 
                 </div>
 
-                {/* Rulebooks Button */}
-                <div className="mt-8 md:mt-10">
+                {/* Footer Controls: Rulebooks & Language Selector */}
+                <div className="mt-8 md:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 z-20">
                     <button
                         onClick={onOpenRules}
-                        className="px-7 py-3.5 sm:px-8 sm:py-4 bg-[#FCFAF6] border-2 border-[#D8CFBC] rounded-full text-[#6B5E4F] font-black uppercase text-xs tracking-[0.2em] hover:bg-[#23272E] hover:text-[#FCFAF6] hover:border-[#23272E] active:scale-95 transition-all shadow-sm hover:shadow-md flex items-center gap-3 mx-auto"
+                        className="px-7 py-3.5 sm:px-8 sm:py-4 bg-[#FCFAF6] border-2 border-[#D8CFBC] rounded-full text-[#6B5E4F] font-black uppercase text-xs tracking-[0.2em] hover:bg-[#23272E] hover:text-[#FCFAF6] hover:border-[#23272E] active:scale-95 transition-all shadow-sm hover:shadow-md flex items-center gap-3"
                     >
-                        <i className="fa-solid fa-book-open text-[#C59B27]"></i> Manuales de Juego
+                        <i className="fa-solid fa-book-open text-[#C59B27]"></i> {t('home.rulebooksBtn')}
                     </button>
+
+                    <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-black uppercase tracking-widest text-[#8C7D6B] hidden sm:inline">
+                            {t('common.language')}:
+                        </span>
+                        <LanguageSelector />
+                    </div>
                 </div>
             </div>
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export const InstallPwaPrompt: React.FC = () => {
+    const { t } = useTranslation();
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [isIOS, setIsIOS] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
@@ -59,7 +61,7 @@ export const InstallPwaPrompt: React.FC = () => {
             setShowIOSModal(true);
         } else {
             // General fallback
-            alert('Para instalar Tricktakers, pulsa en los 3 puntos de tu navegador y selecciona "Añadir a pantalla de inicio" o "Instalar aplicación".');
+            alert(t('home.fallbackInstallAlert'));
         }
     };
 
@@ -74,14 +76,14 @@ export const InstallPwaPrompt: React.FC = () => {
                     <div>
                         <div className="flex items-center gap-2">
                             <span className="font-black text-sm sm:text-base text-teal-300 uppercase tracking-wide">
-                                Instalar App Tricktakers
+                                {t('home.installApp')}
                             </span>
                             <span className="bg-teal-500/20 text-teal-300 border border-teal-400/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
                                 {isIOS ? 'iOS' : 'Android'}
                             </span>
                         </div>
                         <p className="text-xs text-slate-300 font-medium">
-                            Fíjala en tu pantalla de inicio y juega a pantalla completa como una app nativa.
+                            {t('home.installPromptDesc')}
                         </p>
                     </div>
                 </div>
@@ -92,12 +94,12 @@ export const InstallPwaPrompt: React.FC = () => {
                         className="flex-1 sm:flex-none px-5 py-2.5 bg-teal-500 hover:bg-teal-400 active:scale-95 text-slate-950 font-black uppercase text-xs tracking-wider rounded-xl shadow-lg shadow-teal-500/20 transition-all flex items-center justify-center gap-2"
                     >
                         <i className="fa-solid fa-download"></i>
-                        <span>Instalar en Teléfono</span>
+                        <span>{t('home.installBtn')}</span>
                     </button>
                     <button
                         onClick={() => setDismissed(true)}
                         className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center text-xs transition-colors shrink-0"
-                        title="Ocultar"
+                        title={t('home.dismiss')}
                     >
                         <i className="fa-solid fa-xmark"></i>
                     </button>
@@ -121,9 +123,9 @@ export const InstallPwaPrompt: React.FC = () => {
                             </div>
                             <div>
                                 <h3 className="text-lg font-black uppercase text-teal-300 tracking-wide">
-                                    Instalar en iPhone o iPad
+                                    {t('home.iosInstallTitle')}
                                 </h3>
-                                <p className="text-xs text-slate-400 font-medium">Sigue estos dos sencillos pasos en Safari:</p>
+                                <p className="text-xs text-slate-400 font-medium">{t('home.iosInstallSubtitle')}</p>
                             </div>
                         </div>
 
@@ -133,7 +135,7 @@ export const InstallPwaPrompt: React.FC = () => {
                                     1
                                 </div>
                                 <div className="text-xs text-slate-200">
-                                    Pulsa el botón <strong>Compartir</strong> en la barra inferior de Safari{' '}
+                                    {t('home.iosStep1')}{' '}
                                     <span className="inline-flex items-center justify-center w-6 h-6 bg-slate-700 rounded-md text-teal-400 ml-1">
                                         <i className="fa-solid fa-arrow-up-from-bracket"></i>
                                     </span>
@@ -147,8 +149,7 @@ export const InstallPwaPrompt: React.FC = () => {
                                     2
                                 </div>
                                 <div className="text-xs text-slate-200">
-                                    Desliza hacia abajo y selecciona{' '}
-                                    <strong>"Añadir a pantalla de inicio"</strong>{' '}
+                                    {t('home.iosStep2')}{' '}
                                     <span className="inline-flex items-center justify-center w-6 h-6 bg-slate-700 rounded-md text-teal-400 ml-1">
                                         <i className="fa-regular fa-square-plus"></i>
                                     </span>
@@ -160,7 +161,7 @@ export const InstallPwaPrompt: React.FC = () => {
                             onClick={() => setShowIOSModal(false)}
                             className="w-full py-3 bg-teal-500 hover:bg-teal-400 active:scale-95 text-slate-950 font-black uppercase text-xs tracking-wider rounded-xl transition-all"
                         >
-                            ¡Entendido!
+                            {t('home.iosGotIt')}
                         </button>
                     </div>
                 </div>

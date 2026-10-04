@@ -1,11 +1,11 @@
-
 import React from 'react';
 import { Player, Card, Suit } from '../../game/core/types';
 import GameCard from '../GameCard';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface SamuraiWinModalProps {
     players: Player[];
-    playedCards?: Card[]; // Cards from the trick that just ended (passed down or stored)
+    playedCards?: Card[];
     trickCards: Card[];
     onTakeCard: (cardId: string) => void;
     onSkip: () => void;
@@ -19,7 +19,8 @@ export const SamuraiWinModal: React.FC<SamuraiWinModalProps> = ({
     onSkip,
     localPlayerId = 'p1'
 }) => {
-    // Filter: Red cards, NOT owned by local Samurai player
+    const { t } = useTranslation();
+    const isSpanish = t('common.language') === 'es';
     const availableCards = trickCards.filter(c => c.suit === Suit.RED && c.ownerId !== localPlayerId);
 
     return (
@@ -30,22 +31,34 @@ export const SamuraiWinModal: React.FC<SamuraiWinModalProps> = ({
                 </div>
 
                 <h2 className="text-3xl font-black text-red-500 uppercase tracking-tighter mb-2 relative z-10">
-                    Espíritu del Rojo
+                    {isSpanish ? 'Espíritu del Rojo' : 'Spirit of Red'}
                 </h2>
                 <p className="text-slate-300 font-bold mb-6 relative z-10">
-                    Has ganado la baza. Puedes tomar una carta ROJA jugada por un oponente.
-                    <br />
-                    <span className="text-xs text-red-400 opacity-80">(Si lo haces, deberás descartar una carta de tu mano después)</span>
+                    {isSpanish ? (
+                        <>
+                            Has ganado la baza. Puedes tomar una carta ROJA jugada por un oponente.
+                            <br />
+                            <span className="text-xs text-red-400 opacity-80">(Si lo haces, deberás descartar una carta de tu mano después)</span>
+                        </>
+                    ) : (
+                        <>
+                            You won the trick. You may take one RED card played by an opponent.
+                            <br />
+                            <span className="text-xs text-red-400 opacity-80">(If you do, you must discard a card from your hand afterwards)</span>
+                        </>
+                    )}
                 </p>
 
                 {availableCards.length === 0 ? (
                     <div className="text-center py-8">
-                        <p className="text-slate-500 font-bold italic mb-4">No hay cartas rojas disponibles para robar.</p>
+                        <p className="text-slate-500 font-bold italic mb-4">
+                            {isSpanish ? 'No hay cartas rojas disponibles para robar.' : 'No red cards available to take.'}
+                        </p>
                         <button
                             onClick={onSkip}
                             className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition-all"
                         >
-                            Continuar
+                            {t('common.continue')}
                         </button>
                     </div>
                 ) : (
@@ -60,7 +73,7 @@ export const SamuraiWinModal: React.FC<SamuraiWinModalProps> = ({
                                         />
                                     </div>
                                     <span className="text-xs font-bold text-slate-400 bg-slate-800 px-2 py-1 rounded">
-                                        De: {players.find(p => p.id === card.ownerId)?.name || 'Desconocido'}
+                                        {isSpanish ? 'De: ' : 'From: '}{players.find(p => p.id === card.ownerId)?.name || (isSpanish ? 'Desconocido' : 'Unknown')}
                                     </span>
                                 </div>
                             ))}
@@ -71,7 +84,7 @@ export const SamuraiWinModal: React.FC<SamuraiWinModalProps> = ({
                                 onClick={onSkip}
                                 className="text-slate-400 hover:text-white font-bold uppercase tracking-widest text-xs border border-transparent hover:border-slate-500 px-4 py-2 rounded-lg transition-all"
                             >
-                                No robar nada
+                                {isSpanish ? 'No robar nada' : 'Pass / Take None'}
                             </button>
                         </div>
                     </div>

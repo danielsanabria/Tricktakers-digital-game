@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { Player, Card } from '../../game/core/types';
 import GameCard from '../GameCard';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface GamblerSetupModalProps {
     player: Player;
@@ -22,6 +22,8 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
     onBid,
     onBet
 }) => {
+    const { t } = useTranslation();
+    const isSpanish = t('common.language') === 'es';
     const [selectedForSwap, setSelectedForSwap] = useState<string[]>([]);
 
     const toggleCard = (cardId: string) => {
@@ -38,12 +40,16 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
                 <div className="bg-slate-900 rounded-3xl border border-amber-500/30 w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col items-center p-8 gap-8 animate-in zoom-in duration-300">
                     <div className="text-center">
                         <h2 className="text-4xl font-black text-amber-500 tracking-tighter uppercase italic mb-2">
-                            El Arte del Engaño
+                            {isSpanish ? 'El Arte del Engaño' : 'The Art of Cheating'}
                         </h2>
                         <p className="text-slate-400">
-                            Puedes cambiar cartas de tu mano para mejorar tu suerte.
+                            {isSpanish
+                                ? 'Puedes cambiar cartas de tu mano para mejorar tu suerte.'
+                                : 'You may swap cards from your hand to improve your chances.'}
                             <br />
-                            <span className="text-amber-500 font-bold">Intercambios restantes: {player.gambleSwaps}</span>
+                            <span className="text-amber-500 font-bold">
+                                {isSpanish ? 'Intercambios restantes: ' : 'Remaining swaps: '}{player.gambleSwaps}
+                            </span>
                         </p>
                     </div>
 
@@ -67,7 +73,7 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
                             onClick={onSkipSwap}
                             className="px-8 py-3 rounded-lg font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                         >
-                            SALTAR / ESTOY LISTO
+                            {isSpanish ? 'SALTAR / ESTOY LISTO' : 'SKIP / READY'}
                         </button>
                         <button
                             onClick={() => {
@@ -79,7 +85,9 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
                             disabled={selectedForSwap.length === 0}
                             className="btn btn-amber px-10 py-3 text-lg shadow-xl"
                         >
-                            CAMBIAR {selectedForSwap.length} CARTAS
+                            {isSpanish
+                                ? `CAMBIAR ${selectedForSwap.length} CARTAS`
+                                : `SWAP ${selectedForSwap.length} CARDS`}
                         </button>
                     </div>
                 </div>
@@ -92,8 +100,12 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
             <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm gap-8">
                 <div className="bg-slate-900 rounded-2xl border border-amber-500/30 p-8 max-w-2xl w-full text-center space-y-8 animate-in zoom-in duration-300 shadow-2xl">
                     <div>
-                        <h2 className="text-3xl font-black text-amber-500 uppercase tracking-tight mb-2">Declara tu Destino</h2>
-                        <p className="text-slate-400">¿Cuántas bazas ganarás en esta ronda?</p>
+                        <h2 className="text-3xl font-black text-amber-500 uppercase tracking-tight mb-2">
+                            {isSpanish ? 'Declara tu Destino' : 'Declare Your Bid'}
+                        </h2>
+                        <p className="text-slate-400">
+                            {isSpanish ? '¿Cuántas bazas ganarás en esta ronda?' : 'How many tricks will you win this round?'}
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-6 gap-4">
@@ -109,19 +121,34 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
                     </div>
 
                     <div className="bg-slate-950/50 p-4 rounded-lg text-xs text-slate-400 text-left">
-                        <p className="font-bold text-amber-500/80 mb-1">RECORDATORIO:</p>
+                        <p className="font-bold text-amber-500/80 mb-1">
+                            {isSpanish ? 'RECORDATORIO:' : 'REMINDER:'}
+                        </p>
                         <ul className="list-disc pl-4 space-y-1">
-                            <li>Si aciertas exactamente: +20 puntos.</li>
-                            <li>Si fallas: -10 por cada baza de diferencia.</li>
-                            <li>Si apuestas 4 y ganas 4: Victoria Instantánea.</li>
-                            <li>Si ganas 5 bazas: Victoria Instantánea (independiente de la apuesta).</li>
+                            {isSpanish ? (
+                                <>
+                                    <li>Si aciertas exactamente: +20 puntos.</li>
+                                    <li>Si fallas: -10 por cada baza de diferencia.</li>
+                                    <li>Si apuestas 4 y ganas 4: Victoria Instantánea.</li>
+                                    <li>Si ganas 5 bazas: Victoria Instantánea (independiente de la apuesta).</li>
+                                </>
+                            ) : (
+                                <>
+                                    <li>Exact bid: +20 points.</li>
+                                    <li>Miss: -10 points per trick difference.</li>
+                                    <li>Bid 4 and win 4: Instant Victory!</li>
+                                    <li>Win 5 tricks: Instant Victory! (regardless of bid).</li>
+                                </>
+                            )}
                         </ul>
                     </div>
                 </div>
 
                 {/* VISIBLE HAND REFERENCE */}
                 <div className="w-full max-w-4xl">
-                    <p className="text-center text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">Tu Mano</p>
+                    <p className="text-center text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">
+                        {isSpanish ? 'Tu Mano' : 'Your Hand'}
+                    </p>
                     <div className="flex justify-center gap-2 flex-wrap">
                         {player.hand.map(card => (
                             <div key={card.id} className="transform scale-75 origin-top">
@@ -142,8 +169,14 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
             <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm gap-8">
                 <div className="bg-slate-900 rounded-2xl border border-amber-500/30 p-8 max-w-xl w-full text-center space-y-8 animate-in zoom-in duration-300 shadow-2xl">
                     <div>
-                        <h2 className="text-3xl font-black text-amber-500 uppercase tracking-tight mb-2">Dobla la Apuesta</h2>
-                        <p className="text-slate-400">Apuesta puntos adicionales. Si aciertas tu predicción, ganas estos puntos extra. Si fallas, los pierdes.</p>
+                        <h2 className="text-3xl font-black text-amber-500 uppercase tracking-tight mb-2">
+                            {isSpanish ? 'Dobla la Apuesta' : 'Double Down (Points Bet)'}
+                        </h2>
+                        <p className="text-slate-400">
+                            {isSpanish
+                                ? 'Apuesta puntos adicionales. Si aciertas tu predicción, ganas estos puntos extra. Si fallas, los pierdes.'
+                                : 'Bet additional points. If your bid is correct, you win these bonus points. If you miss, you lose them.'}
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -151,7 +184,7 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
                             onClick={() => onBet(0)}
                             className="col-span-2 p-3 rounded-lg bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-all border border-transparent hover:border-slate-600"
                         >
-                            NO APOSTAR NADA
+                            {isSpanish ? 'NO APOSTAR NADA' : 'NO BET (0 PTS)'}
                         </button>
                         {betValues.map(val => (
                             <button
@@ -167,7 +200,9 @@ export const GamblerSetupModal: React.FC<GamblerSetupModalProps> = ({
 
                 {/* VISIBLE HAND REFERENCE */}
                 <div className="w-full max-w-4xl">
-                    <p className="text-center text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">Tu Mano</p>
+                    <p className="text-center text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">
+                        {isSpanish ? 'Tu Mano' : 'Your Hand'}
+                    </p>
                     <div className="flex justify-center gap-2 flex-wrap">
                         {player.hand.map(card => (
                             <div key={card.id} className="transform scale-75 origin-top">

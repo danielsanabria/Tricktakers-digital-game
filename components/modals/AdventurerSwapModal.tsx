@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Player } from '../../game/core/types';
 import GameCard from '../GameCard';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface AdventurerSwapModalProps {
     player: Player;
@@ -13,6 +14,7 @@ export const AdventurerSwapModal: React.FC<AdventurerSwapModalProps> = ({
     maxSelectable,
     onConfirm
 }) => {
+    const { t } = useTranslation();
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     const toggleCard = (cardId: string) => {
@@ -25,15 +27,19 @@ export const AdventurerSwapModal: React.FC<AdventurerSwapModalProps> = ({
         }
     };
 
+    const isSpanish = t('common.language') === 'es';
+
     return (
         <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-slate-900 rounded-3xl border border-blue-500/30 w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col items-center p-8 gap-8 animate-in zoom-in duration-300">
                 <div className="text-center">
                     <h2 className="text-4xl font-black text-blue-500 tracking-tighter uppercase italic mb-2">
-                        Mapa del Destino
+                        {isSpanish ? 'Mapa del Destino' : 'Map of Destiny'}
                     </h2>
                     <p className="text-slate-400 text-lg">
-                        Selecciona hasta <span className="text-blue-500 font-bold">{maxSelectable}</span> cartas para intercambiar.
+                        {isSpanish
+                            ? <>Selecciona hasta <span className="text-blue-500 font-bold">{maxSelectable}</span> cartas para intercambiar.</>
+                            : <>Select up to <span className="text-blue-500 font-bold">{maxSelectable}</span> cards to swap.</>}
                     </p>
                 </div>
 
@@ -58,8 +64,10 @@ export const AdventurerSwapModal: React.FC<AdventurerSwapModalProps> = ({
                         className="px-10 py-3 text-lg shadow-xl font-black rounded-lg transition-all bg-blue-500 text-white hover:bg-blue-400 hover:scale-105"
                     >
                         {selectedIds.length === 0
-                            ? 'NO CAMBIAR NADA'
-                            : `INTERCAMBIAR ${selectedIds.length} CARTA${selectedIds.length !== 1 ? 'S' : ''}`}
+                            ? (isSpanish ? 'NO CAMBIAR NADA' : 'KEEP ALL CARDS')
+                            : (isSpanish
+                                ? `INTERCAMBIAR ${selectedIds.length} CARTA${selectedIds.length !== 1 ? 'S' : ''}`
+                                : `SWAP ${selectedIds.length} CARD${selectedIds.length !== 1 ? 'S' : ''}`)}
                     </button>
                 </div>
             </div>

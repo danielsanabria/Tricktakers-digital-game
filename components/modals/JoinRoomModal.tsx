@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface JoinRoomModalProps {
     isOpen: boolean;
@@ -13,9 +14,10 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
     onCreateRoom,
     onJoinRoom
 }) => {
+    const { t } = useTranslation();
     const [mode, setMode] = useState<'SELECT' | 'CREATE' | 'JOIN'>('SELECT');
     const [playerName, setPlayerName] = useState(() => {
-        return localStorage.getItem('tricktakers_player_name') || ('Jugador ' + Math.floor(100 + Math.random() * 900));
+        return localStorage.getItem('tricktakers_player_name') || ('Player ' + Math.floor(100 + Math.random() * 900));
     });
     const [roomCode, setRoomCode] = useState('');
     const [lastRoom, setLastRoom] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
         e.preventDefault();
         const trimmed = playerName.trim();
         if (!trimmed) {
-            setError('Ingresa tu nombre para continuar.');
+            setError(t('joinModal.nameRequired'));
             return;
         }
         localStorage.setItem('tricktakers_player_name', trimmed);
@@ -47,11 +49,11 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
         e.preventDefault();
         const trimmedName = playerName.trim();
         if (!trimmedName) {
-            setError('Ingresa tu nombre.');
+            setError(t('joinModal.nameRequired'));
             return;
         }
         if (roomCode.trim().length !== 4) {
-            setError('El código de la sala debe tener 4 caracteres.');
+            setError(t('joinModal.codeRequired'));
             return;
         }
         localStorage.setItem('tricktakers_player_name', trimmedName);
@@ -82,10 +84,10 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                         <i className="fa-solid fa-crown"></i>
                     </div>
                     <h3 className="text-2xl font-black text-[#23272E] uppercase tracking-tight">
-                        Multijugador Online
+                        {t('home.multiplayerTitle')}
                     </h3>
                     <p className="text-xs text-[#7D7060] mt-1 font-medium">
-                        Juega con hasta 4 rivales en tiempo real
+                        {t('home.multiplayerDesc')}
                     </p>
                 </div>
 
@@ -100,13 +102,13 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                     <div className="mb-4 p-3.5 bg-[#F7F2E8] border border-[#D8CFBC] rounded-2xl flex items-center justify-between shadow-sm">
                         <div className="text-left">
                             <span className="block text-[9px] font-black uppercase text-[#966E0F] tracking-wider">
-                                Partida reciente detectada
+                                {t('home.rejoinRoom')}
                             </span>
                             <span className="font-black text-sm text-[#23272E] flex items-center gap-1.5">
-                                Sala <span className="font-mono text-[#966E0F] font-bold">{lastRoom}</span>
+                                {t('lobby.roomCode')}: <span className="font-mono text-[#966E0F] font-bold">{lastRoom}</span>
                                 {localStorage.getItem('tricktakers_is_host_' + lastRoom) === 'true' && (
                                     <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black flex items-center gap-1 border border-amber-300">
-                                        <i className="fa-solid fa-crown text-[9px]"></i> Anfitrión
+                                        <i className="fa-solid fa-crown text-[9px]"></i> {t('common.host')}
                                     </span>
                                 )}
                             </span>
@@ -116,7 +118,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                             onClick={() => handleRejoin(lastRoom)}
                             className="px-4 py-2 bg-[#23272E] text-[#FCFAF6] rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#3E4550] transition-colors shadow-md flex items-center gap-1.5 active:scale-95"
                         >
-                            <i className="fa-solid fa-rotate-right text-xs text-[#C59B27]"></i> Reunirse
+                            <i className="fa-solid fa-rotate-right text-xs text-[#C59B27]"></i> {t('home.rejoinRoom')}
                         </button>
                     </div>
                 )}
@@ -131,10 +133,10 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                         >
                             <div>
                                 <h4 className="font-black text-sm text-[#23272E] uppercase tracking-tight group-hover:text-[#966E0F]">
-                                    Crear Nueva Sala
+                                    {t('home.createRoom')}
                                 </h4>
                                 <p className="text-[11px] text-[#7D7060] mt-0.5 font-medium">
-                                    Genera un código e invita hasta a 3 amigos
+                                    {t('lobby.shareCodeHint')}
                                 </p>
                             </div>
                             <i className="fa-solid fa-plus text-[#A09382] group-hover:text-[#966E0F] text-lg"></i>
@@ -147,10 +149,10 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                         >
                             <div>
                                 <h4 className="font-black text-sm text-[#23272E] uppercase tracking-tight group-hover:text-[#966E0F]">
-                                    Unirse con Código
+                                    {t('home.joinRoom')}
                                 </h4>
                                 <p className="text-[11px] text-[#7D7060] mt-0.5 font-medium">
-                                    Introduce el PIN de 4 letras de tu amigo
+                                    {t('joinModal.codePlaceholder')}
                                 </p>
                             </div>
                             <i className="fa-solid fa-arrow-right-to-bracket text-[#A09382] group-hover:text-[#966E0F] text-lg"></i>
@@ -163,7 +165,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                     <form onSubmit={handleCreate} className="flex flex-col gap-4">
                         <div>
                             <label className="block text-[10px] font-black uppercase tracking-wider text-[#7D7060] mb-1 text-left">
-                                Tu Nombre o Apodo
+                                {t('joinModal.enterName')}
                             </label>
                             <input
                                 type="text"
@@ -171,7 +173,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                                 value={playerName}
                                 onChange={(e) => setPlayerName(e.target.value)}
                                 className="w-full px-4 py-3 rounded-xl border border-[#D8CFBC] bg-white text-[#23272E] font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#C59B27] focus:border-[#C59B27]"
-                                placeholder="Ej: Daniel"
+                                placeholder={t('joinModal.namePlaceholder')}
                                 autoFocus
                             />
                         </div>
@@ -182,13 +184,13 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                                 onClick={() => setMode('SELECT')}
                                 className="flex-1 py-3 rounded-full border border-[#D8CFBC] text-[#6B5E4F] font-bold text-xs uppercase hover:bg-[#EFE9DC] transition-colors"
                             >
-                                Atrás
+                                {t('common.back')}
                             </button>
                             <button
                                 type="submit"
                                 className="flex-1 py-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all"
                             >
-                                Crear Sala
+                                {t('home.createRoom')}
                             </button>
                         </div>
                     </form>
@@ -199,7 +201,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                     <form onSubmit={handleJoin} className="flex flex-col gap-4">
                         <div>
                             <label className="block text-[10px] font-black uppercase tracking-wider text-[#7D7060] mb-1 text-left">
-                                Tu Nombre o Apodo
+                                {t('joinModal.enterName')}
                             </label>
                             <input
                                 type="text"
@@ -207,13 +209,13 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                                 value={playerName}
                                 onChange={(e) => setPlayerName(e.target.value)}
                                 className="w-full px-4 py-3 rounded-xl border border-[#D8CFBC] bg-white text-[#23272E] font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#C59B27] focus:border-[#C59B27]"
-                                placeholder="Ej: Elena"
+                                placeholder={t('joinModal.namePlaceholder')}
                             />
                         </div>
 
                         <div>
                             <label className="block text-[10px] font-black uppercase tracking-wider text-[#7D7060] mb-1 text-left">
-                                Código de la Sala (4 Letras)
+                                {t('joinModal.roomCode')} (4)
                             </label>
                             <input
                                 type="text"
@@ -232,13 +234,13 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                                 onClick={() => setMode('SELECT')}
                                 className="flex-1 py-3 rounded-full border border-[#D8CFBC] text-[#6B5E4F] font-bold text-xs uppercase hover:bg-[#EFE9DC] transition-colors"
                             >
-                                Atrás
+                                {t('common.back')}
                             </button>
                             <button
                                 type="submit"
                                 className="flex-1 py-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all"
                             >
-                                Unirse
+                                {t('home.joinRoom')}
                             </button>
                         </div>
                     </form>

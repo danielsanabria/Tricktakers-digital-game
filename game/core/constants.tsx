@@ -115,12 +115,12 @@ export const ITEMS: Item[] = [
 ];
 
 export const BEASTS: Beast[] = [
-  { id: 'b-el', name: 'EL', description: 'Rear: +1 MP/turno. Front: Bandera Blanca.', mpCost: 4, active: false },
-  { id: 'b-miria', name: 'MIRIA', description: 'Rear: 10 no pierde contra 1. Front: Berserker.', mpCost: 3, active: false },
-  { id: 'b-maru', name: 'MARU', description: 'Front: Rojo 10.', mpCost: 1, active: false, suit: Suit.RED },
-  { id: 'b-guru', name: 'GURU', description: 'Front: Azul 10.', mpCost: 1, active: false, suit: Suit.BLUE },
-  { id: 'b-nemu', name: 'NEMU', description: 'Front: Verde 10.', mpCost: 1, active: false, suit: Suit.GREEN },
-  { id: 'b-oko', name: 'OKO', description: 'Front: Negro 10.', mpCost: 1, active: false, suit: Suit.BLACK },
+  { id: 'b-el', name: 'EL', description: 'Rear: +1 MP/round. Front: White Flag.', mpCost: 4, active: false },
+  { id: 'b-miria', name: 'MIRIA', description: 'Rear: 10 does not lose to 1. Front: Berserker.', mpCost: 3, active: false },
+  { id: 'b-maru', name: 'MARU', description: 'Front: Red 10.', mpCost: 1, active: false, suit: Suit.RED },
+  { id: 'b-guru', name: 'GURU', description: 'Front: Blue 10.', mpCost: 1, active: false, suit: Suit.BLUE },
+  { id: 'b-nemu', name: 'NEMU', description: 'Front: Green 10.', mpCost: 1, active: false, suit: Suit.GREEN },
+  { id: 'b-oko', name: 'OKO', description: 'Front: Black 10.', mpCost: 1, active: false, suit: Suit.BLACK },
 ];
 
 export const TRAPS: Trap[] = [

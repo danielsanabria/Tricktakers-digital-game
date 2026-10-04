@@ -2,6 +2,7 @@
 import React from 'react';
 import { RoundResult, CharacterType } from '../../game/core/types';
 import { CHARACTERS } from '../../game/core/constants';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface RoundSummaryModalProps {
     result: RoundResult | null;
@@ -13,6 +14,7 @@ interface RoundSummaryModalProps {
 
 export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, onNext, onProceed, isLastRound = false, localPlayerId = 'p1' }) => {
     if (!result) return null;
+    const { t, translations } = useTranslation();
     const handleProceed = onNext || onProceed || (() => {});
 
     return (
@@ -20,7 +22,7 @@ export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, on
             <div className="bg-white rounded-3xl border border-slate-200 p-8 max-w-3xl w-full shadow-2xl my-auto">
                 <div className="text-center mb-8">
                     <h2 className="text-4xl font-black text-slate-800 tracking-tight uppercase">
-                        Resumen de la Ronda {result.round}
+                        {t('summary.roundSummaryTitle', { round: result.round })}
                     </h2>
                     <div className="h-1.5 w-24 bg-teal-500 mx-auto mt-4 rounded-full"></div>
                 </div>
@@ -28,6 +30,8 @@ export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, on
                 <div className="space-y-4 mb-10">
                     {result.playerResults.map((pr) => {
                         const char = pr.character ? CHARACTERS[pr.character] : null;
+                        const localizedChar = pr.character ? translations.gameData.characters[pr.character] : null;
+                        const charName = localizedChar?.name || char?.name || '---';
 
                         return (
                             <div key={pr.playerId} className="bg-slate-50 rounded-2xl p-4 flex items-center gap-6 border border-slate-100 transition-all hover:bg-slate-100">
@@ -36,23 +40,23 @@ export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, on
                                         {char && (
                                              <img
                                                  src={char.summaryThumbnailPath || char.thumbnailPath}
-                                                 alt={char.name}
+                                                 alt={charName}
                                                  className="w-full h-full object-contain"
                                              />
                                         )}
                                     </div>
                                     <div className={`absolute -bottom-2 -right-2 px-2 py-1 rounded-md text-[10px] font-black text-white shadow-lg ${pr.playerId === localPlayerId ? 'bg-teal-500' : 'bg-slate-600'}`}>
-                                        {pr.playerId === localPlayerId ? 'TÚ' : pr.playerName}
+                                        {pr.playerId === localPlayerId ? t('common.you') : pr.playerName}
                                     </div>
                                 </div>
 
                                 <div className="flex-1">
                                     <div className="font-black text-slate-800 text-lg uppercase">
-                                        {char?.name || '---'}
+                                        {charName}
                                     </div>
                                     <div className="flex gap-4 mt-1">
                                         <div className="flex items-center gap-1">
-                                            <span className="text-slate-400 text-xs font-bold uppercase">Bazas:</span>
+                                            <span className="text-slate-400 text-xs font-bold uppercase">{t('common.tricks')}:</span>
                                             <span className="text-slate-700 font-black">{pr.tricksWon}</span>
                                         </div>
                                         {pr.goldCrownsGained > 0 && (
@@ -72,7 +76,7 @@ export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, on
 
                                 <div className="text-right">
                                     <div className="text-sm font-black text-teal-600">
-                                        {pr.pointsGained >= 0 ? `+${pr.pointsGained}` : pr.pointsGained} pts
+                                        {pr.pointsGained >= 0 ? `+${pr.pointsGained}` : pr.pointsGained} {t('common.pts')}
                                     </div>
                                     <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total</div>
                                     <div className="text-2xl font-black text-slate-800 leading-none">
@@ -87,10 +91,10 @@ export const RoundSummaryModal: React.FC<RoundSummaryModalProps> = ({ result, on
                 <div className="flex justify-center">
                     <button
                         onClick={handleProceed}
-                        className="group relative px-10 py-5 bg-slate-900 rounded-2xl text-white font-black text-xl uppercase tracking-widest transition-all hover:bg-teal-600 hover:-translate-y-1 active:translate-y-0 shadow-lg"
+                        className="group relative px-10 py-5 bg-slate-900 rounded-2xl text-white font-black text-xl uppercase tracking-widest transition-all hover:bg-teal-600 hover:-translate-y-1 active:translate-y-0 shadow-lg cursor-pointer"
                     >
                         <span className="relative z-10">
-                            {isLastRound ? 'Ver Ganador Final' : 'Siguiente Ronda'}
+                            {isLastRound ? t('summary.finalResultsBtn') : t('summary.nextRoundBtn')}
                         </span>
                     </button>
                 </div>

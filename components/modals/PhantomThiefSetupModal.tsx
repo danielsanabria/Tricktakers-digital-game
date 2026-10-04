@@ -1,12 +1,13 @@
-
 import React, { useState } from 'react';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface PhantomThiefSetupModalProps {
     onConfirm: (chipValue: number) => void;
 }
 
 export const PhantomThiefSetupModal: React.FC<PhantomThiefSetupModalProps> = ({ onConfirm }) => {
-    // 3. Phantom Chip: Set to 0 or +/- 1
+    const { t } = useTranslation();
+    const isSpanish = t('common.language') === 'es';
     const [chip, setChip] = useState<number>(0);
 
     return (
@@ -18,11 +19,14 @@ export const PhantomThiefSetupModal: React.FC<PhantomThiefSetupModalProps> = ({ 
                 </div>
 
                 <h2 className="text-3xl font-bold text-center mt-12 mb-2 text-transparent bg-clip-text bg-gradient-to-r from-slate-300 to-white">
-                    Preparación del Golpe
+                    {isSpanish ? 'Preparación del Golpe' : 'Heist Preparation'}
                 </h2>
                 <p className="text-gray-400 text-center text-sm mb-8">
-                    Has enviado los <strong>Avisos Previos</strong> a tus objetivos. <br />
-                    Tu <strong>Socio</strong> ya tiene la carta señalada.
+                    {isSpanish ? (
+                        <>Has enviado los <strong>Avisos Previos</strong> a tus objetivos. <br />Tu <strong>Socio</strong> ya tiene la carta señalada.</>
+                    ) : (
+                        <>You sent <strong>Notice Letters</strong> to your marks. <br />Your <strong>Accomplice</strong> holds the designated card.</>
+                    )}
                 </p>
 
                 {/* Chip Selection */}
@@ -33,7 +37,9 @@ export const PhantomThiefSetupModal: React.FC<PhantomThiefSetupModalProps> = ({ 
                     </div>
 
                     <div className="relative z-10">
-                        <h3 className="text-lg font-bold text-white mb-4 text-center">Configura tu Chip de Predicción</h3>
+                        <h3 className="text-lg font-bold text-white mb-4 text-center">
+                            {isSpanish ? 'Configura tu Chip de Predicción' : 'Configure Prediction Chip'}
+                        </h3>
                         <div className="flex justify-center gap-6">
                             <button
                                 onClick={() => setChip(0)}
@@ -49,18 +55,22 @@ export const PhantomThiefSetupModal: React.FC<PhantomThiefSetupModalProps> = ({ 
                             </button>
                         </div>
                     </div>
-                </div>    <p className="text-xs text-slate-300 text-center mt-3">
+                </div>
+                <p className="text-xs text-slate-300 text-center mt-3">
                     {chip === 0
-                        ? "Robas si tienes IGUAL número de victorias que tu objetivo."
-                        : "Robas si tienes UNA victoria de DIFERENCIA con tu objetivo."}
+                        ? (isSpanish
+                            ? 'Robas si tienes IGUAL número de victorias que tu objetivo.'
+                            : 'Steal if you have the EXACT same number of wins as your mark.')
+                        : (isSpanish
+                            ? 'Robas si tienes UNA victoria de DIFERENCIA con tu objetivo.'
+                            : 'Steal if you have a 1-WIN DIFFERENCE with your mark.')}
                 </p>
-
 
                 <button
                     onClick={() => onConfirm(chip)}
-                    className="w-full btn btn-slate py-3 text-lg shadow-lg font-bold tracking-widest hover:bg-slate-700"
+                    className="w-full btn btn-slate py-3 text-lg shadow-lg font-bold tracking-widest hover:bg-slate-700 uppercase"
                 >
-                    INICIAR EL GOLPE
+                    {isSpanish ? 'INICIAR EL GOLPE' : 'EXECUTE HEIST'}
                 </button>
             </div>
         </div>
