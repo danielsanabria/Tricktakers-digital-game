@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, Suit } from '../../game/core/types';
+import GameCard from '../GameCard';
 
 interface AlchemistSuitSelectorModalProps {
     selectedCards: Card[]; // The 3 cards played
@@ -11,16 +12,6 @@ export const AlchemistSuitSelectorModal: React.FC<AlchemistSuitSelectorModalProp
     // Determine available suits
     // Rule: "You can declare any color as Lead based on your played cards."
     // "You can only declare Black if you played 3 different colors (Red, Blue, Green)."
-
-    // Logic:
-    // 1. Get unique suits present in the 3 cards (excluding Colorless usually, but Colorless cards take color in combinations? No, assume standard suits).
-    // Actually, can you declare a suit you DON'T have? "based on your played cards". Implies you must pick one of them.
-    // Example: Played Red 7, Red 8, Blue 1. Can you declare Green? No.
-    // However, if you have 3 distinct colors (Red, Blue, Green), you can declare BLACK (even if no Black card played).
-
-    // Let's implement strict interpretation:
-    // Options = Unique Suits in (Red, Blue, Green, Black) found in selectedCards.
-    // + Force include BLACK if (Red is present AND Blue is present AND Green is present).
 
     const presentSuits = Array.from(new Set(selectedCards.map(c => c.suit))).filter(s => s !== Suit.COLORLESS) as Suit[];
 
@@ -69,13 +60,13 @@ export const AlchemistSuitSelectorModal: React.FC<AlchemistSuitSelectorModalProp
                 </p>
 
                 {/* Cards Preview */}
-                <div className="flex justify-center gap-2 mb-8">
+                <div className="flex justify-center gap-3 mb-8">
                     {selectedCards.map(card => (
                         <div key={card.id} className="transform hover:-translate-y-1 transition-transform">
-                            <img
-                                src={`/assets/cards/${card.type === 'NUMBER' ? `${card.suit}-${card.value}.png` : card.type === 'RARE' ? 'RARE.png' : 'whiteflag.png'}`}
-                                alt={card.name}
-                                className="w-16 h-auto shadow-md rounded-sm border border-gray-700"
+                            <GameCard
+                                card={card}
+                                small={true}
+                                disabled={true}
                             />
                         </div>
                     ))}

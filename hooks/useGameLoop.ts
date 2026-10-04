@@ -97,6 +97,10 @@ export const useGameLoop = () => {
     const [strategistPendingChoice, setStrategistPendingChoice] = useState<{ type: 'BLACK7' | 'RARE', pointsObj: number } | null>(null);
     const isResolvingRef = useRef(false);
     const isRoundResolvingRef = useRef(false);
+    const pendingResolutionRef = useRef<{
+        updatedPlayers: Player[];
+        winnerIdx: number;
+    } | null>(null);
     const [itemCardToShow, setItemCardToShow] = useState<Item | string | null>(null);
 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -596,6 +600,56 @@ export const useGameLoop = () => {
         performCheckGameOver(players);
     };
 
+    const finishTrickResolution = (playersAfterAbility?: Player[], forcedWinnerIdx?: number) => {
+        const pending = pendingResolutionRef.current;
+        let basePlayers = playersAfterAbility || (pending ? pending.updatedPlayers : players);
+        let winnerIdx = forcedWinnerIdx !== undefined ? forcedWinnerIdx : (pending ? pending.winnerIdx : trickStarterIdx);
+        pendingResolutionRef.current = null;
+
+        if (isKakumei) {
+            setIsKakumei(false);
+            addLog("La Revolución ha terminado. La jerarquía se restablece.");
+        }
+
+        let updatedPlayers = basePlayers.map(p => p.character === CharacterType.HERMIT ? { ...p, hermitUsedAbility: false, hermitDiscarding: false } : p);
+
+        updatedPlayers = updatedPlayers.map(p => ({
+            ...p,
+            adventurerUsedItem: false,
+            pendingItemEffect: null,
+            frontBeastId: null
+        }));
+
+        if (trick < 4) {
+            if (trapDeck.length > trick) {
+                const nextTrap = trapDeck[trick];
+                setCurrentTrap(nextTrap);
+                addLog(`Nueva Trampa Revelada: ${nextTrap.name}`);
+            } else {
+                setCurrentTrap(null);
+            }
+        } else {
+            setCurrentTrap(null);
+        }
+
+        setPlayedCards([]);
+        setLeadSuit(null);
+        setTrickStarterIdx(winnerIdx);
+        setCurrentPlayerIdx(winnerIdx);
+        isResolvingRef.current = false;
+
+        if (trick < 5) {
+            setPlayers(updatedPlayers);
+            setTrick(t => t + 1);
+        } else {
+            if (!isRoundResolvingRef.current) {
+                isRoundResolvingRef.current = true;
+                setPlayers(updatedPlayers);
+                resolveRound(updatedPlayers);
+            }
+        }
+    };
+
     const resolveTrick = (cards: Card[], currentPlayers?: Player[]) => {
         timerRef.current = setTimeout(() => {
             const playersToUse = currentPlayers || players;
@@ -709,6 +763,7 @@ export const useGameLoop = () => {
                 // CHECK: Collector Loss Ability (Local Human)
                 const humanCollector = updatedPlayers.find(p => p.id === localSeatId && p.character === CharacterType.COLLECTOR && p.isHuman && !p.isBotControlled);
                 if (humanCollector && humanCollector.id !== winnerId) {
+                    pendingResolutionRef.current = { updatedPlayers, winnerIdx };
                     setAbilityMode('COLLECTOR_PICK_TRICK_CARD');
                     return; // Pause resolution
                 }
@@ -717,6 +772,7 @@ export const useGameLoop = () => {
                 const availableRedCards = cards.filter(c => c.suit === Suit.RED && c.ownerId !== winnerId);
                 if (winnerP.character === CharacterType.SAMURAI && availableRedCards.length > 0) {
                     if (winnerP.id === localSeatId && winnerP.isHuman && !winnerP.isBotControlled) {
+                        pendingResolutionRef.current = { updatedPlayers, winnerIdx };
                         setAbilityMode('SAMURAI_WIN_CHOICE');
                         // Pause resolution to wait for user input
                         return;
@@ -739,59 +795,17 @@ export const useGameLoop = () => {
                 }
             }
 
-            if (isKakumei) {
-                setIsKakumei(false);
-                addLog("La Revolución ha terminado. La jerarquía se restablece.");
-            }
-
-            updatedPlayers = updatedPlayers.map(p => p.character === CharacterType.HERMIT ? { ...p, hermitUsedAbility: false, hermitDiscarding: false } : p);
-
-            updatedPlayers = updatedPlayers.map(p => ({
-                ...p,
-                adventurerUsedItem: false,
-                pendingItemEffect: null,
-                frontBeastId: null
-            }));
-
-            if (trick < 4) {
-                if (trapDeck.length > trick) {
-                    const nextTrap = trapDeck[trick];
-                    setCurrentTrap(nextTrap);
-                    addLog(`Nueva Trampa Revelada: ${nextTrap.name}`);
-                } else {
-                    setCurrentTrap(null);
-                }
-            } else {
-                setCurrentTrap(null);
-            }
-
             // 5. Check Time Traveler "Change the Past" Opportunity (Local Human ONLY)
             const winner = updatedPlayers[winnerIdx];
-            if (winner.character === CharacterType.TIME_TRAVELER && trick < 5 && winner.timeTravelTokens > 0) {
+            if (winner && winner.character === CharacterType.TIME_TRAVELER && trick < 5 && winner.timeTravelTokens > 0) {
                 if (winner.id === localSeatId && winner.isHuman && !winner.isBotControlled) {
-                    // Trigger Interception for local human player
+                    pendingResolutionRef.current = { updatedPlayers, winnerIdx };
                     setAbilityMode('TIME_TRAVEL_WIN_CHOICE');
                     return; // STOP execution here to wait for user input
                 }
-                // AI Time Traveler: does not block the engine or pop up modal
             }
 
-            setPlayedCards([]);
-            setLeadSuit(null);
-            setTrickStarterIdx(winnerIdx);
-            setCurrentPlayerIdx(winnerIdx);
-            isResolvingRef.current = false;
-
-            if (trick < 5) {
-                setPlayers(updatedPlayers);
-                setTrick(t => t + 1);
-            } else {
-                if (!isRoundResolvingRef.current) {
-                    isRoundResolvingRef.current = true;
-                    setPlayers(updatedPlayers);
-                    resolveRound(updatedPlayers);
-                }
-            }
+            finishTrickResolution(updatedPlayers, winnerIdx);
         }, 1500);
     };
 
@@ -806,7 +820,8 @@ export const useGameLoop = () => {
         setTrick,
         setPhase,
         setTrickStarterIdx,
-        localPlayerId: localSeatId
+        localPlayerId: localSeatId,
+        finishTrickResolution
     });
 
     const playCard = (cardId: string, targetPlayerId?: string) => {

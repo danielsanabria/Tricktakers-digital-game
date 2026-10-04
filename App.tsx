@@ -527,6 +527,7 @@ const App = () => {
                         performAction={handlePerformAction}
                         strategistPendingChoice={game.strategistPendingChoice}
                         localPlayerId={myInGameId}
+                        selectedCards={game.selectedCards}
                         onStrategistChoice={(choice) => {
                             if (choice) {
                                 if (choice.type === 'BLACK7') {

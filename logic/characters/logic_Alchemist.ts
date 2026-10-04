@@ -87,7 +87,7 @@ export class AlchemistLogic extends BaseCharacterLogic {
           React.createElement("span", { className: "font-bold text-purple-600 text-xs" }, `ALQUIMIA (${selectedCards.length}/3)`),
           React.createElement("button", {
             disabled: selectedCards.length !== 3,
-            onClick: () => performAction('ALCHEMIST_PLAY'),
+            onClick: () => performAction('ALCHEMIST_PLAY', { cardIds: selectedCards }),
             className: "btn btn-purple !py-1 !px-4 text-[10px] disabled:opacity-50"
           }, "TRANSMUTAR")
         )

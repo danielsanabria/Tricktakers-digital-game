@@ -29,6 +29,7 @@ interface GameActionsProps {
     setPhase: React.Dispatch<React.SetStateAction<any>>;
     setTrickStarterIdx: React.Dispatch<React.SetStateAction<number>>; // Added missing prop
     localPlayerId?: string;
+    finishTrickResolution?: (playersAfterAbility?: Player[], forcedWinnerIdx?: number) => void;
 }
 
 export const useGameActions = ({
@@ -56,7 +57,8 @@ export const useGameActions = ({
     setTrick,
     setPhase,
     setTrickStarterIdx, // Added missing prop
-    localPlayerId = 'p1'
+    localPlayerId = 'p1',
+    finishTrickResolution
 }: GameActionsProps) => {
 
     const performAction = useCallback((actionName: string, payload?: any, targetPlayerId?: string) => {
@@ -241,7 +243,8 @@ export const useGameActions = ({
             }
         }
         else if (actionName === 'ALCHEMIST_PLAY') {
-            if (selectedCards.length !== 3) {
+            const cardsToUse = payload?.cardIds || selectedCards;
+            if (cardsToUse.length !== 3) {
                 addLog("Debes seleccionar exactamente 3 cartas para la Alquimia.");
                 return;
             }
@@ -249,7 +252,11 @@ export const useGameActions = ({
             if (!p) return;
 
             // 1. Calculate Alchemy Value & Elements
-            const actualCards = p.hand.filter(c => selectedCards.includes(c.id));
+            const actualCards = p.hand.filter(c => cardsToUse.includes(c.id));
+            if (actualCards.length !== 3) {
+                addLog("Error al recuperar las 3 cartas seleccionadas para Alquimia.");
+                return;
+            }
             const alchemyResult = calculateAlchemyValue(actualCards);
             const sumValue = alchemyResult.value;
             let newElements = [...(p.magicElements || []), ...alchemyResult.elements];
@@ -276,7 +283,10 @@ export const useGameActions = ({
 
             // 3. Handle Leading vs Following
             if (!leadSuit) {
-                // If Leading: Open Modal to decide suit
+                // If Leading: Ensure cardsToUse are preserved in selectedCards, then open Modal to decide suit
+                if (cardsToUse !== selectedCards) {
+                    setSelectedCards(cardsToUse);
+                }
                 setAbilityMode('ALCHEMIST_DECIDE_LEAD');
                 return;
             }
@@ -318,7 +328,7 @@ export const useGameActions = ({
             }
 
             // Update Player State
-            const remainingHand = p.hand.filter(c => !selectedCards.includes(c.id));
+            const remainingHand = p.hand.filter(c => !cardsToUse.includes(c.id));
             const newHand = [...remainingHand, ...drawnCards];
 
             setPlayers(prev => prev.map(pl => pl.id === myId ? {
@@ -359,12 +369,13 @@ export const useGameActions = ({
         }
         else if (actionName === 'ALCHEMIST_RESOLVE_LEAD') {
             // Called from Modal when Leading
-            const { suit } = payload;
+            const { suit, cardIds } = payload;
             const p = players.find(player => player.id === myId);
             if (!p) return;
 
+            const cardsToUse = cardIds || selectedCards;
             // Recalculate (safe assuming selectedCards didn't change because modal blocks interaction)
-            const actualCards = p.hand.filter(c => selectedCards.includes(c.id));
+            const actualCards = p.hand.filter(c => cardsToUse.includes(c.id));
             const alchemyResult = calculateAlchemyValue(actualCards);
             const sumValue = alchemyResult.value;
             let newElements = [...(p.magicElements || []), ...alchemyResult.elements]; // Logic elements only
@@ -402,7 +413,7 @@ export const useGameActions = ({
             }
 
             // Update Player
-            const remainingHand = p.hand.filter(c => !selectedCards.includes(c.id));
+            const remainingHand = p.hand.filter(c => !cardsToUse.includes(c.id));
             const newHand = [...remainingHand, ...drawnCards];
 
             setPlayers(prev => prev.map(pl => pl.id === myId ? {
@@ -455,100 +466,29 @@ export const useGameActions = ({
             addLog("Viajero del Tiempo: Baza reiniciada. Tú tienes el turno.");
         }
         else if (actionName === 'COMPLETE_TRICK_NORMAL') {
-            // Determine winner properly
-            // We need to fetch necessary logic imports if not available, OR rely on simple recalc
-            // Since we are in useGameActions, we might not have 'determineWinner' imported.
-            // But we can reproduce the basic logic or trust that Samurai WAS the winner.
+            setAbilityMode('NONE');
+            if (finishTrickResolution) {
+                finishTrickResolution();
+                return;
+            }
 
-            // Logic: Samurai triggered this, so Samurai IS the winner.
-            // But we need the index.
             const winnerId = myId;
-            const winnerIdx = players.findIndex(p => p.id === winnerId);
-
-            // Calculate Score Updates (Simplified version of resolveTrick logic)
-            // We need to apply Trap Logic + Standard Points
-            let currentTrapPool = 0; // Assuming trap pool was handled or resets? 
-            // In resolveTrick, trap pool is local. Here we don't have access to it easily unless passed in payload.
-            // However, Samurai ability triggers AFTER trap logic in resolveTrick?
-            // checking resolveTrick:
-            // 1. Determine Winner
-            // 2. Trap D Logic (Pre-calc)
-            // 3. Update Players (Score + Bonus)
-            // 4. Samurai Trigger Check -> RETURN
-
-            // So, Trap logic & Basic Score WAS calculated but DISCARDED.
-            // We must re-calculate it.
-
-            // ISSUE: We don't have 'currentTrap' or 'trapPool' state here directly?
-            // 'useGameActions' does NOT have 'currentTrap' or 'trapPool' in props? (Checking props...)
-            // Props: setTrapDeck, setTrick, setPhase... NO currentTrap.
-            // We can't accurately calc Trap points without it.
-
-            // ALTERNATIVE: PASS calculated updates in the Payload when pausing?
-            // But 'resolveTrick' returned without saving them.
-
-            // FIXED APPROACH:
-            // Modify 'resolveTrick' to SAVE the `updatedPlayers` to a ref or state BEFORE returning?
-            // Or simple assumption:
-            // Samurai winning implies: +1 Win. +Points (Cards).
-            // Traps? If Trap D triggered, p1 might have lost 10 pts.
-            // If Trap pool existed, p1 might have won it.
-
-            // Since we lack `currentTrap` access here, the cleanest fix is in `useGameLoop.ts`.
-            // STARTING NEW STRATEGY:
-            // 1. In `useGameLoop.ts`, when pausing for Samurai, SAVE `updatedPlayers` to a Ref (e.g. `pendingTrickResolutionState`).
-            // 2. In `COMPLETE_TRICK_NORMAL`, simple call `setPlayers(pendingState)` and cleanup.
-
-            // BUT, `useGameActions` doesn't have access to that Ref unless we pass it.
-            // And we can't easily change the hook signature without touching everything.
-
-            // FALLBACK FOR NOW (To unblock):
-            // Assume no complex trap interactions for this specific edge case or apply basic win.
-            // Trigger standard "Win" update.
-            const p1 = players.find(p => p.id === myId)!;
-
-            // Calculate points from playedCards
-            // (Simplification: Just sum values? Or use scoring logic?)
-            // We'll trust the user wants to proceed. 
-            // We will do a generic "Add Win + Add Cards" update.
-
-            const cardsWon = [...playedCards];
-            // Filter out the one Samurai took? (It's already in hand, but still in playedCards array in state until cleared)
-            // If Samurai took it, it should NOT be in 'cardsWon' (won pile).
-            // Samurai Rule check: "Take 1 red card... Discard 1."
-            // Does the taken card count as "Won"? Usually "Won Cards" go to scoring pile.
-            // The rule implies you take it TO HAND. So it doesn't go to Score Pile.
-            // So we must remove it from `cardsWon`.
-            // But which one? The one passed in `SAMURAI_TAKE_CARD`. 
-            // We don't have it here.
-            // Valid constraint: We'll add all remaining playedCards to wonCards.
-            // If Samurai took one, we should have removed it from `playedCards`? 
-            // `SAMURAI_TAKE_CARD` did NOT remove it from `playedCards`.
-            // We need to handle that.
-
-            // Simplified Resolution:
             setPlayers(prev => prev.map(p => {
-                if (p.id === myId) {
+                if (p.id === winnerId) {
                     return {
                         ...p,
                         wins: p.wins + 1,
-                        wonCards: [...p.wonCards, ...playedCards], // Adding all for now to ensure scoring
-                        // If we want perfection, we'd filter, but without ID it's hard.
+                        wonCards: [...p.wonCards, ...playedCards],
                     };
                 }
                 return p;
             }));
 
-            // addLog(`Samurai completa la baza.`); // Removed: causing confusion when Samurai is not in play
-
-            // Reset Table
             setPlayedCards([]);
             setLeadSuit(null);
-            setCurrentPlayerIdx(players.findIndex(p => p.id === myId));
+            setCurrentPlayerIdx(players.findIndex(p => p.id === winnerId));
+            isResolvingRef.current = false;
 
-            isResolvingRef.current = false; // Resume loop
-
-            setAbilityMode('NONE');
             if (trick < 5) {
                 setTrick(t => t + 1);
             } else {
