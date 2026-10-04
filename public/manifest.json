@@ -1,0 +1,38 @@
+{
+  "name": "Tricktakers",
+  "short_name": "Tricktakers",
+  "description": "Juego digital de bazas asimétrico - Tricktakers Digital Game",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1e293b",
+  "theme_color": "#B9DED1",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/assets/logo/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo/favicon@2x.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo/logo@2x.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
