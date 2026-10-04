@@ -75,7 +75,7 @@ const GameCard: React.FC<GameCardProps> = ({ card, onClick, disabled, small, sel
       className={`
           ${small ? 'w-14 h-20 sm:w-20 sm:h-28' : 'w-24 h-36 sm:w-32 sm:h-48'}
           relative group transition-all duration-300
-          ${!disabled ? 'cursor-pointer hover:-translate-y-2 hover:shadow-2xl' : 'opacity-90'}
+          ${!disabled ? 'cursor-pointer hover:-translate-y-2 hover:shadow-2xl ring-2 ring-teal-400/40 hover:ring-teal-400' : 'opacity-60 cursor-not-allowed'}
           ${selected ? 'ring-4 ring-amber-400 ring-offset-2 scale-105 z-20 rounded-xl' : ''}
         `}
     >

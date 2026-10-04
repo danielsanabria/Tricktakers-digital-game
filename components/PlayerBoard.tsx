@@ -242,22 +242,38 @@ const PlayerBoard: React.FC<PlayerBoardProps> = ({
       {
         isHuman ? (
           // JUGADOR: Mano Interactiva Completa
-          <div className="flex flex-wrap gap-3 justify-center bg-slate-50 p-4 rounded-[1.5rem] border border-slate-200/50 shadow-inner min-h-[160px]">
-            {player.hand.map(card => (
-              <GameCard
-                key={card.id}
-                card={card}
-                onClick={() => onCardPlay(card.id)}
-                disabled={!canPlay}
-                small={window.innerWidth < 640}
-                selected={selectedCards.includes(card.id)}
-              />
-            ))}
-            {player.hand.length === 0 && (
-              <div className="w-full flex items-center justify-center h-32 opacity-30">
-                <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Sin cartas</p>
-              </div>
-            )}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between px-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Tus Cartas ({player.hand.length})
+              </span>
+              <span className={`text-[11px] font-bold px-3 py-0.5 rounded-full transition-all duration-300 ${
+                canPlay 
+                  ? 'bg-teal-500 text-white animate-pulse shadow-md shadow-teal-500/30' 
+                  : 'bg-slate-200 text-slate-500'
+              }`}>
+                {canPlay ? '¡Es tu turno! Haz clic en una carta para jugarla' : 'Esperando el turno del rival...'}
+              </span>
+            </div>
+            <div className={`flex flex-wrap gap-3 justify-center p-4 rounded-[1.5rem] border shadow-inner min-h-[160px] transition-colors duration-300 ${
+              canPlay ? 'bg-teal-50/50 border-teal-200' : 'bg-slate-50 border-slate-200/50'
+            }`}>
+              {player.hand.map(card => (
+                <GameCard
+                  key={card.id}
+                  card={card}
+                  onClick={() => onCardPlay(card.id)}
+                  disabled={!canPlay}
+                  small={window.innerWidth < 640}
+                  selected={selectedCards.includes(card.id)}
+                />
+              ))}
+              {player.hand.length === 0 && (
+                <div className="w-full flex items-center justify-center h-32 opacity-30">
+                  <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Sin cartas</p>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           // RIVAL: Resumen Compacto (Sin cartas visibles)

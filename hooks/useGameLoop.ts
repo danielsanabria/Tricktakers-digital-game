@@ -289,12 +289,51 @@ export const useGameLoop = () => {
         }
     }, [round, players, trickStarterIdx, strategistInheritedCard]);
 
-    // Check ability mode on turn change
+    // Check ability mode on turn change or round start
     useEffect(() => {
         if (phase === GamePhase.TRICK_PLAYING && !isResolvingRef.current && !isRoundResolvingRef.current) {
+            // First: ensure local human player gets their required character setup (King, Gambler, Adventurer, etc.)
+            const me = players.find(p => p.id === localSeatId);
+            if (me && me.isHuman && !me.isBotControlled) {
+                if (me.character === CharacterType.KING && me.hand.length > 5) {
+                    setAbilityMode('KING_SETUP');
+                    return;
+                }
+                if (me.character === CharacterType.GAMBLER && me.bid === undefined) {
+                    if (me.gambleSwaps && me.gambleSwaps > 0) setAbilityMode('GAMBLER_SWAP');
+                    else setAbilityMode('GAMBLE_BID');
+                    return;
+                }
+                if (me.character === CharacterType.ADVENTURER && me.items.length === 0) {
+                    setAbilityMode('ADVENTURER_SETUP');
+                    return;
+                }
+                if (me.character === CharacterType.BERSERKER && me.berserkerDeck && me.berserkerDeck.length > 2) {
+                    setAbilityMode('BERSERKER_SETUP');
+                    return;
+                }
+                if (me.character === CharacterType.RULER && (!me.tasksAssigned || Object.keys(me.tasksAssigned).length === 0)) {
+                    setAbilityMode('RULER_SETUP');
+                    return;
+                }
+                if (me.character === CharacterType.STRATEGIST && me.hand.length > 5) {
+                    setAbilityMode('STRATEGIST_DISCARD');
+                    return;
+                }
+                if (me.character === CharacterType.PHANTOM_THIEF && me.thiefChipValue === null) {
+                    setAbilityMode('PHANTOM_THIEF_SETUP');
+                    return;
+                }
+                if (me.character === CharacterType.TIME_TRAVELER && (!me.timeTravelPredictions || me.timeTravelPredictions.length === 0)) {
+                    setAbilityMode('TIME_TRAVELER_SETUP');
+                    return;
+                }
+            }
+
+            // Otherwise check current turn player ability mode
             checkPlayerAbilityMode(players[currentPlayerIdx]);
         }
-    }, [currentPlayerIdx, phase, players]);
+    }, [currentPlayerIdx, phase, players, localSeatId]);
 
     const prepareRoundSelection = (
         r: number,
@@ -770,10 +809,18 @@ export const useGameLoop = () => {
         localPlayerId: localSeatId
     });
 
-    const playCard = (cardId: string) => {
+    const playCard = (cardId: string, targetPlayerId?: string) => {
         if (isResolvingRef.current) return;
-        const p = players[currentPlayerIdx];
-        const isUser = p.id === localSeatId && p.isHuman && !p.isBotControlled;
+        const currentTurnPlayer = players[currentPlayerIdx];
+        if (!currentTurnPlayer) return;
+
+        if (targetPlayerId && currentTurnPlayer.id !== targetPlayerId) {
+            console.warn(`[playCard] Ignored card from ${targetPlayerId}: currently ${currentTurnPlayer.id}'s turn`);
+            return;
+        }
+
+        const p = currentTurnPlayer;
+        const isUser = (p.id === localSeatId || !!targetPlayerId) && p.isHuman && !p.isBotControlled;
 
         // AI Alchemist Turn: Automatically transmute 3 cards
         if (p.character === CharacterType.ALCHEMIST && !isUser) {

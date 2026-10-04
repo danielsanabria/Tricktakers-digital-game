@@ -59,9 +59,8 @@ export const useGameActions = ({
     localPlayerId = 'p1'
 }: GameActionsProps) => {
 
-    const myId = localPlayerId || 'p1';
-
-    const performAction = useCallback((actionName: string, payload?: any) => {
+    const performAction = useCallback((actionName: string, payload?: any, targetPlayerId?: string) => {
+        const myId = targetPlayerId || payload?.playerId || localPlayerId || 'p1';
         if (actionName === 'GAMBLER_EXECUTE_SWAP') {
             const cardsToSwap = payload?.cardIds || selectedCards;
             if (cardsToSwap.length === 0) return;

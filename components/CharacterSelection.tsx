@@ -25,6 +25,17 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
 }) => {
     const currentPicker = players.find(p => p.id === selectionOrder[selectionIndex]);
     const isUserTurn = currentPicker?.id === localPlayerId;
+    const [selectedChar, setSelectedChar] = React.useState<CharacterType | null>(null);
+
+    // Reset optimistic selection when the turn or index changes
+    React.useEffect(() => {
+        setSelectedChar(null);
+    }, [selectionIndex]);
+
+    const handleSelect = (ct: CharacterType) => {
+        setSelectedChar(ct);
+        selectCharacter(ct);
+    };
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col h-full animate-in fade-in duration-500">
@@ -35,7 +46,7 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
                     <span className="text-slate-400 font-bold uppercase text-xs tracking-widest">Turno actual</span>
                     <div className="w-px h-4 bg-slate-200"></div>
                     <span className={`font-black uppercase text-lg ${isUserTurn ? 'text-teal-500 animate-pulse' : 'text-slate-700'}`}>
-                        {currentPicker?.name}
+                        {currentPicker?.name} {isUserTurn ? '(¡Tu turno!)' : ''}
                     </span>
                 </div>
             </div>
@@ -77,19 +88,22 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
                         // King Ban Rule: Cannot pick King if you were King last round
                         const isBanned = ct === CharacterType.KING && currentPicker?.lastCharacter === CharacterType.KING;
 
+                        const isSelectedByMe = selectedChar === ct;
+
                         return (
                             <div
                                 key={ct}
-                                onClick={() => canSelect && !isBanned && selectCharacter(ct)}
+                                onClick={() => canSelect && !isBanned && !selectedChar && handleSelect(ct)}
                                 className={`
-                                    relative group transition-all duration-500
+                                    relative group transition-all duration-300
                                     ${isTaken || isBanned ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:-translate-y-2 cursor-pointer'}
+                                    ${isSelectedByMe ? 'scale-105 z-30' : ''}
                                 `}
                             >
                                 {/* Card Body */}
                                 <div className={`
                                     aspect-[2/3] rounded-[1.5rem] overflow-hidden bg-slate-200 relative shadow-lg
-                                    ${canSelect ? 'ring-4 ring-transparent group-hover:ring-teal-400 group-hover:shadow-teal-500/30' : ''}
+                                    ${isSelectedByMe ? 'ring-4 ring-teal-400 shadow-2xl shadow-teal-500/50' : canSelect ? 'ring-4 ring-transparent group-hover:ring-teal-400 group-hover:shadow-teal-500/30' : ''}
                                 `}>
                                     <img
                                         src={`/assets/thumb/${char.thumbnailPath || `${char.id}-thumb.jpg`}`}
@@ -120,8 +134,20 @@ export const CharacterSelection: React.FC<CharacterSelectionProps> = ({
                                         </div>
                                     )}
 
+                                    {/* Optimistic Selection State */}
+                                    {isSelectedByMe && (
+                                        <div className="absolute inset-0 bg-teal-600/70 backdrop-blur-[1px] flex flex-col items-center justify-center animate-in fade-in duration-200">
+                                            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-teal-600 mb-2 shadow-xl animate-bounce">
+                                                <i className="fa-solid fa-check text-xl"></i>
+                                            </div>
+                                            <span className="text-white font-black text-xs uppercase tracking-widest bg-teal-800/80 px-3 py-1 rounded-full">
+                                                ¡Seleccionado!
+                                            </span>
+                                        </div>
+                                    )}
+
                                     {/* Selection Hover Effect */}
-                                    {canSelect && (
+                                    {canSelect && !isSelectedByMe && (
                                         <div className="absolute inset-0 bg-teal-500/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <span className="bg-white text-teal-600 px-6 py-2 rounded-full font-black text-xs uppercase shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform">
                                                 Seleccionar

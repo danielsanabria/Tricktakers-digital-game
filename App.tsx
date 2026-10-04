@@ -108,11 +108,18 @@ const App = () => {
         onMessage: (msg) => {
             if (msg.type === 'PLAY_CARD') {
                 if (isHostRef.current) {
-                    game.playCard(msg.payload.cardId);
+                    game.playCard(msg.payload.cardId, msg.payload.playerId);
+                    setTimeout(() => broadcastGameState(), 30);
+                }
+            } else if (msg.type === 'PERFORM_ACTION') {
+                if (isHostRef.current) {
+                    game.performAction(msg.payload.actionName, msg.payload.payload, msg.payload.playerId);
+                    setTimeout(() => broadcastGameState(), 30);
                 }
             } else if (msg.type === 'SELECT_CHARACTER') {
                 if (isHostRef.current) {
                     game.selectCharacter(msg.payload.character, msg.payload.playerId);
+                    setTimeout(() => broadcastGameState(), 30);
                 }
             } else if (msg.type === 'REQUEST_SYNC') {
                 if (isHostRef.current) {
@@ -121,6 +128,7 @@ const App = () => {
             } else if (msg.type === 'PROCEED_ROUND') {
                 if (isHostRef.current) {
                     game.proceedFromSummary();
+                    setTimeout(() => broadcastGameState(), 30);
                 }
             } else if (msg.type === 'RECONNECT') {
                 const pId = msg.payload?.participantId || msg.payload?.playerId;
@@ -384,9 +392,25 @@ const App = () => {
 
     const handlePlayCard = (cardId: string) => {
         if (!multiplayerRoomCode || isHostRef.current) {
-            game.playCard(cardId);
+            game.playCard(cardId, myInGameId);
+            if (multiplayerRoomCode && isHostRef.current) {
+                setTimeout(() => broadcastGameState(), 30);
+            }
         } else {
             realtimeService.broadcast('PLAY_CARD', { cardId, playerId: myInGameId });
+        }
+    };
+
+    const handlePerformAction = (actionName: string, payload?: any) => {
+        if (!multiplayerRoomCode || isHostRef.current) {
+            game.performAction(actionName, payload, myInGameId);
+            if (multiplayerRoomCode && isHostRef.current) {
+                setTimeout(() => broadcastGameState(), 30);
+            }
+        } else {
+            // Also run locally for immediate UI updates if applicable
+            game.performAction(actionName, payload, myInGameId);
+            realtimeService.broadcast('PERFORM_ACTION', { actionName, payload, playerId: myInGameId });
         }
     };
 
@@ -485,7 +509,7 @@ const App = () => {
                             setAbilityMode={game.setAbilityMode}
                             selectedCards={game.selectedCards}
                             setSelectedCards={game.setSelectedCards}
-                            performAction={game.performAction}
+                            performAction={handlePerformAction}
                             round={game.round}
                             setViewingCharacter={game.setViewingCharacter}
                             setItemCardToShow={game.setItemCardToShow}
@@ -500,7 +524,7 @@ const App = () => {
                         setAbilityMode={game.setAbilityMode}
                         players={game.players}
                         setPlayers={game.setPlayers}
-                        performAction={game.performAction}
+                        performAction={handlePerformAction}
                         strategistPendingChoice={game.strategistPendingChoice}
                         localPlayerId={myInGameId}
                         onStrategistChoice={(choice) => {

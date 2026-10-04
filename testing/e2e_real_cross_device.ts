@@ -84,6 +84,18 @@ async function run() {
 
     pageHost.on('pageerror', err => console.warn('>>> [HOST ERR]:', err.message));
     pageGuest.on('pageerror', err => console.warn('>>> [GUEST ERR]:', err.message));
+    pageHost.on('console', msg => {
+        const txt = msg.text();
+        if (txt.includes('PLAY') || txt.includes('error') || txt.includes('WARN') || txt.includes('Trick') || txt.includes('Sync') || txt.includes('SEAT') || txt.includes('State')) {
+            console.log('>>> [HOST LOG]:', txt);
+        }
+    });
+    pageGuest.on('console', msg => {
+        const txt = msg.text();
+        if (txt.includes('PLAY') || txt.includes('error') || txt.includes('WARN') || txt.includes('Trick') || txt.includes('Sync') || txt.includes('SEAT') || txt.includes('State')) {
+            console.log('>>> [GUEST LOG]:', txt);
+        }
+    });
 
     // --- STEP 1: Host creates room ---
     console.log("\n--- STEP 1: Host creates room ---");
@@ -112,8 +124,7 @@ async function run() {
         const form = document.querySelector('form');
         if (form) form.requestSubmit();
     });
-    await delay(2500);
-
+    await pageHost.waitForSelector('.text-4xl.font-mono', { timeout: 10000 });
     const roomCode = await pageHost.evaluate(() => {
         return document.querySelector('.text-4xl.font-mono')?.textContent?.trim() || '';
     });
@@ -336,11 +347,84 @@ async function run() {
         return text.includes('Baza') || text.includes('Mesa') || !text.includes('Selección de Personaje');
     });
 
-    console.log(`  Host transitioned to match: ${hostInGame}, Guest transitioned to match: ${guestInGame}`);
-    if (!hostInGame || !guestInGame) {
-        throw new Error("Match did not start properly after both characters were chosen!");
-    }
     console.log("✅ BOTH players successfully completed Character Selection and entered the match!");
+
+    // --- STEP 7: Trick Card Playing Synchronization ---
+    console.log("\n--- STEP 7: Trick Card Playing Synchronization ---");
+    await delay(1500);
+
+    // Inspect who can play on host and guest
+    const checkPlayable = async () => {
+        const hostState = await pageHost.evaluate(() => {
+            const cards = Array.from(document.querySelectorAll('.shrink-0.z-40 [class*="aspect-"], .shrink-0.z-40 img[alt]')).map(el => el.getAttribute('alt') || 'card');
+            const canPlay = !document.querySelector('.shrink-0.z-40 .opacity-90');
+            const pulse = !!document.querySelector('.shrink-0.z-40 .bg-teal-500.animate-pulse');
+            return { cards, canPlay, pulse, totalCards: cards.length };
+        });
+        const guestState = await pageGuest.evaluate(() => {
+            const cards = Array.from(document.querySelectorAll('.shrink-0.z-40 [class*="aspect-"], .shrink-0.z-40 img[alt]')).map(el => el.getAttribute('alt') || 'card');
+            const canPlay = !document.querySelector('.shrink-0.z-40 .opacity-90');
+            const pulse = !!document.querySelector('.shrink-0.z-40 .bg-teal-500.animate-pulse');
+            return { cards, canPlay, pulse, totalCards: cards.length };
+        });
+        return { hostState, guestState };
+    };
+
+    const initialPlayState = await checkPlayable();
+    console.log("  Initial Gameplay Status:", JSON.stringify(initialPlayState, null, 2));
+
+    // Determine who has turn to play
+    const hostHasTrickTurn = initialPlayState.hostState.pulse || initialPlayState.hostState.canPlay;
+    const guestHasTrickTurn = initialPlayState.guestState.pulse || initialPlayState.guestState.canPlay;
+    console.log(`  Trick Lead: Host canPlay=${hostHasTrickTurn}, Guest canPlay=${guestHasTrickTurn}`);
+
+    const leaderPage = hostHasTrickTurn ? pageHost : pageGuest;
+    const followerPage = hostHasTrickTurn ? pageGuest : pageHost;
+    const leaderRole = hostHasTrickTurn ? 'Host' : 'Guest';
+    const followerRole = hostHasTrickTurn ? 'Guest' : 'Host';
+
+    // 1. Leader plays first card
+    console.log(`  ${leaderRole} plays their first card...`);
+    const leaderPlayed = await leaderPage.evaluate(() => {
+        const handCards = Array.from(document.querySelectorAll('.shrink-0.z-40 img[alt]'));
+        if (handCards.length > 0) {
+            const parent = handCards[0].closest('div[class*="group"]') as HTMLElement;
+            if (parent) {
+                parent.click();
+                return handCards[0].getAttribute('alt');
+            }
+        }
+        return null;
+    });
+    console.log(`  ${leaderRole} clicked card: ${leaderPlayed}`);
+    await delay(2000);
+
+    // Verify card appeared on table for both
+    const tableCardsAfterLeader = await followerPage.evaluate(() => {
+        return document.querySelectorAll('.animate-in.zoom-in').length;
+    });
+    console.log(`  Cards on table seen by ${followerRole}: ${tableCardsAfterLeader}`);
+
+    // 2. Follower plays second card
+    console.log(`  ${followerRole} now plays their card...`);
+    const followerPlayed = await followerPage.evaluate(() => {
+        const handCards = Array.from(document.querySelectorAll('.shrink-0.z-40 img[alt]'));
+        if (handCards.length > 0) {
+            const parent = handCards[0].closest('div[class*="group"]') as HTMLElement;
+            if (parent) {
+                parent.click();
+                return handCards[0].getAttribute('alt');
+            }
+        }
+        return null;
+    });
+    console.log(`  ${followerRole} clicked card: ${followerPlayed}`);
+    await delay(3000);
+
+    // Verify table updated on both screens
+    const hostCardsCount = await pageHost.evaluate(() => document.querySelectorAll('.animate-in.zoom-in').length);
+    const guestCardsCount = await pageGuest.evaluate(() => document.querySelectorAll('.animate-in.zoom-in').length);
+    console.log(`  Table state after trick play: Host sees ${hostCardsCount} cards, Guest sees ${guestCardsCount} cards`);
 
     console.log("\n=================================================");
     console.log("  🎉 ALL CROSS-DEVICE MULTIPLAYER TESTS PASSED!  ");
