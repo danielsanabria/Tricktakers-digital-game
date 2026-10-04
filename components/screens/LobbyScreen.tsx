@@ -50,15 +50,14 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         <div className="flex-1 flex flex-col items-center justify-start sm:justify-center p-4 md:p-8 text-center bg-transparent overflow-y-auto custom-scrollbar relative">
             <div className="relative z-10 w-full max-w-2xl bg-[#FCFAF6]/98 backdrop-blur-xl rounded-2xl sm:rounded-[2.5rem] border-2 border-[#E7DFD0] shadow-2xl p-5 sm:p-8 md:p-10 flex flex-col items-center my-auto">
 
-                {/* Back / Leave button & Language selector header */}
-                <div className="w-full flex items-center justify-between mb-5 sm:mb-6">
+                {/* Back / Leave button */}
+                <div className="w-full flex items-center justify-start mb-5 sm:mb-6">
                     <button
                         onClick={onLeaveLobby}
                         className="px-4 py-2 rounded-xl bg-[#EFE9DC] hover:bg-[#E5DDCB] text-[#6B5E4F] text-xs font-bold transition-all flex items-center gap-2 active:scale-95"
                     >
                         <i className="fa-solid fa-arrow-left"></i> {t('lobby.leaveLobby')}
                     </button>
-                    <LanguageSelector compact />
                 </div>
 
                 {/* Title and Room Code Card */}
@@ -240,6 +239,14 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                         <i className="fa-solid fa-circle-notch fa-spin text-[#C59B27]"></i> {t('lobby.waitingHost')}
                     </div>
                 )}
+
+                {/* Language Selector at bottom */}
+                <div className="mt-6 pt-4 border-t border-[#E7DFD0]/80 w-full flex items-center justify-center gap-2">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#8C7D6B]">
+                        {t('common.language')}:
+                    </span>
+                    <LanguageSelector />
+                </div>
 
             </div>
         </div>

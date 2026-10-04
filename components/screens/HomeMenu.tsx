@@ -32,9 +32,6 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
 
             <div className="relative z-10 w-full max-w-5xl flex flex-col items-center pt-2 md:pt-4 pb-12 md:pb-8">
 
-                {/* Banner de instalación nativa PWA (Android / iOS) */}
-                <InstallPwaPrompt />
-
                 {/* Configuration Controls Bar - Board Game Setup Tablet */}
                 <div className="w-full max-w-4xl mb-5 sm:mb-6 bg-[#FCFAF6]/95 backdrop-blur-sm border-2 border-[#E7DFD0] rounded-2xl md:rounded-3xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
                     {/* Player Count Selector */}
@@ -258,6 +255,9 @@ export const HomeMenu: React.FC<HomeMenuProps> = ({
                     </button>
 
                 </div>
+
+                {/* Banner de instalación PWA al final de la pantalla de inicio */}
+                <InstallPwaPrompt />
 
                 {/* Footer Controls: Rulebooks & Language Selector */}
                 <div className="mt-8 md:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 z-20">

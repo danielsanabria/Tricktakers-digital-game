@@ -1,7 +1,6 @@
 import React from 'react';
 import { GamePhase, AIDifficulty } from '../game/core/types';
 import { useTranslation } from '../i18n/LanguageContext';
-import { LanguageSelector } from './LanguageSelector';
 
 interface GameHeaderProps {
     phase: GamePhase;
@@ -90,9 +89,6 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
                         </div>
                     </div>
                 )}
-
-                {/* Language Switcher in Header */}
-                <LanguageSelector compact />
 
                 <div className="flex items-center gap-2">
                     <button
