@@ -51,3 +51,8 @@ Unused items on your equipment slots grant points:
     *   Crystal: +20 (Initial) / +30 (Extra Slot).
     *   Rock Crystal: +30 (Initial) / +50 (Extra Slot).
     *   Fairy Mischief: -30 pts.
+
+### Round Transition & Reset
+* At the end of each round, points from unused items in equipment slots are calculated and scored.
+* **All items and equipment slots are completely reset/returned.** Items NEVER carry over between rounds.
+* If a player (the same player or another) selects the Adventurer in a subsequent round, they execute the setup from scratch (2 initial slots, choosing 1 Red and 1 Blue item from fresh options).

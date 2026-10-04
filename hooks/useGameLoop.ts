@@ -189,7 +189,11 @@ export const useGameLoop = () => {
                 isKakumeiActive: false,
                 hermitUsedAbility: false,
                 strategistUsedIgnore: false,
-                items: p.character === CharacterType.ADVENTURER ? (setupData.items || []) : p.items
+                items: p.character === CharacterType.ADVENTURER ? (setupData.items || []) : [],
+                itemSlots: p.character === CharacterType.ADVENTURER ? (setupData.itemSlots || 2) : 0,
+                tasks: p.character === CharacterType.RULER ? (setupData.tasks || []) : [],
+                collectedCards: [],
+                usedItemIds: []
             };
         });
 

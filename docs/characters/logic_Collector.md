@@ -7,12 +7,11 @@
 
 ## Abilities
 
-### Reserve (Trick Loss)
-If you **lose** a trick, you may take **1 card** played in that trick and add it to your collection (face down).
-*   *Note:* You cannot take cards if you win the trick.
-
-### Collect (Trick Win)
-If you **win** a trick, you take **ALL cards** played in that trick into your collection.
+### Reserve Token (Trick Loss)
+On your turn during Step 4, after playing a card, you may place the **Reserve Token** on any card already in the trick:
+* If another player wins the trick, you collect the card you reserved into your collection (face down).
+* If you win the trick, you collect **ALL cards** played in that trick instead.
+* After the trick, the Reserve Token returns to your play area for the next trick.
 
 ### No Crowns
 The Collector **cannot** gain Gold or Black Crowns, regardless of trick wins.
