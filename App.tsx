@@ -206,6 +206,7 @@ const App = () => {
         const code = realtimeService.generateRoomCode();
         localStorage.setItem('tricktakers_last_room', code);
         localStorage.setItem('tricktakers_player_name', playerName);
+        localStorage.setItem('tricktakers_is_host_' + code, 'true');
         setMultiplayerRoomCode(code);
         setLocalPlayerId('p1');
         localPlayerIdRef.current = 'p1';
@@ -218,17 +219,20 @@ const App = () => {
     };
 
     const handleJoinRoom = async (code: string, playerName: string) => {
-        const pId = getPersistentParticipantId();
-        localStorage.setItem('tricktakers_last_room', code);
+        const cleanCode = code.trim().toUpperCase();
+        const wasHost = localStorage.getItem('tricktakers_is_host_' + cleanCode) === 'true';
+        const pId = wasHost ? 'p1' : getPersistentParticipantId();
+
+        localStorage.setItem('tricktakers_last_room', cleanCode);
         localStorage.setItem('tricktakers_player_name', playerName);
-        setMultiplayerRoomCode(code);
+        setMultiplayerRoomCode(cleanCode);
         setLocalPlayerId(pId);
         localPlayerIdRef.current = pId;
-        setIsHost(false);
-        isHostRef.current = false;
+        setIsHost(wasHost);
+        isHostRef.current = wasHost;
         setIsJoinModalOpen(false);
 
-        await realtimeService.joinRoom(code, pId, playerName, false, setupRealtimeCallbacks());
+        await realtimeService.joinRoom(cleanCode, pId, playerName, wasHost, setupRealtimeCallbacks());
         realtimeService.broadcast('RECONNECT', { participantId: pId, name: playerName });
         if (game.phase === GamePhase.MODE_SELECTION) {
             game.setPhase(GamePhase.LOBBY);
@@ -336,8 +340,8 @@ const App = () => {
         setMultiplayerRoomCode('');
         setParticipants([]);
         setMyInGameId('p1');
-        setIsHost(true);
-        isHostRef.current = true;
+        setIsHost(false);
+        isHostRef.current = false;
         game.resetGame();
     };
 

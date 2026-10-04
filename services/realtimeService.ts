@@ -565,15 +565,20 @@ class RealtimeService {
 
         if (message.type === 'ROOM_UPDATE' && message.payload?.participant) {
             const p = message.payload.participant as RoomParticipant;
+            const isNew = !this.participants.has(p.id);
             this.participants.set(p.id, p);
             this.notifyParticipants();
 
-            // If this node is host, reply with full list of participants to sync guest
+            // Reply so all peers stay fully synchronized immediately
             const myParticipant = this.localPlayerId ? this.participants.get(this.localPlayerId) : null;
-            if (this.isHost || myParticipant?.isHost) {
-                this.broadcast('SYNC_PARTICIPANTS', {
-                    participants: Array.from(this.participants.values())
-                });
+            if (myParticipant && p.id !== this.localPlayerId) {
+                if (this.isHost || myParticipant.isHost) {
+                    this.broadcast('SYNC_PARTICIPANTS', {
+                        participants: Array.from(this.participants.values())
+                    });
+                } else if (isNew) {
+                    this.broadcast('ROOM_UPDATE', { participant: myParticipant });
+                }
             }
         } else if (message.type === 'SYNC_PARTICIPANTS' && Array.isArray(message.payload?.participants)) {
             message.payload.participants.forEach((part: RoomParticipant) => {
@@ -584,6 +589,10 @@ class RealtimeService {
             const reconnectedId = message.payload?.playerId || message.payload?.participantId;
             if (reconnectedId) {
                 this.handlePlayerReconnected(reconnectedId);
+            }
+            const myParticipant = this.localPlayerId ? this.participants.get(this.localPlayerId) : null;
+            if (myParticipant && reconnectedId !== this.localPlayerId) {
+                this.broadcast('ROOM_UPDATE', { participant: myParticipant });
             }
         } else if (message.type === 'BOT_TAKEOVER') {
             this.callbacks?.onBotTakeover(message.payload?.playerId);

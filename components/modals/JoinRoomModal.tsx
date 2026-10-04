@@ -22,8 +22,12 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const savedRoom = localStorage.getItem('tricktakers_last_room');
-        if (savedRoom) setLastRoom(savedRoom);
+        if (isOpen) {
+            setMode('SELECT');
+            setError('');
+            const savedRoom = localStorage.getItem('tricktakers_last_room');
+            if (savedRoom) setLastRoom(savedRoom);
+        }
     }, [isOpen]);
 
     if (!isOpen) return null;
@@ -98,8 +102,13 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({
                             <span className="block text-[9px] font-black uppercase text-teal-600 tracking-wider">
                                 Partida reciente detectada
                             </span>
-                            <span className="font-black text-sm text-slate-800">
+                            <span className="font-black text-sm text-slate-800 flex items-center gap-1.5">
                                 Sala <span className="font-mono text-teal-600 font-bold">{lastRoom}</span>
+                                {localStorage.getItem('tricktakers_is_host_' + lastRoom) === 'true' && (
+                                    <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black flex items-center gap-1">
+                                        <i className="fa-solid fa-crown text-[9px]"></i> Anfitrión
+                                    </span>
+                                )}
                             </span>
                         </div>
                         <button

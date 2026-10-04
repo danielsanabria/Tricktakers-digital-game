@@ -176,6 +176,67 @@ async function run() {
     }
     console.log("✅ Cross-Device Lobby Handshake SUCCESSFUL!");
 
+    // --- STEP 3.5: Host Leaves Lobby & Re-enters, Retaining Host Role ---
+    console.log("\n--- STEP 3.5: Host Leaves Lobby and Rejoins (verifying Host role persistence) ---");
+    // Host clicks "Salir de la Sala"
+    await pageHost.evaluate(() => {
+        const leaveBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Salir de la Sala'));
+        if (leaveBtn) leaveBtn.click();
+    });
+    await delay(1200);
+
+    // Host should now be on HomeMenu
+    const onHome = await pageHost.evaluate(() => {
+        return !!Array.from(document.querySelectorAll('h3')).find(h => h.textContent?.includes('Multijugador Online'));
+    });
+    console.log(`  Host back on HomeMenu: ${onHome}`);
+
+    // Host clicks Multijugador Online again
+    await pageHost.evaluate(() => {
+        const h3 = Array.from(document.querySelectorAll('h3')).find(h => h.textContent?.includes('Multijugador Online'));
+        const btn = h3?.closest('button');
+        if (btn) btn.click();
+    });
+    await delay(600);
+
+    // Host sees recent room banner with "Reunirse" & Crown badge
+    const seesHostBanner = await pageHost.evaluate(() => {
+        const text = document.body.textContent || '';
+        return text.includes('Partida reciente detectada') && text.includes('Anfitrión');
+    });
+    console.log(`  Host sees recent room with Anfitrión crown badge: ${seesHostBanner}`);
+
+    // Host clicks "Reunirse"
+    await pageHost.evaluate(() => {
+        const rejoinBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Reunirse'));
+        if (rejoinBtn) rejoinBtn.click();
+    });
+    await delay(2500);
+
+    // Verify Host has Iniciar Torneo button and Host badge in lobby
+    let hostRestored = false;
+    for (let i = 0; i < 10; i++) {
+        await delay(1000);
+        const hostState = await pageHost.evaluate(() => {
+            const text = document.body.textContent || '';
+            const hasStartBtn = !!Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Iniciar Torneo'));
+            const isHostSlot = text.includes('Anfitrión de la Sala');
+            const seesGuest = text.includes('Jugador Conectado') || document.querySelectorAll('.bg-emerald-500').length >= 2;
+            return { hasStartBtn, isHostSlot, seesGuest };
+        });
+
+        console.log(`  Check host restore [${i + 1}/10]: hasStartBtn=${hostState.hasStartBtn}, isHostSlot=${hostState.isHostSlot}, seesGuest=${hostState.seesGuest}`);
+        if (hostState.hasStartBtn && hostState.isHostSlot && hostState.seesGuest) {
+            hostRestored = true;
+            break;
+        }
+    }
+
+    if (!hostRestored) {
+        throw new Error("Host failed to retain host role or rediscover guest after rejoining lobby!");
+    }
+    console.log("✅ Host SUCCESSFULLY retained Host role, crown, and Iniciar Torneo button upon rejoining!");
+
     // --- STEP 4: Host Starts Game ---
     console.log("\n--- STEP 4: Host Starts Game ---");
     await pageHost.evaluate(() => {
